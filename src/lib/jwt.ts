@@ -18,3 +18,9 @@ export function verifyToken(token: string): JwtPayload | string | null {
         return null;
     }
 }
+
+export function getUserFromAuthHeader(authHeader?: string | null) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
+    const token = authHeader.split(" ")[1];
+    return verifyToken(token);
+}

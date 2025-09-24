@@ -1,12 +1,12 @@
-import {RegisterSchema} from "@/schemas/auth.schema";
-import {NextResponse} from "next/server";
+import { RegisterSchema } from "@/schemas/auth.schema";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import {signToken} from "@/lib/jwt";
+import { signToken } from "@/lib/jwt";
 
 export async function POST(req: Request) {
     try {
-        const body = await req.json;
+        const body = await req.json();
         const parsed = RegisterSchema.safeParse(body);
 
         if (!parsed.success) {
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
         const user = await prisma.user.create({
             data: {
                 email,
-                password,
+                password: hashed,
                 name,
             },
             select: {

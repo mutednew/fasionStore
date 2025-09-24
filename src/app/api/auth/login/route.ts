@@ -2,7 +2,7 @@ import {LoginSchema} from "@/schemas/auth.schema";
 import {NextResponse} from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
-import {signToken} from "@/lib/jwt";
+import { signToken } from "@/lib/jwt";
 
 export async function POST(req: Request) {
     try {
@@ -15,10 +15,7 @@ export async function POST(req: Request) {
 
         const { email, password } = parsed.data;
 
-        const user = await prisma.user.findUnique({
-            where: { email },
-            select: { id: true, email: true, name: true, password: true, role: true },
-        });
+        const user = await prisma.user.findUnique({ where: { email } });
 
         if (!user) {
             return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
@@ -32,12 +29,7 @@ export async function POST(req: Request) {
 
         const token = signToken({ userId: user.id, role: user.role});
 
-        const returnedUser = {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-        }
+        const { password: _, ...returnedUser } = user;
 
         return NextResponse.json({ user: returnedUser, token }, { status: 200 });
     } catch (err: any) {
