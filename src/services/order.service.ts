@@ -1,7 +1,7 @@
 import { OrderType } from "@/schemas/order.schema";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
 import { CartSchema } from "@/schemas/cart.schema";
+import { toPlainOrder, PrismaOrderWithItems } from "@/lib/transformers";
 
 export const orderService = {
     async getAll(): Promise<OrderType[]> {
@@ -15,7 +15,7 @@ export const orderService = {
             orderBy: { createdAt: "desc" },
         });
 
-        return orders.map(orderService.toPlainOrder);
+        return orders.map(toPlainOrder);
     },
 
     async getById(id: string): Promise<OrderType | null> {
@@ -29,7 +29,7 @@ export const orderService = {
             },
         });
 
-        return order ? orderService.toPlainOrder(order) : null;
+        return order ? toPlainOrder(order) : null;
     },
 
     async getByUser(userId: string): Promise<OrderType[]> {
@@ -41,7 +41,7 @@ export const orderService = {
             orderBy: { createdAt: "desc" },
         });
 
-        return orders.map(orderService.toPlainOrder);
+        return orders.map(toPlainOrder);
     },
 
     async createFromCart(cartData: unknown): Promise<OrderType> {
@@ -65,7 +65,7 @@ export const orderService = {
             include: { items: { include: { product: true } } },
         });
 
-        return orderService.toPlainOrder(order);
+        return toPlainOrder(order);
     },
 
     async updateStatus(id: string, status: OrderType["status"]): Promise<OrderType> {
@@ -75,25 +75,10 @@ export const orderService = {
             include: { items: { include: { product: true } } },
         });
 
-        return orderService.toPlainOrder(updated);
+        return toPlainOrder(updated);
     },
 
     async delete(id: string): Promise<void> {
         await prisma.order.delete({ where: { id } });
-    },
-
-    toPlainOrder(order: Prisma.OrderGetPayload<{ include: { items: { include: { product: true } } } }>): OrderType {
-        return {
-            id: order.id,
-            userId: order.userId,
-            status: order.status,
-            createdAt: order.createdAt,
-            items: order.items.map((item) => ({
-                id: item.id,
-                productId: item.productId,
-                quantity: item.quantity,
-                price: Number(item.price),
-            })),
-        };
     },
 };
