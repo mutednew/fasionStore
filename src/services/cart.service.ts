@@ -38,13 +38,11 @@ export const cartService = {
     async addItem(userId: string, data: unknown): Promise<CartType> {
         const parsed = CartItemSchema.parse(data);
 
-        let cart = await prisma.cart.findUnique({
+        const cart = await prisma.cart.upsert({
             where: { userId },
+            update: {},
+            create: { userId },
         });
-
-        if (!cart) {
-            cart = await prisma.cart.create({ data: { userId } });
-        }
 
         const existingItem = await prisma.cartItem.findFirst({
             where: {
