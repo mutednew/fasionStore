@@ -1,22 +1,25 @@
-import {ProductSchema, ProductType} from "@/schemas/product.schema";
+import { ProductSchema, ProductType } from "@/schemas/product.schema";
 import { prisma } from "@/lib/prisma";
+import { toPlainProduct } from "@/lib/transformers";
 
 export const productService = {
-    async getAll(categoryId: string): Promise<ProductType[]> {
+    async getAll(categoryId?: string): Promise<ProductType[]> {
         const products = await prisma.product.findMany({
             where: categoryId ? { categoryId } : {},
             include: { category: true },
             orderBy: { createdAt: "desc" },
         });
 
-        return products as ProductType[];
+        return products.map(toPlainProduct);
     },
 
     async getById(id: string): Promise<ProductType | null> {
-        return prisma.product.findUnique({
+        const product = await prisma.product.findUnique({
             where: { id },
             include: { category: true },
         });
+
+        return product ? toPlainProduct(product) : null;
     },
 
     async create(data: unknown): Promise<ProductType> {
@@ -30,9 +33,10 @@ export const productService = {
                 imageUrl: parsed.imageUrl,
                 categoryId: parsed.categoryId,
             },
+            include: { category: true },
         });
 
-        return product;
+        return toPlainProduct(product);
     },
 
     async update(id: string, data: unknown): Promise<ProductType> {
@@ -41,9 +45,10 @@ export const productService = {
         const updated = await prisma.product.update({
             where: { id },
             data: parsed,
+            include: { category: true },
         });
 
-        return updated;
+        return toPlainProduct(updated);
     },
 
     async delete(id: string): Promise<void> {
