@@ -1,62 +1,82 @@
-import {categoryService} from "@/services/category.service";
-import {NextResponse} from "next/server";
-import {ZodError} from "zod";
-import {CategorySchema} from "@/schemas/category.schema";
+import { categoryService } from "@/services/category.service";
+import { CategorySchema } from "@/schemas/category.schema";
+import { requireAuth } from "@/middleware/auth";
+import { ok, fail } from "@/lib/response";
+import { ZodError } from "zod";
+import { ApiError } from "@/lib/ApiError";
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
     try {
         const category = await categoryService.getById(params.id);
 
         if (!category) {
-            return NextResponse.json({ error: "Category not found" }, { status: 404 })
+            throw new ApiError("Category not found", 404);
         }
 
-        return NextResponse.json(category);
+        return ok(category);
     } catch (err) {
-        console.error("GET /api/categories/:id error:", err);
+        if (err instanceof ApiError) {
+            return fail(err.message, err.status, err.details);
+        }
 
-        return NextResponse.json(
-            { error: "Failed to fetch category" },
-            { status: 500 }
-        );
+        console.error("GET /api/categories/:id error:", err);
+        return fail("Failed to fetch category", 500);
     }
 }
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
+    const auth = await requireAuth(req as any, "ADMIN");
+    if (auth) return auth;
+
+    const user = (req as any).user;
+
     try {
         const body = await req.json();
         const parsed = CategorySchema.partial().omit({ id: true }).parse(body);
+
+        const category = await categoryService.getById(params.id);
+        if (!category) {
+            throw new ApiError("Category not found", 404);
+        }
+
         const updated = await categoryService.update(params.id, parsed);
 
-        return NextResponse.json(updated);
+        return ok(updated);
     } catch (err) {
         if (err instanceof ZodError) {
-            return NextResponse.json(
-                { error: "Invalid data", details: err.issues },
-                { status: 400 }
-            );
+            return fail("Invalid data", 400, err.issues);
+        }
+
+        if (err instanceof ApiError) {
+            return fail(err.message, err.status, err.details);
         }
 
         console.error("PUT /api/categories/:id error:", err);
-
-        return NextResponse.json(
-            { error: "Failed to update category" },
-            { status: 500 }
-        );
+        return fail("Failed to update category", 500);
     }
 }
 
 export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+    const auth = await requireAuth(_req as any, "ADMIN");
+    if (auth) return auth;
+
+    const user = (_req as any).user;
+
     try {
+        const category = await categoryService.getById(params.id);
+        if (!category) {
+            throw new ApiError("Category not found", 404);
+        }
+
         await categoryService.delete(params.id);
 
-        return NextResponse.json({ message: "Category deleted" });
+        return ok({ message: "Category deleted" });
     } catch (err) {
-        console.error("DELETE /api/categories/:id error:", err);
+        if (err instanceof ApiError) {
+            return fail(err.message, err.status, err.details);
+        }
 
-        return NextResponse.json(
-            { error: "Failed to delete category" },
-            { status: 500 }
-        );
+        console.error("DELETE /api/categories/:id error:", err);
+        return fail("Failed to delete category", 500);
     }
 }

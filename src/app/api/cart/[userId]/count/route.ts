@@ -1,17 +1,19 @@
 import { cartService } from "@/services/cart.service";
-import { NextResponse } from "next/server";
+import { ok, fail } from "@/lib/response";
+import { ApiError } from "@/lib/ApiError";
 
 export async function GET(_req: Request, { params }: { params: { userId: string } }) {
     try {
         const count = await cartService.getItemCount(params.userId);
 
-        return NextResponse.json({ count });
+        return ok({ count });
     } catch (err) {
+        if (err instanceof ApiError) {
+            return fail(err.message, err.status, err.details);
+        }
+
         console.error("GET /api/cart/:userId/count error:", err);
 
-        return NextResponse.json(
-            { error: "Failed to get cart item count" },
-            { status: 500 }
-        );
+        return fail("Failed to get cart item count", 500);
     }
 }

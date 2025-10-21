@@ -1,6 +1,7 @@
 import { LoginSchema } from "@/schemas/auth.schema";
-import { NextResponse } from "next/server";
 import { loginUser } from "@/services/user.service";
+import { ApiError } from "@/lib/ApiError";
+import { ok, fail } from "@/lib/response";
 
 export async function POST(req: Request) {
     try {
@@ -8,13 +9,16 @@ export async function POST(req: Request) {
         const parsed = LoginSchema.safeParse(body);
 
         if (!parsed.success) {
-            return NextResponse.json({ error: parsed.error.format() }, { status: 400 });
+            return fail("Invalid data", 400, parsed.error.format());
         }
 
         const result = await loginUser(parsed.data);
-
-        return NextResponse.json(result, { status: 200 });
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message || "Internal server error" }, { status: 500 });
+        return ok(result, 200);
+    } catch (err) {
+        if (err instanceof ApiError) {
+            return fail(err.message, err.status, err.details);
+        }
+        console.error("Login error:", err);
+        return fail("Internal server error", 500);
     }
 }

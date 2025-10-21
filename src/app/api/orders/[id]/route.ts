@@ -1,61 +1,91 @@
 import { orderService } from "@/services/order.service";
-import { NextResponse } from "next/server";
 import { OrderSchema } from "@/schemas/order.schema";
+import { requireAuth } from "@/middleware/auth";
+import { ok, fail } from "@/lib/response";
 import { ZodError } from "zod";
+import { ApiError } from "@/lib/ApiError";
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: { id: string } }) {
+    const auth = await requireAuth(req as any);
+    if (auth) return auth;
+
+    const user = (req as any).user;
+
     try {
         const order = await orderService.getById(params.id);
 
         if (!order) {
-            return NextResponse.json({ error: "Order not found" }, { status: 404 });
+            throw new ApiError("Order not found", 404);
         }
 
-        return NextResponse.json(order);
-    } catch (err) {
-        console.error("GET /api/orders/:id error:", err);
+        if (user.role !== "ADMIN" && user.userId !== order.userId) {
+            throw new ApiError("Forbidden", 403);
+        }
 
-        return NextResponse.json(
-            { error: "Failed to fetch order" },
-            { status: 500 }
-        );
+        return ok(order);
+    } catch (err) {
+        if (err instanceof ApiError) {
+            return fail(err.message, err.status, err.details);
+        }
+
+        console.error("GET /api/orders/:id error:", err);
+        return fail("Failed to fetch order", 500);
     }
 }
 
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
+    const auth = await requireAuth(req as any);
+    if (auth) return auth;
+
+    const user = (req as any).user;
+
     try {
         const body = await req.json();
         const parsed = OrderSchema.pick({ status: true }).parse(body);
-        const updated = await orderService.updateStatus(params.id, parsed.status);
 
-        return NextResponse.json(updated);
+        const order = await orderService.getById(params.id);
+
+        if (!order || (user.role !== "ADMIN" && user.userId !== order.userId)) {
+            throw new ApiError("Forbidden", 403);
+        }
+
+        const updated = await orderService.updateStatus(params.id, parsed.status);
+        return ok(updated);
     } catch (err) {
         if (err instanceof ZodError) {
-            return NextResponse.json(
-                { error: "Invalid status", details: err.issues },
-                { status: 400 }
-            );
+            return fail("Invalid status", 400, err.issues);
+        }
+
+        if (err instanceof ApiError) {
+            return fail(err.message, err.status, err.details);
         }
 
         console.error("PUT /api/orders/:id error:", err);
-        return NextResponse.json(
-            { error: "Failed to update order" },
-            { status: 500 }
-        );
+        return fail("Failed to update order", 500);
     }
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+    const auth = await requireAuth(req as any);
+    if (auth) return auth;
+
+    const user = (req as any).user;
+
     try {
+        const order = await orderService.getById(params.id);
+
+        if (!order || (user.role !== "ADMIN" && user.userId !== order.userId)) {
+            throw new ApiError("Forbidden", 403);
+        }
+
         await orderService.delete(params.id);
-
-        return NextResponse.json({ message: "Order deleted" });
+        return ok({ message: "Order deleted" });
     } catch (err) {
-        console.error("DELETE /api/orders/:id error:", err);
+        if (err instanceof ApiError) {
+            return fail(err.message, err.status, err.details);
+        }
 
-        return NextResponse.json(
-            { error: "Failed to delete order" },
-            { status: 500 }
-        );
+        console.error("DELETE /api/orders/:id error:", err);
+        return fail("Failed to delete order", 500);
     }
 }

@@ -1,25 +1,32 @@
-import jwt, {JwtPayload, SignOptions} from 'jsonwebtoken';
+import jwt, { JwtPayload, SignOptions } from "jsonwebtoken";
+import { ApiError } from "@/lib/ApiError";
+
+export interface UserTokenPayload extends JwtPayload {
+    userId: string;
+    role: string;
+}
 
 const JWT_SECRET = process.env.JWT_SECRET as string;
-const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d") as `${number}${'d'|'h'|'m'|'s'}`;
+const JWT_EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d") as `${number}${"d" | "h" | "m" | "s"}`;
 
 if (!JWT_SECRET) throw new Error("JWT_SECRET is not defined in environment variables");
 
-export function signToken(payload: Record<string, any>) {
+export function signToken(payload: UserTokenPayload): string {
     const options: SignOptions = { expiresIn: JWT_EXPIRES_IN };
-
     return jwt.sign(payload, JWT_SECRET, options);
 }
 
-export function verifyToken(token: string): JwtPayload | string | null {
+export function verifyToken(token: string): UserTokenPayload | null {
     try {
-        return jwt.verify(token, JWT_SECRET);
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (typeof decoded === "string") return null;
+        return decoded as UserTokenPayload;
     } catch (err) {
-        return null;
+        throw new ApiError("Invalid or expired token", 401);
     }
 }
 
-export function getUserFromAuthHeader(authHeader?: string | null) {
+export function getUserFromAuthHeader(authHeader?: string | null): UserTokenPayload | null {
     if (!authHeader || !authHeader.startsWith("Bearer ")) return null;
     const token = authHeader.split(" ")[1];
     return verifyToken(token);

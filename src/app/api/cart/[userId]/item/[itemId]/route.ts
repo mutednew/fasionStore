@@ -1,6 +1,8 @@
 import { z, ZodError } from "zod";
 import { cartService } from "@/services/cart.service";
-import { NextResponse } from "next/server";
+import { requireAuth } from "@/middleware/auth";
+import { ok, fail } from "@/lib/response";
+import { ApiError } from "@/lib/ApiError";
 
 const QuantitySchema = z.object({
     quantity: z.number().int().min(1),
@@ -8,8 +10,17 @@ const QuantitySchema = z.object({
 
 export async function PUT(
     req: Request,
-    { params }: { params: { userId: string, itemId: string } }
+    { params }: { params: { userId: string; itemId: string } }
 ) {
+    const auth = await requireAuth(req as any);
+    if (auth) return auth;
+
+    const user = (req as any).user;
+
+    if (user.userId !== params.userId) {
+        throw new ApiError("Forbidden", 403);
+    }
+
     try {
         const body = await req.json();
         const { quantity } = QuantitySchema.parse(body);
@@ -17,35 +28,46 @@ export async function PUT(
         const updated = await cartService.updateItemQuantity(
             params.userId,
             params.itemId,
-            quantity,
+            quantity
         );
 
-        return NextResponse.json(updated);
+        return ok(updated);
     } catch (err) {
         if (err instanceof ZodError) {
-            return NextResponse.json(
-                { error: "Invalid quantity", details: err.issues },
-                { status: 400 }
-            );
+            return fail("Invalid quantity", 400, err.issues);
+        }
+
+        if (err instanceof ApiError) {
+            return fail(err.message, err.status, err.details);
         }
 
         console.error("PUT /api/cart/:userId/item/:itemId error:", err);
-
-        return NextResponse.json({ error: "Failed to update item" }, { status: 500 });
+        return fail("Failed to update item", 500);
     }
 }
 
 export async function DELETE(
-    _req: Request,
-    { params }: { params: { userId: string, itemId: string } }
+    req: Request,
+    { params }: { params: { userId: string; itemId: string } }
 ) {
+    const auth = await requireAuth(req as any);
+    if (auth) return auth;
+
+    const user = (req as any).user;
+
+    if (user.userId !== params.userId) {
+        throw new ApiError("Forbidden", 403);
+    }
+
     try {
         const updated = await cartService.removeItem(params.userId, params.itemId);
-
-        return NextResponse.json(updated);
+        return ok(updated);
     } catch (err) {
-        console.error("DELETE /api/cart/:userId/item/:itemId error:", err);
+        if (err instanceof ApiError) {
+            return fail(err.message, err.status, err.details);
+        }
 
-        return NextResponse.json({ error: "Failed to remove item" }, { status: 500 });
+        console.error("DELETE /api/cart/:userId/item/:itemId error:", err);
+        return fail("Failed to remove item", 500);
     }
 }

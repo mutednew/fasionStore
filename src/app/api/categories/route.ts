@@ -1,50 +1,52 @@
 import { categoryService } from "@/services/category.service";
-import { NextResponse } from "next/server";
 import { CategorySchema } from "@/schemas/category.schema";
+import { requireAuth } from "@/middleware/auth";
+import { ok, fail } from "@/lib/response";
 import { ZodError } from "zod";
+import { ApiError } from "@/lib/ApiError";
 
 export async function GET() {
     try {
         const categories = await categoryService.getAll();
-
-        return NextResponse.json(categories);
+        return ok(categories);
     } catch (err) {
-        console.error("GET /api/categories error:", err);
+        if (err instanceof ApiError) {
+            return fail(err.message, err.status, err.details);
+        }
 
-        return NextResponse.json(
-            { error: "Failed to fetch categories" },
-            { status: 500 }
-        );
+        console.error("GET /api/categories error:", err);
+        return fail("Failed to fetch categories", 500);
     }
 }
 
 export async function POST(req: Request) {
+    const auth = await requireAuth(req as any, "ADMIN");
+    if (auth) return auth;
+
+    const user = (req as any).user;
+
     try {
         const body = await req.json();
         const parsed = CategorySchema.omit({ id: true }).parse(body);
-        const created = await categoryService.create(parsed);
 
-        return NextResponse.json(created, { status: 201 });
-    } catch (err) {
-        if (err instanceof ZodError) {
-            return NextResponse.json(
-                { error: "Invalid data", details: err.issues },
-                { status: 400 }
-            );
+        const existingCategory = await categoryService.getByName(parsed.name);
+        if (existingCategory) {
+            throw new ApiError("Category with this name already exists", 409);
         }
 
-        if (err instanceof Error && err.message.includes("already exists")) {
-            return NextResponse.json(
-                { error: err.message },
-                { status: 409 } // Conflict
-            );
+        const created = await categoryService.create(parsed);
+
+        return ok(created, 201);
+    } catch (err) {
+        if (err instanceof ZodError) {
+            return fail("Invalid data", 400, err.issues);
+        }
+
+        if (err instanceof ApiError) {
+            return fail(err.message, err.status, err.details);
         }
 
         console.error("POST /api/categories error:", err);
-
-        return NextResponse.json(
-            { error: "Failed to create category" },
-            { status: 500 }
-        );
+        return fail("Failed to create category", 500);
     }
 }
