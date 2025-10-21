@@ -5,9 +5,18 @@ export interface User {
     role: "ADMIN" | "CUSTOMER";
 }
 
-export async function requireAuth(req: NextRequest, role?: "ADMIN" | "CUSTOMER"): Promise<NextResponse | null> {
-    const userId = req.headers.get("x-user-id");
-    const userRole = req.headers.get("x-user-role");
+export async function requireAuth(req: Request | NextRequest, role?: "ADMIN" | "CUSTOMER"): Promise<NextResponse | null> {
+    const headers = (req as any).headers?.get
+        ? req.headers
+        : new Headers((req as any).headers);
+
+    const authHeader = headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = headers.get("x-user-id");
+    const userRole = headers.get("x-user-role");
 
     if (!userId || !userRole) {
         return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
@@ -17,7 +26,6 @@ export async function requireAuth(req: NextRequest, role?: "ADMIN" | "CUSTOMER")
         return NextResponse.json({ success: false, message: "Forbidden" }, { status: 403 });
     }
 
-    // Типизируем user
     (req as any).user = { userId, role: userRole };
 
     return null;

@@ -3,7 +3,7 @@ import { CartItemSchema } from "@/schemas/cart.schema";
 import { requireAuth } from "@/middleware/auth";
 import { ok, fail } from "@/lib/response";
 import { ZodError } from "zod";
-import {ApiError} from "@/lib/ApiError";
+import { ApiError } from "@/lib/ApiError";
 
 export async function GET(req: Request, { params }: { params: { userId: string } }) {
     const auth = await requireAuth(req as any);
@@ -13,7 +13,7 @@ export async function GET(req: Request, { params }: { params: { userId: string }
 
     try {
         if (user.userId !== params.userId) {
-            return new ApiError("Forbidden", 403);
+            throw new ApiError("Forbidden", 403);
         }
 
         const cart = await cartService.getByUser(params.userId);
@@ -37,7 +37,7 @@ export async function POST(req: Request, { params }: { params: { userId: string 
 
     try {
         if (user.userId !== params.userId) {
-            return new ApiError("Forbidden", 403);
+            throw new ApiError("Forbidden", 403);
         }
 
         const body = await req.json();
@@ -68,7 +68,7 @@ export async function DELETE(req: Request, { params }: { params: { userId: strin
 
     try {
         if (user.userId !== params.userId) {
-            return new ApiError("Forbidden", 403);
+            throw new ApiError("Forbidden", 403);
         }
 
         await cartService.clear(params.userId);

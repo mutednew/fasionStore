@@ -1,7 +1,7 @@
 import { OrderType } from "@/schemas/order.schema";
 import { prisma } from "@/lib/prisma";
 import { CartSchema } from "@/schemas/cart.schema";
-import { toPlainOrder, PrismaOrderWithItems } from "@/lib/transformers";
+import { toPlainOrder } from "@/lib/transformers";
 import { ApiError } from "@/lib/ApiError";
 
 export const orderService = {
@@ -112,13 +112,22 @@ export const orderService = {
 
     async delete(id: string): Promise<void> {
         try {
-            const order = await prisma.order.findUnique({ where: { id } });
+            const order = await prisma.order.findUnique({
+                where: { id },
+                include: { items: true },
+            });
 
             if (!order) {
                 throw new ApiError("Order not found", 404);
             }
 
-            await prisma.order.delete({ where: { id } });
+            await prisma.orderItem.deleteMany({
+                where: { orderId: id },
+            });
+
+            await prisma.order.delete({
+                where: { id },
+            });
         } catch (err) {
             if (err instanceof ApiError) {
                 throw err;

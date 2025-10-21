@@ -18,7 +18,7 @@ export async function GET(req: Request) {
         });
 
         if (!cart) {
-            return new ApiError("Cart not found", 404);
+            throw new ApiError("Cart not found", 404);
         }
 
         return ok(cart, 200);
