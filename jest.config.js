@@ -23,6 +23,7 @@ const config = {
         "!src/**/*.d.ts",
         "!src/**/index.ts",
         "!src/app/api/**",
+        "!src/utils/*",
     ],
 };
 
