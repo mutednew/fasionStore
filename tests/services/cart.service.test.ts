@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/ApiError";
 import { CartItemSchema } from "@/schemas/cart.schema";
 
-// 🔧 Мокаем зависимости
 jest.mock("@/lib/prisma", () => ({
     prisma: {
         cart: {
@@ -28,7 +27,7 @@ jest.mock("@/schemas/cart.schema", () => ({
     },
 }));
 
-describe("🧪 cartService", () => {
+describe("cartService", () => {
     afterEach(() => {
         jest.clearAllMocks();
     });

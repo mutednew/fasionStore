@@ -2,12 +2,11 @@ import { getUserFromToken } from "@/lib/auth";
 import { verifyToken } from "@/lib/jwt";
 import { ApiError } from "@/lib/ApiError";
 
-// 🧠 Мокаем verifyToken, чтобы контролировать поведение без реального JWT
 jest.mock("@/lib/jwt", () => ({
     verifyToken: jest.fn(),
 }));
 
-describe("🔐 lib/auth — getUserFromToken()", () => {
+describe("lib/auth — getUserFromToken()", () => {
     const mockVerify = verifyToken as jest.Mock;
 
     afterEach(() => {

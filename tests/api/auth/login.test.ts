@@ -7,20 +7,17 @@ describe("POST /api/auth/login", () => {
         const response = await request(baseUrl)
             .post("/api/auth/login")
             .send({
-                email: "user@example.com", // ✅ подставь реального юзера из БД
-                password: "password123",              // ✅ реальный пароль
+                email: "user@example.com",
+                password: "password123",
             });
 
-        // Проверяем, что запрос прошёл
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
 
-        // Проверяем, что в ответе есть токен
         expect(response.body.data).toBeDefined();
         expect(response.body.data.token).toBeDefined();
         expect(typeof response.body.data.token).toBe("string");
 
-        // Проверяем наличие пользователя в ответе
         expect(response.body.data.user).toBeDefined();
         expect(response.body.data.user.email).toBe("user@example.com");
     });
@@ -42,7 +39,7 @@ describe("POST /api/auth/login", () => {
         const response = await request(baseUrl)
             .post("/api/auth/login")
             .send({
-                email: "", // некорректные данные
+                email: "",
                 password: "",
             });
 

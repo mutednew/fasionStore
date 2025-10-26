@@ -1,7 +1,7 @@
 import { Decimal } from "@prisma/client/runtime/library";
 import { toPlainProduct, toPlainOrder } from "@/lib/transformers";
 
-describe("🧪 transformers", () => {
+describe("transformers", () => {
     describe("toPlainProduct()", () => {
         it("should correctly transform product with Decimal price", () => {
             const prismaProduct = {

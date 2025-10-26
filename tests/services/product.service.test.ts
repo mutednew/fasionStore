@@ -2,7 +2,6 @@ import { productService } from "@/services/product.service";
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/ApiError";
 
-// Мокаем prisma
 jest.mock("@/lib/prisma", () => ({
     prisma: {
         product: {
@@ -16,12 +15,11 @@ jest.mock("@/lib/prisma", () => ({
     },
 }));
 
-// Мокаем toPlainProduct
 jest.mock("@/lib/transformers", () => ({
     toPlainProduct: (p: any) => ({ ...p, price: Number(p.price) }),
 }));
 
-describe("🧪 productService", () => {
+describe("productService", () => {
     afterEach(() => {
         jest.clearAllMocks();
     });
@@ -73,7 +71,7 @@ describe("🧪 productService", () => {
                 name: "Created Product",
                 price: 150,
                 stock: 10,
-                imageUrl: "https://example.com/image.png", // ✅ строка, а не null
+                imageUrl: "https://example.com/image.png",
                 categoryId: "a34e764a-2a60-418f-9df3-537a8a646f41",
                 createdAt: new Date(),
                 updatedAt: new Date(),
@@ -84,7 +82,7 @@ describe("🧪 productService", () => {
                 name: "Created Product",
                 price: 150,
                 stock: 10,
-                imageUrl: "https://example.com/image.png", // ✅ строка, не null
+                imageUrl: "https://example.com/image.png",
                 categoryId: "a34e764a-2a60-418f-9df3-537a8a646f41",
             });
 

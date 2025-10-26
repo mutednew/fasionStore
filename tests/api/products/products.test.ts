@@ -46,7 +46,7 @@ describe('POST /api/products', () => {
             .send(productData);
 
         expect(response.status).toBe(201);
-        createdProductId = response.body.data.id; // сохраняем id для удаления
+        createdProductId = response.body.data.id;
     });
 
     it('should return 400 if invalid data is provided', async () => {

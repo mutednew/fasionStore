@@ -15,7 +15,6 @@ describe("🧩 lib/prisma", () => {
             // @ts-ignore
             process.env.NODE_ENV = "development";
 
-            // 🧩 мок объявляем внутри isolateModules, чтобы он был "свежим"
             const mockConstructor = jest.fn().mockImplementation(() => ({
                 $connect: jest.fn(),
                 $disconnect: jest.fn(),

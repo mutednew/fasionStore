@@ -3,7 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/ApiError";
 import { CartSchema } from "@/schemas/cart.schema"
 
-// Мокаем prisma
 jest.mock("@/lib/prisma", () => ({
     prisma: {
         order: {
@@ -29,7 +28,7 @@ jest.mock("@/lib/transformers", () => ({
     toPlainOrder: jest.fn((order) => order),
 }));
 
-describe("🧪 orderService", () => {
+describe("orderService", () => {
     afterEach(() => {
         jest.clearAllMocks();
     });

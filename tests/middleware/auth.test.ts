@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAuth } from "@/middleware/auth";
 
-describe("🧪 requireAuth middleware", () => {
+describe("requireAuth middleware", () => {
     const makeRequest = (headers: Record<string, string> = {}) =>
         ({
             headers: new Headers(headers),

@@ -32,7 +32,7 @@ export const productService = {
             return toPlainProduct(product);
         } catch (err) {
             if (err instanceof ApiError) {
-                throw err; // Перенаправляем уже выброшенную ошибку
+                throw err;
             }
             throw new ApiError("Failed to fetch product", 500);
         }
@@ -46,7 +46,7 @@ export const productService = {
                 where: { name: parsed.name },
             });
             if (existingProduct) {
-                throw new ApiError("Product with this name already exists", 409); // 409 — Conflict
+                throw new ApiError("Product with this name already exists", 409);
             }
 
             const product = await prisma.product.create({
@@ -63,7 +63,7 @@ export const productService = {
             return toPlainProduct(product);
         } catch (err) {
             if (err instanceof ApiError) {
-                throw err; // Перенаправляем уже выброшенную ошибку
+                throw err;
             }
             throw new ApiError("Failed to create product", 500);
         }
@@ -73,7 +73,6 @@ export const productService = {
         try {
             const parsed = ProductSchema.partial().parse(data);
 
-            // Проверяем, существует ли продукт, который нужно обновить
             const existingProduct = await prisma.product.findUnique({
                 where: { id },
             });
@@ -91,7 +90,7 @@ export const productService = {
             return toPlainProduct(updated);
         } catch (err) {
             if (err instanceof ApiError) {
-                throw err; // Перенаправляем уже выброшенную ошибку
+                throw err;
             }
             throw new ApiError("Failed to update product", 500);
         }
@@ -110,7 +109,7 @@ export const productService = {
             await prisma.product.delete({ where: { id } });
         } catch (err) {
             if (err instanceof ApiError) {
-                throw err; // Перенаправляем уже выброшенную ошибку
+                throw err;
             }
             throw new ApiError("Failed to delete product", 500);
         }

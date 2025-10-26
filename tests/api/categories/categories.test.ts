@@ -7,7 +7,7 @@ const baseUrl = "http://localhost:3000";
 const adminId = "1881f55f-e826-49bb-9582-cf8245f9c78f";
 const existingCategoryId = "a34e764a-2a60-418f-9df3-537a8a646f41";
 
-describe("🗂 CATEGORY API", () => {
+describe("CATEGORY API", () => {
     let createdCategoryId: string;
 
     it("should create a new category", async () => {
@@ -36,7 +36,6 @@ describe("🗂 CATEGORY API", () => {
             name: "Duplicate Category " + Date.now(),
         };
 
-        // создаём первую
         await request(baseUrl)
             .post("/api/categories")
             .set("x-user-id", adminId)
@@ -44,7 +43,6 @@ describe("🗂 CATEGORY API", () => {
             .set("Authorization", `Bearer ${process.env.JWT_TOKEN_ADMIN}`)
             .send(categoryData);
 
-        // создаём вторую с тем же именем
         const response = await request(baseUrl)
             .post("/api/categories")
             .set("x-user-id", adminId)

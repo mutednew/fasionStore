@@ -2,7 +2,7 @@ import { LoginInput, RegisterInput } from "@/schemas/auth.schema";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { signToken } from "@/lib/jwt";
-import {ApiError} from "@/lib/ApiError";
+import { ApiError } from "@/lib/ApiError";
 
 export async function registerUser(input: RegisterInput) {
     const { email, password, name } = input;

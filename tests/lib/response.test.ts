@@ -1,7 +1,7 @@
 import { ok, fail } from "@/lib/response";
 import { NextResponse } from "next/server";
 
-describe("🧪 response helpers", () => {
+describe("response helpers", () => {
     it("ok() should return a successful JSON response with default 200 status", async () => {
         const payload = { id: 1, name: "Test" };
         const res = ok(payload);

@@ -5,7 +5,7 @@ describe("POST /api/auth/register", () => {
 
     it("should register a new user successfully", async () => {
         const newUser = {
-            email: `testuser_${Date.now()}@example.com`, // уникальный email
+            email: `testuser_${Date.now()}@example.com`,
             password: "123456",
             name: "Test User",
         };
@@ -17,7 +17,6 @@ describe("POST /api/auth/register", () => {
         expect(response.status).toBe(201);
         expect(response.body.success).toBe(true);
 
-        // Проверяем, что данные о пользователе есть
         expect(response.body.data).toBeDefined();
         expect(response.body.data.user).toBeDefined();
         expect(response.body.data.user.email).toBe(newUser.email);
@@ -25,7 +24,7 @@ describe("POST /api/auth/register", () => {
 
     it("should return error if email is already registered", async () => {
         const existingUser = {
-            email: "user@example.com", // email, который уже есть в БД
+            email: "user@example.com",
             password: "password123",
             name: "Duplicate User",
         };
@@ -41,7 +40,7 @@ describe("POST /api/auth/register", () => {
 
     it("should return validation error for invalid data", async () => {
         const invalidUser = {
-            email: "invalidemail", // некорректный формат
+            email: "invalidemail",
             password: "",
             name: "",
         };

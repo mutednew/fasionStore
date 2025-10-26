@@ -1,6 +1,6 @@
 import { ApiError } from "@/lib/ApiError";
 
-describe("🧩 ApiError", () => {
+describe("ApiError", () => {
     it("should create an instance with message and status", () => {
         const err = new ApiError("Something went wrong", 500);
 

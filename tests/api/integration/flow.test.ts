@@ -8,7 +8,7 @@ const USER_ID = "e262dd1c-62bd-4673-92f0-71ad803f0f4a";
 const PRODUCT_ID = "72d74724-734a-4e9a-a497-6241ddb3cca2";
 const ADMIN_ID = "1881f55f-e826-49bb-9582-cf8245f9c78f";
 
-describe("🧩 End-to-End Flow: Cart → Order → Fetch → Delete", () => {
+describe("End-to-End Flow: Cart → Order → Fetch → Delete", () => {
     let createdOrderId: string;
 
     it("should create an order from the cart", async () => {

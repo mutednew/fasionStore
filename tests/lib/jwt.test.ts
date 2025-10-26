@@ -1,4 +1,3 @@
-// ✅ Устанавливаем окружение до загрузки модуля
 process.env.JWT_SECRET = "supersecret";
 process.env.JWT_EXPIRES_IN = "7d";
 
@@ -6,7 +5,6 @@ import jwt from "jsonwebtoken";
 import { signToken, verifyToken, getUserFromAuthHeader } from "@/lib/jwt";
 import { ApiError } from "@/lib/ApiError";
 
-// 🧠 Мокаем библиотеку jsonwebtoken
 jest.mock("jsonwebtoken", () => ({
     sign: jest.fn(),
     verify: jest.fn(),
@@ -14,7 +12,7 @@ jest.mock("jsonwebtoken", () => ({
 
 const payload = { userId: "u1", role: "ADMIN" };
 
-describe("🧩 lib/jwt", () => {
+describe("lib/jwt", () => {
     afterEach(() => jest.clearAllMocks());
 
     describe("signToken()", () => {

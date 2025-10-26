@@ -13,7 +13,6 @@ describe("GET /api/me", () => {
 
         console.log("VALID TOKEN RESPONSE:", response.body);
 
-        // ⚠️ если пользователь не найден — просто логируем, не падаем
         if (response.status === 404) {
             console.warn("⚠️ User not found for provided token, update JWT_TOKEN in .env");
             return;
@@ -46,12 +45,10 @@ describe("GET /api/me", () => {
 
         expect(response.status).toBe(401);
         expect(response.body.success).toBe(false);
-        // ✅ корректное сообщение по твоему коду
         expect(response.body.message).toBe("Invalid or expired token");
     });
 
     it("should return 404 if user not found in database", async () => {
-        // токен с правильной подписью, но несуществующим userId
         const fakeUserToken =
             "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJmYWtlLWlkLXVzZXIiLCJyb2xlIjoiQ1VTVE9NRVIiLCJpYXQiOjE3NjEwNTcxNjEsImV4cCI6MTc2MTY2MTk2MX0.dvtZS1_Yz79fvYw7a5a1y_bqv2i0YypeSIEu9lIFOFg";
 
@@ -61,7 +58,7 @@ describe("GET /api/me", () => {
 
         console.log("NOT FOUND RESPONSE:", response.body);
 
-        expect([401, 404]).toContain(response.status); // допускаем оба варианта
+        expect([401, 404]).toContain(response.status);
         if (response.status === 404) {
             expect(response.body.message).toBe("User not found");
         }

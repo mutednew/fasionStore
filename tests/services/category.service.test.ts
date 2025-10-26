@@ -25,7 +25,7 @@ jest.mock("@/schemas/category.schema", () => ({
     },
 }));
 
-describe("🧪 categoryService", () => {
+describe("categoryService", () => {
     afterEach(() => {
         jest.clearAllMocks();
     });

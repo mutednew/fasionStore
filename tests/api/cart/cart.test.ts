@@ -7,10 +7,9 @@ const baseUrl = "http://localhost:3000";
 const userId = "e262dd1c-62bd-4673-92f0-71ad803f0f4a";
 const productId = "72d74724-734a-4e9a-a497-6241ddb3cca2";
 
-let createdItemId: string | null = null; // сюда сохраним itemId после добавления
+let createdItemId: string | null = null;
 
-describe("🛒 CART API", () => {
-    // ---------- GET /api/cart ----------
+describe("CART API", () => {
     it("should return the cart for the user", async () => {
         const response = await request(baseUrl)
             .get("/api/cart")
@@ -36,7 +35,6 @@ describe("🛒 CART API", () => {
         expect(response.body.message).toBe("Cart not found");
     });
 
-    // ---------- POST /api/cart/:userId ----------
     it("should add an item to the cart", async () => {
         const response = await request(baseUrl)
             .post(`/api/cart/${userId}`)
@@ -55,7 +53,6 @@ describe("🛒 CART API", () => {
         const items = response.body.data.items;
         expect(Array.isArray(items)).toBe(true);
 
-        // сохраним ID созданного item для следующих тестов
         if (items.length > 0) {
             createdItemId = items[items.length - 1].id;
         }
@@ -79,7 +76,6 @@ describe("🛒 CART API", () => {
         expect(response.body.message).toBe("Invalid cart item");
     });
 
-    // ---------- GET /api/cart/:userId ----------
     it("should return the cart by userId", async () => {
         const response = await request(baseUrl)
             .get(`/api/cart/${userId}`)
@@ -92,7 +88,6 @@ describe("🛒 CART API", () => {
         expect(response.body.data).toHaveProperty("items");
     });
 
-    // ---------- GET /api/cart/:userId/count ----------
     it("should return the number of items in the cart", async () => {
         const response = await request(baseUrl)
             .get(`/api/cart/${userId}/count`)
@@ -106,7 +101,6 @@ describe("🛒 CART API", () => {
         expect(typeof response.body.data.count).toBe("number");
     });
 
-    // ---------- PUT /api/cart/:userId/item/:itemId ----------
     it("should update the quantity of an item in the cart", async () => {
         expect(createdItemId).toBeTruthy();
 
@@ -137,7 +131,6 @@ describe("🛒 CART API", () => {
         expect(response.body.message).toBe("Invalid quantity");
     });
 
-    // ---------- DELETE /api/cart/:userId/item/:itemId ----------
     it("should remove an item from the cart", async () => {
         expect(createdItemId).toBeTruthy();
 
@@ -151,7 +144,6 @@ describe("🛒 CART API", () => {
         expect(response.body.success).toBe(true);
     });
 
-    // ---------- DELETE /api/cart/:userId ----------
     it("should clear all items in the cart", async () => {
         const response = await request(baseUrl)
             .delete(`/api/cart/${userId}`)
