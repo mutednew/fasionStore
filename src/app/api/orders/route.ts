@@ -1,61 +1,47 @@
 import { orderService } from "@/services/order.service";
-import { CartSchema } from "@/schemas/cart.schema";
 import { requireAuth } from "@/middleware/auth";
 import { ok, fail } from "@/lib/response";
-import { ZodError } from "zod";
 import { ApiError } from "@/lib/ApiError";
-import { User } from "@/middleware/auth";
+import { OrderSchema } from "@/schemas/order.schema";
 
 export async function GET(req: Request) {
     try {
-        const auth = await requireAuth(req as any);
+        const auth = await requireAuth(req);
         if (auth) return auth;
 
-        const user = (req as any).user as User;
+        const user = (req as any).user;
 
-        const orders = user.role === "ADMIN"
-            ? await orderService.getAll()
-            : await orderService.getByUser(user.userId);
+        const orders =
+            user.role === "ADMIN"
+                ? await orderService.getAll()
+                : await orderService.getByUser(user.userId);
 
-        return ok(orders);
+        return ok({ orders });
     } catch (err) {
-        if (err instanceof ApiError) {
-            return fail(err.message, err.status, err.details);
-        }
-
-        console.error("GET /api/orders error:", err);
-        return fail("Failed to fetch orders", 500);
+        if (err instanceof ApiError) return fail(err.message, err.status, err.details);
+        console.error("Orders fetch error:", err);
+        return fail("Internal server error", 500);
     }
 }
 
 export async function POST(req: Request) {
     try {
-        const auth = await requireAuth(req as any);
+        const auth = await requireAuth(req);
         if (auth) return auth;
 
-        const user = (req as any).user as User;
-
+        const user = (req as any).user;
         const body = await req.json();
-        const parsed = CartSchema.parse(body);
 
-        parsed.userId = user.userId;
+        const parsed = OrderSchema.safeParse(body);
+        if (!parsed.success) {
+            return fail("Invalid order data", 400, parsed.error.format());
+        }
 
-        const createdOrder = await orderService.createFromCart(parsed);
-        return ok(createdOrder, 201);
+        const order = await orderService.createFromCart(user.userId);
+        return ok({ order }, 201);
     } catch (err) {
-        if (err instanceof ZodError) {
-            return fail("Invalid cart data", 400, err.issues);
-        }
-
-        if (err instanceof Error && err.message.includes("Cart is empty")) {
-            return fail(err.message, 400);
-        }
-
-        if (err instanceof ApiError) {
-            return fail(err.message, err.status, err.details);
-        }
-
-        console.error("POST /api/orders error:", err);
-        return fail("Failed to create order", 500);
+        if (err instanceof ApiError) return fail(err.message, err.status, err.details);
+        console.error("Order creation error:", err);
+        return fail("Internal server error", 500);
     }
 }

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyToken } from "@/lib/jwt";
+import { fail } from "@/lib/response";
+import { ApiError } from "@/lib/ApiError";
 
 export function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
@@ -8,30 +10,65 @@ export function middleware(req: NextRequest) {
     if (
         pathname.startsWith("/api/auth") ||
         pathname.startsWith("/api/public") ||
+        pathname === "/login" ||
+        pathname === "/register" ||
         pathname === "/"
     ) {
         return NextResponse.next();
     }
 
+    const cookieToken = req.cookies.get("token")?.value;
+
     const authHeader = req.headers.get("authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const bearerToken =
+        authHeader && authHeader.startsWith("Bearer ")
+            ? authHeader.split(" ")[1]
+            : undefined;
+
+    const token = cookieToken || bearerToken;
+
+    if (!token) {
+        if (!pathname.startsWith("/api")) {
+            return NextResponse.redirect(new URL("/login", req.url));
+        }
+        return fail("Unauthorized", 401);
     }
 
-    const token = authHeader.split(" ")[1];
-    const payload = verifyToken(token);
+    try {
+        const payload = verifyToken(token);
 
-    if (!payload || typeof payload === "string") {
-        return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
+        if (!payload) {
+            throw new ApiError("Invalid token payload", 401);
+        }
+
+        const response = NextResponse.next();
+        response.headers.set("x-user-id", payload.userId);
+        response.headers.set("x-user-role", payload.role);
+
+        return response;
+    } catch (err) {
+        if (err instanceof ApiError) {
+            if (!pathname.startsWith("/api")) {
+                return NextResponse.redirect(new URL("/login", req.url));
+            }
+            return fail(err.message, err.status, err.details);
+        }
+
+        console.error("Middleware error:", err);
+        if (!pathname.startsWith("/api")) {
+            return NextResponse.redirect(new URL("/login", req.url));
+        }
+        return fail("Invalid or expired token", 401);
     }
-
-    const response = NextResponse.next();
-    response.headers.set("x-user-id", payload.userId);
-    response.headers.set("x-user-role", payload.role);
-
-    return response;
 }
 
 export const config = {
-    matcher: ["/api/:path*", "/dashboard/:path*", "/orders/:path*", "/admin/:path*"],
+    matcher: [
+        "/api/:path*",
+        "/dashboard/:path*",
+        "/orders/:path*",
+        "/admin/:path*",
+        "/profile/:path*",
+        "/cart/:path*",
+    ],
 };

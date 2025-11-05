@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, Heart, ShoppingCart, User, Play } from "lucide-react";
+import { Menu, Heart, ShoppingCart, User, LogIn, Shield } from "lucide-react";
 import { useAppSelector } from "@/store/hooks";
 import { cn } from "@/lib/utils";
 import { StoreLogo } from "@/components/icons/StoreLogo";
@@ -10,11 +10,17 @@ import { StoreLogo } from "@/components/icons/StoreLogo";
 export default function Header() {
     const pathname = usePathname();
     const { items } = useAppSelector((state) => state.cart);
+    const { profile } = useAppSelector((state) => state.user);
+
+    console.log("profile", profile);
+
+    const isAdmin = profile?.role === "ADMIN";
+    const isAuth = !!profile;
 
     return (
         <header className="w-full border-b border-gray-200 bg-[#f9f9f9]">
             <div className="flex items-center justify-between px-10 py-5">
-                {/* Левая часть — меню и навигация */}
+                {/* === LEFT: меню и навигация === */}
                 <div className="flex items-center gap-8">
                     <button className="p-2 hover:opacity-70">
                         <Menu size={24} strokeWidth={2} />
@@ -30,6 +36,7 @@ export default function Header() {
                         >
                             Home
                         </Link>
+
                         <Link
                             href="/collections"
                             className={cn(
@@ -39,6 +46,7 @@ export default function Header() {
                         >
                             Collections
                         </Link>
+
                         <Link
                             href="/products"
                             className={cn(
@@ -46,15 +54,17 @@ export default function Header() {
                                 pathname.startsWith("/products") && "text-black font-bold"
                             )}
                         >
-                            New
+                            Products
                         </Link>
                     </nav>
                 </div>
 
+                {/* === CENTER: логотип === */}
                 <div className="flex items-center justify-center">
-                    <StoreLogo/>
+                    <StoreLogo />
                 </div>
 
+                {/* === RIGHT: иконки и профиль === */}
                 <div className="flex items-center gap-5">
                     <button className="p-3 rounded-full bg-black text-white hover:opacity-80 transition">
                         <Heart size={18} strokeWidth={1.8} />
@@ -73,12 +83,38 @@ export default function Header() {
                         )}
                     </Link>
 
-                    <Link
-                        href="/profile"
-                        className="p-3 rounded-full bg-black text-white hover:opacity-80 transition"
-                    >
-                        <User size={18} strokeWidth={1.8} />
-                    </Link>
+                    {/* === условный рендер: авторизация === */}
+                    {isAuth ? (
+                        <>
+                            {isAdmin && (
+                                <Link
+                                    href="/admin"
+                                    className="p-3 rounded-full bg-black text-white hover:opacity-80 transition"
+                                    title="Admin Panel"
+                                >
+                                    <Shield size={18} strokeWidth={1.8} />
+                                </Link>
+                            )}
+
+                            <Link
+                                href="/profile"
+                                className="p-3 rounded-full bg-black text-white hover:opacity-80 transition"
+                                title="Profile"
+                            >
+                                <User size={18} strokeWidth={1.8} />
+                            </Link>
+                        </>
+                    ) : (
+                        <Link
+                            href="/login"
+                            className="p-3 rounded-full bg-black text-white hover:opacity-80 transition flex items-center gap-2"
+                        >
+                            <LogIn size={18} strokeWidth={1.8} />
+                            <span className="text-sm font-semibold hidden sm:inline">
+                Login
+              </span>
+                        </Link>
+                    )}
                 </div>
             </div>
         </header>
