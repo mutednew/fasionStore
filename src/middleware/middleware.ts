@@ -4,6 +4,7 @@ import { verifyToken } from "@/lib/jwt";
 import { fail } from "@/lib/response";
 import { ApiError } from "@/lib/ApiError";
 
+
 export function middleware(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
@@ -18,7 +19,6 @@ export function middleware(req: NextRequest) {
     }
 
     const cookieToken = req.cookies.get("token")?.value;
-
     const authHeader = req.headers.get("authorization");
     const bearerToken =
         authHeader && authHeader.startsWith("Bearer ")
@@ -37,13 +37,19 @@ export function middleware(req: NextRequest) {
     try {
         const payload = verifyToken(token);
 
-        if (!payload) {
-            throw new ApiError("Invalid token payload", 401);
-        }
+        if (!payload) throw new ApiError("Invalid token payload", 401);
 
         const response = NextResponse.next();
         response.headers.set("x-user-id", payload.userId);
         response.headers.set("x-user-role", payload.role);
+
+        if (pathname.startsWith("/admin") && payload.role !== "ADMIN") {
+            console.warn(`Access denied for non-admin user: ${payload.userId}`);
+            if (pathname.startsWith("/api")) {
+                return fail("Forbidden: Admins only", 403);
+            }
+            return NextResponse.redirect(new URL("/", req.url));
+        }
 
         return response;
     } catch (err) {
