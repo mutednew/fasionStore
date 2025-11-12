@@ -3,8 +3,9 @@ export interface Product {
     name: string;
     price: number;
     categoryId: string;
-    image?: string;
-    stock?: number;
+    imageUrl?: string;
+    stock: number;
+    createdAt?: Date;
 }
 
 export interface Category {
@@ -14,8 +15,23 @@ export interface Category {
 
 export interface Order {
     id: string;
+    userId: string;
     status: "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELED";
     total: number;
-    userId: string;
     createdAt: string;
+    user?: {
+        id: string;
+        name: string;
+        email?: string;
+    };
+    items?: {
+        id: string;
+        quantity: number;
+        price: number;
+        product: {
+            id: string;
+            name: string;
+            imageUrl?: string;
+        };
+    }[];
 }

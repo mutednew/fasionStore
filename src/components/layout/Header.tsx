@@ -16,8 +16,6 @@ export default function Header() {
     const { items } = useAppSelector((state) => state.cart);
     const { profile } = useAppSelector((state) => state.user);
 
-    console.log("profile", profile);
-
     const isAdmin = profile?.role === "ADMIN";
     const isAuth = !!profile;
 

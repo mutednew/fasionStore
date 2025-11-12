@@ -101,7 +101,10 @@ export const orderService = {
             const updated = await prisma.order.update({
                 where: { id },
                 data: { status },
-                include: { items: { include: { product: true } } },
+                include: {
+                    items: { include: { product: true } },
+                    user: true, // ✅ добавь
+                },
             });
 
             return toPlainOrder(updated);

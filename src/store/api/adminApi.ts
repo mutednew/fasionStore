@@ -7,7 +7,6 @@ interface ApiResponse<T> {
     data: T;
 }
 
-// Пример: { success: true, data: { orders: [...] } }
 interface OrdersResponse {
     orders: Order[];
 }
@@ -28,7 +27,6 @@ export const adminApi = createApi({
     }),
     tagTypes: ["Product", "Category", "Order"],
     endpoints: (builder) => ({
-        // 🧱 PRODUCTS
         getProducts: builder.query<ApiResponse<ProductsResponse>, void>({
             query: () => "/products",
             providesTags: ["Product"],
@@ -39,7 +37,7 @@ export const adminApi = createApi({
             providesTags: ["Product"],
         }),
 
-        addProduct: builder.mutation<ApiResponse<{ product: Product }>, Partial<Product>>({
+        addProduct: builder.mutation<ApiResponse<{ product: Product }>, Omit<Product, "id" | "createdAt">>({
             query: (body) => ({
                 url: "/products",
                 method: "POST",
@@ -50,9 +48,9 @@ export const adminApi = createApi({
 
         updateProduct: builder.mutation<
             ApiResponse<{ product: Product }>,
-            { id: string; data: Partial<Product> }
+            Partial<Product> & { id: string }
         >({
-            query: ({ id, data }) => ({
+            query: ({ id, ...data }) => ({
                 url: `/products/${id}`,
                 method: "PUT",
                 body: data,
@@ -68,11 +66,21 @@ export const adminApi = createApi({
             invalidatesTags: ["Product"],
         }),
 
-        // 🧾 ORDERS
         getOrders: builder.query<ApiResponse<OrdersResponse>, void>({
             query: () => "/orders",
             providesTags: ["Order"],
         }),
+
+        getOrderStats: builder.query<ApiResponse<{ stats: {
+                total: number;
+                pending: number;
+                delivered: number;
+                canceled: number;
+            } }>, void>({
+            query: () => "/orders/stats",
+            providesTags: ["Order"],
+        }),
+
 
         updateOrderStatus: builder.mutation<
             ApiResponse<{ order: Order }>,
@@ -86,7 +94,6 @@ export const adminApi = createApi({
             invalidatesTags: ["Order"],
         }),
 
-        // 🏷️ CATEGORIES
         getCategories: builder.query<ApiResponse<CategoriesResponse>, void>({
             query: () => "/categories",
             providesTags: ["Category"],
@@ -118,6 +125,7 @@ export const {
     useUpdateProductMutation,
     useDeleteProductMutation,
     useGetOrdersQuery,
+    useGetOrderStatsQuery,
     useUpdateOrderStatusMutation,
     useGetCategoriesQuery,
     useAddCategoryMutation,
