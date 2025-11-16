@@ -1,4 +1,4 @@
-import {requireAuth} from "@/middleware/auth";
+import {requireAuth} from "@/lib/requireAuth";
 import {z} from "zod";
 import {cartService} from "@/services/cart.service";
 import {ok, fail} from "@/lib/response";

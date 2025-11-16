@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/middleware/auth";
+import { requireAuth } from "@/lib/requireAuth";
 
 describe("requireAuth middleware", () => {
     const makeRequest = (headers: Record<string, string> = {}) =>

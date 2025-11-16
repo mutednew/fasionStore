@@ -9,7 +9,7 @@ import {
     ShoppingCart,
     Settings,
     HelpCircle,
-    MessageSquare,
+    MessageSquare, Home,
 } from "lucide-react";
 
 const navItems = [
@@ -24,9 +24,11 @@ export default function Sidebar() {
 
     return (
         <aside className="w-64 bg-black text-white flex flex-col justify-between">
-            {/* Верхняя часть */}
             <div>
-                <div className="p-6 font-semibold text-lg border-b border-white/10">
+                <div className="flex gap-4 p-6 font-semibold text-lg border-b border-white/10">
+                    <Link href="/">
+                        <Home/>
+                    </Link>
                     Admin Panel
                 </div>
 

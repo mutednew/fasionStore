@@ -1,59 +1,76 @@
 "use client";
 
-import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from "@/components/ui/select";
+import {
+    Select,
+    SelectTrigger,
+    SelectContent,
+    SelectItem,
+    SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export function OrderFilters() {
+interface OrderFiltersProps {
+    status: string;
+    sort: string;
+    onStatusChange: (value: string) => void;
+    onSortChange: (value: string) => void;
+    onReset: () => void;
+}
+
+export function OrderFilters({
+    status,
+    sort,
+    onStatusChange,
+    onSortChange,
+    onReset,
+}: OrderFiltersProps) {
     return (
         <Card className="shadow-sm">
             <CardHeader>
                 <CardTitle>Filters</CardTitle>
             </CardHeader>
+
             <CardContent className="space-y-4">
+
+                {/* Order Status */}
                 <div className="space-y-1">
                     <label className="text-sm font-medium">Order Status</label>
-                    <Select>
-                        <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                    <Select value={status} onValueChange={onStatusChange}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="All statuses" />
+                        </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="pending">Pending</SelectItem>
-                            <SelectItem value="shipped">Shipped</SelectItem>
-                            <SelectItem value="delivered">Delivered</SelectItem>
-                            <SelectItem value="cancelled">Cancelled</SelectItem>
-                            <SelectItem value="returned">Returned</SelectItem>
+                            <SelectItem value="PENDING">Pending</SelectItem>
+                            <SelectItem value="PAID">Paid</SelectItem>
+                            <SelectItem value="SHIPPED">Shipped</SelectItem>
+                            <SelectItem value="DELIVERED">Delivered</SelectItem>
+                            <SelectItem value="CANCELED">Canceled</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
 
+                {/* Sort By */}
                 <div className="space-y-1">
-                    <label className="text-sm font-medium">Payment Status</label>
-                    <Select>
-                        <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
+                    <label className="text-sm font-medium">Sort by</label>
+                    <Select value={sort} onValueChange={onSortChange}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Sort" />
+                        </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="paid">Paid</SelectItem>
-                            <SelectItem value="unpaid">Unpaid</SelectItem>
-                            <SelectItem value="refunded">Refunded</SelectItem>
+                            <SelectItem value="date-desc">Newest</SelectItem>
+                            <SelectItem value="date-asc">Oldest</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
 
-                <div className="space-y-1">
-                    <label className="text-sm font-medium">Payment Method</label>
-                    <Select>
-                        <SelectTrigger><SelectValue placeholder="All" /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All</SelectItem>
-                            <SelectItem value="card">Credit Card</SelectItem>
-                            <SelectItem value="paypal">PayPal</SelectItem>
-                            <SelectItem value="bank">Bank Transfer</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                    Apply Filters
+                <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={onReset}
+                >
+                    Reset Filters
                 </Button>
             </CardContent>
         </Card>

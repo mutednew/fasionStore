@@ -1,6 +1,6 @@
 import { categoryService } from "@/services/category.service";
 import { CategorySchema } from "@/schemas/category.schema";
-import { requireAuth } from "@/middleware/auth";
+import { requireAuth } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { ApiError } from "@/lib/ApiError";
 

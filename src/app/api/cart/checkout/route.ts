@@ -1,4 +1,4 @@
-import { requireAuth } from "@/middleware/auth";
+import { requireAuth } from "@/lib/requireAuth";
 import { cartService } from "@/services/cart.service";
 import { orderService } from "@/services/order.service";
 import { ApiError } from "@/lib/ApiError";

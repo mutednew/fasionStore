@@ -24,6 +24,7 @@ import {
     useGetCategoriesQuery,
 } from "@/store/api/adminApi";
 import { PlusCircle, ImageIcon } from "lucide-react";
+import { toast } from "sonner";
 
 export function AddProductModal() {
     const [open, setOpen] = useState(false);
@@ -49,48 +50,57 @@ export function AddProductModal() {
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
-        if (!name || !price) return alert("Fill all fields!");
 
-        let imageUrl = "";
-
-        // 🖼️ Отправляем изображение, если выбрано
-        if (image) {
-            const formData = new FormData();
-            formData.append("file", image);
-
-            const uploadRes = await fetch("/api/upload", {
-                method: "POST",
-                body: formData,
-                credentials: "include",
-            });
-
-            if (!uploadRes.ok) {
-                console.error("Upload failed", await uploadRes.text());
-                alert("Image upload failed");
-                return;
-            }
-
-            const uploadData = await uploadRes.json();
-            imageUrl = uploadData?.data?.url || "";
+        if (!name.trim() || !price.trim()) {
+            toast.error("Fill all fields");
+            return;
         }
 
-        // 📦 создаём товар
-        await addProduct({
-            name,
-            price: Number(price),
-            categoryId: categoryId || categories[0]?.id,
-            stock: Number(stock),
-            imageUrl, // ✅ правильное имя поля (а не image)
-        }).unwrap();
+        try {
+            let imageUrl = "";
 
-        // 🧹 сбрасываем поля
-        setOpen(false);
-        setName("");
-        setPrice("");
-        setStock("10");
-        setCategoryId("");
-        setImage(null);
-        setPreview(null);
+            // 🖼 Upload image
+            if (image) {
+                const formData = new FormData();
+                formData.append("file", image);
+
+                const uploadRes = await fetch("/api/upload", {
+                    method: "POST",
+                    body: formData,
+                    credentials: "include",
+                });
+
+                if (!uploadRes.ok) {
+                    toast.error("Image upload failed");
+                    return;
+                }
+
+                const uploadData = await uploadRes.json();
+                imageUrl = uploadData?.data?.url || "";
+            }
+
+            // 📦 Create product
+            await addProduct({
+                name,
+                price: Number(price),
+                categoryId: categoryId || categories[0]?.id,
+                stock: Number(stock),
+                imageUrl,
+            }).unwrap();
+
+            toast.success(`Product "${name}" added!`);
+
+            // 🔄 Reset
+            setName("");
+            setPrice("");
+            setStock("10");
+            setCategoryId("");
+            setImage(null);
+            setPreview(null);
+            setOpen(false);
+        } catch {
+            toast.error("Failed to add product");
+        }
     };
 
     return (
@@ -108,7 +118,7 @@ export function AddProductModal() {
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
-                    {/* Название */}
+                    {/* Name */}
                     <div className="space-y-2">
                         <Label>Name</Label>
                         <Input
@@ -118,7 +128,7 @@ export function AddProductModal() {
                         />
                     </div>
 
-                    {/* Цена */}
+                    {/* Price */}
                     <div className="space-y-2">
                         <Label>Price ($)</Label>
                         <Input
@@ -129,7 +139,7 @@ export function AddProductModal() {
                         />
                     </div>
 
-                    {/* Остаток */}
+                    {/* Stock */}
                     <div className="space-y-2">
                         <Label>Stock</Label>
                         <Input
@@ -140,7 +150,7 @@ export function AddProductModal() {
                         />
                     </div>
 
-                    {/* Категория */}
+                    {/* Category */}
                     <div className="space-y-2">
                         <Label>Category</Label>
                         <Select onValueChange={setCategoryId} value={categoryId}>
@@ -157,7 +167,7 @@ export function AddProductModal() {
                         </Select>
                     </div>
 
-                    {/* Картинка */}
+                    {/* Image */}
                     <div className="space-y-2">
                         <Label>Image</Label>
                         <div className="flex items-center gap-3">
@@ -169,6 +179,7 @@ export function AddProductModal() {
                             />
                             <ImageIcon className="w-5 h-5 text-gray-400" />
                         </div>
+
                         {preview && (
                             <img
                                 src={preview}
@@ -178,7 +189,6 @@ export function AddProductModal() {
                         )}
                     </div>
 
-                    {/* Кнопка */}
                     <DialogFooter>
                         <Button type="submit" disabled={isLoading}>
                             {isLoading ? "Adding..." : "Add Product"}

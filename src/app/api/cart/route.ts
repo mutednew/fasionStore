@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/middleware/auth";
+import { requireAuth } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { ApiError } from "@/lib/ApiError";
 

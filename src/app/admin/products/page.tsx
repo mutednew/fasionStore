@@ -23,11 +23,12 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
-import type { Product } from "@/types";
 import { AddProductModal } from "@/app/admin/components/modals/AddProductModal";
 import { EditProductModal } from "@/app/admin/components/modals/EditProductModal";
-import { useToast } from "@/components/ui/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import {AddCategoryModal} from "@/app/admin/components/modals/AddCategoryModal";
+import {toast} from "sonner";
+import {AdminSkeleton} from "@/app/admin/components/skeletons/AdminSkeleton";
 
 export default function AdminProducts() {
     const [searchTerm, setSearchTerm] = useState("");
@@ -39,7 +40,6 @@ export default function AdminProducts() {
     const { data: productsRes, isLoading } = useGetProductsQuery();
     const { data: categoriesRes } = useGetCategoriesQuery();
     const [deleteProduct] = useDeleteProductMutation();
-    const { toast } = useToast();
 
     const products = productsRes?.data.products ?? [];
     const categories = categoriesRes?.data.categories ?? [];
@@ -88,22 +88,15 @@ export default function AdminProducts() {
         if (confirm("Delete this product?")) {
             try {
                 await deleteProduct(id).unwrap();
-                toast({
-                    title: "Product deleted",
-                    description: "The product was removed successfully.",
-                });
+                toast.success("Product deleted");
             } catch {
-                toast({
-                    variant: "destructive",
-                    title: "Failed to delete product",
-                    description: "Something went wrong, please try again.",
-                });
+                toast.error("Failed to delete product");
             }
         }
     };
 
     if (isLoading)
-        return <div className="p-8 text-gray-500">Loading products...</div>;
+        return <AdminSkeleton type="products" />;
 
     return (
         <motion.div
@@ -157,7 +150,7 @@ export default function AdminProducts() {
                                 <SelectValue placeholder="Stock Status" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="all">All</SelectItem>
+                                <SelectItem value="all">All Stock</SelectItem>
                                 <SelectItem value="in-stock">In Stock</SelectItem>
                                 <SelectItem value="out-of-stock">Out of Stock</SelectItem>
                             </SelectContent>
@@ -187,7 +180,8 @@ export default function AdminProducts() {
                             </SelectContent>
                         </Select>
 
-                        <div className="ml-auto">
+                        <div className="ml-auto flex gap-6">
+                            <AddCategoryModal/>
                             <AddProductModal />
                         </div>
                     </CardContent>

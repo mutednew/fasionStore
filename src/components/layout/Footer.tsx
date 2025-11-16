@@ -1,6 +1,6 @@
 import {FooterLogo} from "@/components/icons/FooterLogo";
 
-export function Footer() {
+export default function Footer() {
     return (
         <footer className="w-full relative text-gray-700 py-28 px-8 h-[630px] bg-[url('/footerBg.png')] bg-cover bg-center bg-no-repeat">
             <div className="max-w-6xl mx-auto flex md:items-start gap-10">

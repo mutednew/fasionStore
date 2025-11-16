@@ -1,6 +1,6 @@
 import { productService } from "@/services/product.service";
 import { ProductSchema } from "@/schemas/product.schema";
-import { requireAuth } from "@/middleware/auth";
+import { requireAuth } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { ZodError } from "zod";
 import { ApiError } from "@/lib/ApiError";

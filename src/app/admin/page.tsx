@@ -6,6 +6,7 @@ import {
     useGetCategoriesQuery,
 } from "@/store/api/adminApi";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import {AdminSkeleton} from "@/app/admin/components/skeletons/AdminSkeleton";
 
 export default function AdminDashboard() {
     const { data: productsRes, isLoading: loadingProducts } = useGetProductsQuery();
@@ -14,7 +15,7 @@ export default function AdminDashboard() {
 
     // 🌀 Общее состояние загрузки
     if (loadingProducts || loadingOrders || loadingCategories)
-        return <div className="p-8 text-gray-500">Loading data...</div>;
+        return <AdminSkeleton type="dashboard" />;
 
     // 🧩 Распаковываем данные из типизированных ApiResponse
     const products = productsRes?.data.products ?? [];

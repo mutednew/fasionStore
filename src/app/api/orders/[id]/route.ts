@@ -1,6 +1,6 @@
 import { orderService } from "@/services/order.service";
 import { OrderSchema } from "@/schemas/order.schema";
-import { requireAuth } from "@/middleware/auth";
+import { requireAuth } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import {z, ZodError} from "zod";
 import { ApiError } from "@/lib/ApiError";

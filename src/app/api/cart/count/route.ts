@@ -1,7 +1,7 @@
 import { cartService } from "@/services/cart.service";
 import { ok, fail } from "@/lib/response";
 import { ApiError } from "@/lib/ApiError";
-import { requireAuth } from "@/middleware/auth";
+import { requireAuth } from "@/lib/requireAuth";
 
 export async function GET(req: Request) {
     try {

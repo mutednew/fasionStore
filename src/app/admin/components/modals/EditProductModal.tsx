@@ -24,6 +24,7 @@ import {
     useGetCategoriesQuery,
 } from "@/store/api/adminApi";
 import { Pencil, ImageIcon } from "lucide-react";
+import { toast } from "sonner";
 import type { Product } from "@/types";
 
 interface EditProductModalProps {
@@ -55,9 +56,10 @@ export function EditProductModal({ product }: EditProductModalProps) {
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
-        let imageUrl = product.imageUrl;
-
         try {
+            let imageUrl = product.imageUrl;
+
+            // Удалить старую картинку (если загружаем новую)
             if (image && product.imageUrl) {
                 await fetch("/api/upload/delete", {
                     method: "DELETE",
@@ -66,6 +68,7 @@ export function EditProductModal({ product }: EditProductModalProps) {
                 });
             }
 
+            // Загрузить новую картинку
             if (image) {
                 const formData = new FormData();
                 formData.append("file", image);
@@ -76,11 +79,15 @@ export function EditProductModal({ product }: EditProductModalProps) {
                 });
 
                 const uploadData = await uploadRes.json();
-                if (uploadData?.data?.url) {
-                    imageUrl = uploadData.data.url;
+                if (!uploadRes.ok || !uploadData?.data?.url) {
+                    toast.error("Image upload failed");
+                    return;
                 }
+
+                imageUrl = uploadData.data.url;
             }
 
+            // Обновить продукт
             await updateProduct({
                 id: product.id,
                 name,
@@ -90,10 +97,11 @@ export function EditProductModal({ product }: EditProductModalProps) {
                 imageUrl,
             }).unwrap();
 
+            toast.success(`Product "${name}" updated successfully`);
             setOpen(false);
         } catch (err) {
             console.error("Edit product failed:", err);
-            alert("Failed to update product");
+            toast.error("Failed to update product");
         }
     };
 
@@ -111,6 +119,8 @@ export function EditProductModal({ product }: EditProductModalProps) {
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+
+                    {/* Name */}
                     <div className="space-y-2">
                         <Label>Name</Label>
                         <Input
@@ -120,6 +130,7 @@ export function EditProductModal({ product }: EditProductModalProps) {
                         />
                     </div>
 
+                    {/* Price */}
                     <div className="space-y-2">
                         <Label>Price ($)</Label>
                         <Input
@@ -130,6 +141,7 @@ export function EditProductModal({ product }: EditProductModalProps) {
                         />
                     </div>
 
+                    {/* Stock */}
                     <div className="space-y-2">
                         <Label>Stock</Label>
                         <Input
@@ -140,6 +152,7 @@ export function EditProductModal({ product }: EditProductModalProps) {
                         />
                     </div>
 
+                    {/* Category */}
                     <div className="space-y-2">
                         <Label>Category</Label>
                         <Select onValueChange={setCategoryId} value={categoryId}>
@@ -156,6 +169,7 @@ export function EditProductModal({ product }: EditProductModalProps) {
                         </Select>
                     </div>
 
+                    {/* Image */}
                     <div className="space-y-2">
                         <Label>Image</Label>
                         <div className="flex items-center gap-3">
@@ -166,6 +180,7 @@ export function EditProductModal({ product }: EditProductModalProps) {
                             />
                             <ImageIcon className="w-5 h-5 text-gray-400" />
                         </div>
+
                         {preview && (
                             <img
                                 src={preview}

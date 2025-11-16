@@ -6,9 +6,19 @@ import { OrderActivity } from "../components/OrderActivity";
 import { OrderFilters } from "../components/OrderFilters";
 import { OrderTable } from "../components/OrderTable";
 import { useGetOrderStatsQuery } from "@/store/api/adminApi";
+import { useState } from "react";
+import {AdminSkeleton} from "@/app/admin/components/skeletons/AdminSkeleton";
 
 export default function AdminOrders() {
     const { data, isLoading } = useGetOrderStatsQuery();
+
+    const [status, setStatus] = useState("all");
+    const [sort, setSort] = useState("date-desc");
+
+    const resetFilters = () => {
+        setStatus("all");
+        setSort("date-desc");
+    };
 
     const stats = data?.data?.stats ?? {
         total: 0,
@@ -16,6 +26,10 @@ export default function AdminOrders() {
         delivered: 0,
         canceled: 0,
     };
+
+    if (isLoading) {
+        return <AdminSkeleton type="orders" />
+    }
 
     return (
         <div className="space-y-6">
@@ -51,11 +65,17 @@ export default function AdminOrders() {
                         <OrderActivity />
                         <OrderChart />
                     </div>
-                    <OrderTable />
+                    <OrderTable status={status} sort={sort}/>
                 </div>
 
                 <div className="xl:col-span-1">
-                    <OrderFilters />
+                    <OrderFilters
+                        status={status}
+                        sort={sort}
+                        onStatusChange={setStatus}
+                        onSortChange={setSort}
+                        onReset={resetFilters}
+                    />
                 </div>
             </div>
         </div>

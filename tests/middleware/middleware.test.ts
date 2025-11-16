@@ -1,6 +1,6 @@
 import { verifyToken } from "@/lib/jwt";
 import { NextRequest, NextResponse } from "next/server";
-import { middleware } from "@/middleware/middleware";
+import { middleware } from "../../middleware";
 
 jest.mock("@/lib/jwt", () => ({
     verifyToken: jest.fn(),

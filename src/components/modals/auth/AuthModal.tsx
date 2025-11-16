@@ -18,7 +18,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     const toggleMode = () =>
         setMode((prev) => (prev === "login" ? "register" : "login"));
 
-    // 🚫 Блокируем скролл при открытии
     useEffect(() => {
         if (isOpen) {
             document.body.style.overflow = "hidden";
@@ -30,7 +29,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         };
     }, [isOpen]);
 
-    // ⚙️ Обработчик клика по фону
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) {
             onClose();
@@ -45,15 +43,15 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    onClick={handleBackdropClick} // <== клик по фону закрывает
+                    onClick={handleBackdropClick}
                 >
-                    {/* --- фоновая подсветка --- */}
+                    {}
                     <div className="absolute inset-0 overflow-hidden pointer-events-none">
                         <div className="absolute -top-32 -left-20 w-[400px] h-[400px] bg-pink-300/40 blur-[120px]" />
                         <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-blue-300/40 blur-[120px]" />
                     </div>
 
-                    {/* --- модалка --- */}
+                    {}
                     <motion.div
                         animate={{ height: bounds.height }}
                         transition={{ type: "spring", stiffness: 160, damping: 22 }}
@@ -61,9 +59,9 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                                    shadow-[0_8px_60px_-15px_rgba(255,75,43,0.4)]
                                    rounded-2xl border border-white/40
                                    text-center font-[Montserrat] overflow-hidden"
-                        onClick={(e) => e.stopPropagation()} // <== клик внутри не закрывает
+                        onClick={(e) => e.stopPropagation()}
                     >
-                        {/* кнопка закрытия */}
+                        {}
                         <button
                             onClick={onClose}
                             className="absolute top-3 right-4 text-gray-500 hover:text-black text-xl transition"
@@ -71,7 +69,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                             ×
                         </button>
 
-                        {/* контент */}
+                        {}
                         <div ref={ref} className="px-8 pt-10 pb-8">
                             <AnimatePresence mode="wait">
                                 {mode === "login" ? (
