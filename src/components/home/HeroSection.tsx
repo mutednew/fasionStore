@@ -1,19 +1,23 @@
 "use client";
 
 import { Search, ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 export default function HeroSection() {
     return (
         <section className="w-full">
-            <div className="max-w-7xl mx-auto px-8 pt-10 pb-20">
-                {/* top row: categories + search */}
-                <div className="flex items-start justify-between gap-6 mb-10">
+            <div className="max-w-7xl mx-auto px-6 pt-12 pb-20 space-y-12">
+
+                {/* top row */}
+                <div className="flex items-start justify-between gap-6">
                     {/* categories */}
-                    <ul className="space-y-1 text-[12px] uppercase tracking-wider">
+                    <ul className="space-y-1 text-[12px] uppercase tracking-[0.15em] font-medium text-neutral-700">
                         {["Men", "Women", "Kids"].map((x) => (
                             <li
                                 key={x}
-                                className="underline underline-offset-2 hover:opacity-80 cursor-pointer"
+                                className="cursor-pointer opacity-80 hover:opacity-100 transition underline underline-offset-[3px]"
                             >
                                 {x}
                             </li>
@@ -21,64 +25,67 @@ export default function HeroSection() {
                     </ul>
 
                     {/* search */}
-                    <div className="ml-auto w-full max-w-sm">
-                        <label className="relative block">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                            <input
-                                type="text"
-                                placeholder="Search"
-                                className="w-full rounded-sm border border-gray-300 bg-white/70 pl-9 pr-3 py-2 text-sm placeholder:text-gray-400 outline-none focus:ring-1 focus:ring-gray-700"
-                            />
-                        </label>
+                    <div className="ml-auto w-full max-w-sm relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-500" />
+                        <Input
+                            placeholder="Search"
+                            className="pl-9 bg-white/70 border-neutral-300 focus-visible:ring-neutral-800 text-sm"
+                        />
                     </div>
                 </div>
 
-                {/* main row */}
-                <div className="grid grid-cols-12 gap-8">
-                    {/* left: text */}
-                    <div className="col-span-12 md:col-span-4">
-                        <h1 className="uppercase leading-none tracking-tight text-5xl md:text-6xl font-extrabold text-gray-900">
+                {/* main grid */}
+                <div className="grid grid-cols-12 gap-10 items-start">
+
+                    {/* left column */}
+                    <div className="col-span-12 md:col-span-4 space-y-6">
+                        <h1 className="uppercase leading-none tracking-tight text-5xl md:text-6xl font-extrabold text-neutral-900">
                             New
                             <br />
                             Collection
                         </h1>
 
-                        <div className="mt-4 text-sm text-gray-600">
-                            <div>Summer</div>
-                            <div>2024</div>
-                        </div>
+                        <p className="text-sm text-neutral-600 leading-tight">
+                            Summer <br /> 2024
+                        </p>
 
-                        {/* CTA + arrows */}
-                        <div className="mt-8 flex items-center gap-3">
-                            <button className="group inline-flex items-center gap-3 border border-gray-300 bg-white px-5 py-3 text-sm uppercase tracking-wider hover:bg-gray-900 hover:text-white transition">
+                        <div className="flex items-center gap-3 pt-2">
+                            <Button
+                                variant="outline"
+                                className="px-6 py-5 uppercase tracking-wide font-medium
+                                border-neutral-400 bg-white hover:bg-neutral-900 hover:text-white"
+                            >
                                 Go To Shop
-                                <ArrowRight className="w-5 h-5 transition group-hover:translate-x-1" />
-                            </button>
+                                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                            </Button>
 
-                            <button
-                                aria-label="prev"
-                                className="grid place-items-center h-10 w-10 border border-gray-300 bg-white hover:bg-gray-100"
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-10 w-10 border-neutral-300 hover:bg-neutral-200"
                             >
                                 <ChevronLeft className="w-5 h-5" />
-                            </button>
-                            <button
-                                aria-label="next"
-                                className="grid place-items-center h-10 w-10 border border-gray-300 bg-white hover:bg-gray-100"
+                            </Button>
+
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-10 w-10 border-neutral-300 hover:bg-neutral-200"
                             >
                                 <ChevronRight className="w-5 h-5" />
-                            </button>
+                            </Button>
                         </div>
                     </div>
 
-                    {/* right: two product cards */}
+                    {/* right column: product previews */}
                     <div className="col-span-12 md:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-8">
-                        {/* replace these boxes with <Image/> when будут реальные картинки */}
-                        <div className="aspect-[4/5] bg-white border border-gray-300 shadow-[0_0_0_1px_rgba(0,0,0,0.02)] flex items-center justify-center text-gray-400">
-                            <span className="text-sm">Image 1</span>
-                        </div>
-                        <div className="aspect-[4/5] bg-white border border-gray-300 shadow-[0_0_0_1px_rgba(0,0,0,0.02)] flex items-center justify-center text-gray-400">
-                            <span className="text-sm">Image 2</span>
-                        </div>
+                        <Card className="aspect-[4/5] bg-white border-neutral-300 flex items-center justify-center shadow-xs">
+                            <span className="text-sm text-neutral-400">Image 1</span>
+                        </Card>
+
+                        <Card className="aspect-[4/5] bg-white border-neutral-300 flex items-center justify-center shadow-xs">
+                            <span className="text-sm text-neutral-400">Image 2</span>
+                        </Card>
                     </div>
                 </div>
             </div>

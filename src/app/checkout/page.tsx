@@ -3,6 +3,13 @@
 import Image from "next/image";
 import { useState } from "react";
 
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+
 const mockOrder = [
     {
         id: "1",
@@ -25,166 +32,129 @@ const mockOrder = [
 ];
 
 export default function CheckoutPage() {
-    const [step, setStep] = useState<"information" | "shipping" | "payment">(
-        "information"
-    );
-
     const subtotal = mockOrder.reduce(
         (acc, item) => acc + item.price * item.quantity,
         0
     );
 
     return (
-        <main className="min-h-screen bg-[#f9f9f9] text-gray-800 px-20 py-16 font-[Poppins]">
-            {/* Back arrow */}
-            <button className="text-xl mb-6 text-gray-500 hover:text-black">←</button>
+        <main className="min-h-screen bg-[#f9f9f9] text-neutral-900 px-20 py-16">
 
-            <h1 className="text-2xl font-extrabold mb-10 tracking-tight uppercase">
+            {/* back arrow */}
+            <button className="text-xl mb-6 text-neutral-500 hover:text-neutral-800 transition">
+                ←
+            </button>
+
+            {/* title */}
+            <h1 className="text-3xl font-extrabold mb-12 tracking-tight uppercase">
                 Checkout
             </h1>
 
-            <div className="flex gap-10">
-                {/* ==== LEFT SIDE ==== */}
-                <div className="flex-1">
-                    {/* Tabs */}
-                    <div className="flex gap-6 mb-8 text-sm font-medium uppercase tracking-wide">
-                        <button
-                            onClick={() => setStep("information")}
-                            className={`pb-1 ${
-                                step === "information"
-                                    ? "border-b-2 border-black text-black"
-                                    : "text-gray-400 hover:text-black"
-                            }`}
-                        >
-                            Information
-                        </button>
-                        <button
-                            onClick={() => setStep("shipping")}
-                            className={`pb-1 ${
-                                step === "shipping"
-                                    ? "border-b-2 border-black text-black"
-                                    : "text-gray-400 hover:text-black"
-                            }`}
-                        >
-                            Shipping
-                        </button>
-                        <button
-                            onClick={() => setStep("payment")}
-                            className={`pb-1 ${
-                                step === "payment"
-                                    ? "border-b-2 border-black text-black"
-                                    : "text-gray-400 hover:text-black"
-                            }`}
-                        >
-                            Payment
-                        </button>
-                    </div>
+            <div className="flex gap-14 items-start">
 
-                    {/* === INFORMATION FORM === */}
-                    {step === "information" && (
-                        <form className="flex flex-col gap-6 max-w-xl">
-                            {/* Contact Info */}
+                {/* LEFT SIDE */}
+                <div className="flex-1 max-w-xl">
+
+                    <Tabs defaultValue="information" className="w-full">
+
+                        {/* TABS HEADER */}
+                        <TabsList className="flex gap-6 bg-transparent p-0 mb-8">
+                            <TabsTrigger
+                                value="information"
+                                className="uppercase tracking-wide text-sm data-[state=active]:border-b-2 border-neutral-900 rounded-none pb-1"
+                            >
+                                Information
+                            </TabsTrigger>
+
+                            <TabsTrigger
+                                value="shipping"
+                                className="uppercase tracking-wide text-sm data-[state=active]:border-b-2 border-neutral-900 rounded-none pb-1"
+                            >
+                                Shipping
+                            </TabsTrigger>
+
+                            <TabsTrigger
+                                value="payment"
+                                className="uppercase tracking-wide text-sm data-[state=active]:border-b-2 border-neutral-900 rounded-none pb-1"
+                            >
+                                Payment
+                            </TabsTrigger>
+                        </TabsList>
+
+                        {/* ------------ INFORMATION FORM ------------ */}
+                        <TabsContent value="information" className="space-y-10">
+
+                            {/* CONTACT INFO */}
                             <div>
-                                <p className="text-xs font-semibold mb-2 uppercase text-gray-500">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-2">
                                     Contact Info
                                 </p>
-                                <div className="flex flex-col gap-3">
-                                    <input
-                                        type="email"
-                                        placeholder="Email"
-                                        className="border border-gray-300 px-3 py-2 w-full text-sm focus:outline-none focus:border-gray-500"
-                                    />
-                                    <input
-                                        type="tel"
-                                        placeholder="Phone"
-                                        className="border border-gray-300 px-3 py-2 w-full text-sm focus:outline-none focus:border-gray-500"
-                                    />
+
+                                <div className="flex flex-col gap-4">
+                                    <div>
+                                        <Input placeholder="Email" className="bg-white" />
+                                    </div>
+                                    <div>
+                                        <Input placeholder="Phone" className="bg-white" />
+                                    </div>
                                 </div>
                             </div>
 
-                            {/* Shipping Address */}
+                            {/* SHIPPING ADDRESS */}
                             <div>
-                                <p className="text-xs font-semibold mb-2 uppercase text-gray-500">
+                                <p className="text-xs font-semibold uppercase tracking-wide text-neutral-500 mb-3">
                                     Shipping Address
                                 </p>
 
-                                <div className="grid grid-cols-2 gap-3 mb-3">
-                                    <input
-                                        type="text"
-                                        placeholder="First Name"
-                                        className="border border-gray-300 px-3 py-2 text-sm"
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Last Name"
-                                        className="border border-gray-300 px-3 py-2 text-sm"
-                                    />
+                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                    <Input placeholder="First Name" className="bg-white" />
+                                    <Input placeholder="Last Name" className="bg-white" />
                                 </div>
 
-                                <input
-                                    type="text"
-                                    placeholder="Country"
-                                    className="border border-gray-300 px-3 py-2 w-full text-sm mb-3"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="State / Region"
-                                    className="border border-gray-300 px-3 py-2 w-full text-sm mb-3"
-                                />
-                                <input
-                                    type="text"
-                                    placeholder="Address"
-                                    className="border border-gray-300 px-3 py-2 w-full text-sm mb-3"
-                                />
-                                <div className="grid grid-cols-2 gap-3 mb-3">
-                                    <input
-                                        type="text"
-                                        placeholder="City"
-                                        className="border border-gray-300 px-3 py-2 text-sm"
-                                    />
-                                    <input
-                                        type="text"
-                                        placeholder="Postal Code"
-                                        className="border border-gray-300 px-3 py-2 text-sm"
-                                    />
+                                <Input placeholder="Country" className="bg-white mb-4" />
+                                <Input placeholder="State / Region" className="bg-white mb-4" />
+                                <Input placeholder="Address" className="bg-white mb-4" />
+
+                                <div className="grid grid-cols-2 gap-4 mb-4">
+                                    <Input placeholder="City" className="bg-white" />
+                                    <Input placeholder="Postal Code" className="bg-white" />
                                 </div>
 
-                                <button
-                                    type="button"
-                                    onClick={() => setStep("shipping")}
-                                    className="mt-4 w-[150px] bg-black text-white py-3 text-sm uppercase font-semibold hover:bg-gray-800 transition"
+                                <Button
+                                    className="mt-3 bg-neutral-900 text-white hover:bg-neutral-700"
                                 >
-                                    Shipping →
-                                </button>
+                                    Continue to Shipping →
+                                </Button>
                             </div>
-                        </form>
-                    )}
+                        </TabsContent>
 
-                    {/* === SHIPPING === */}
-                    {step === "shipping" && (
-                        <div className="text-gray-500 mt-8 text-sm">
-                            (макет для Shipping будет добавлен после подключения данных)
-                        </div>
-                    )}
+                        {/* ------------ SHIPPING ------------ */}
+                        <TabsContent value="shipping">
+                            <p className="text-neutral-500 text-sm">
+                                (Shipping details UI will be added when backend is connected)
+                            </p>
+                        </TabsContent>
 
-                    {/* === PAYMENT === */}
-                    {step === "payment" && (
-                        <div className="text-gray-500 mt-8 text-sm">
-                            (макет для Payment будет добавлен позже)
-                        </div>
-                    )}
+                        {/* ------------ PAYMENT ------------ */}
+                        <TabsContent value="payment">
+                            <p className="text-neutral-500 text-sm">
+                                (Payment section will be added later)
+                            </p>
+                        </TabsContent>
+                    </Tabs>
                 </div>
 
-                {/* ==== RIGHT SIDE ==== */}
-                <div className="w-[360px] border border-gray-200 bg-white p-6 self-start">
+                {/* ------------ RIGHT SIDE — ORDER SUMMARY ------------ */}
+                <Card className="w-[360px] border border-neutral-200 bg-white p-6 shadow-sm">
+
                     <h2 className="text-xs font-semibold mb-6 uppercase tracking-wider">
-                        Your Order <span className="text-gray-400">(2)</span>
+                        Your Order <span className="text-neutral-400">(2)</span>
                     </h2>
 
-                    <div className="flex flex-col gap-6 mb-6">
+                    <div className="flex flex-col gap-6">
                         {mockOrder.map((item) => (
                             <div key={item.id} className="flex gap-4">
-                                <div className="w-[70px] h-[90px] border border-gray-200">
+                                <div className="w-[70px] h-[90px] border border-neutral-200 overflow-hidden">
                                     <Image
                                         src={item.image}
                                         alt={item.name}
@@ -196,35 +166,38 @@ export default function CheckoutPage() {
 
                                 <div className="flex-1 text-sm">
                                     <p className="font-semibold">{item.name}</p>
-                                    <p className="text-gray-500 text-xs mb-2">{item.variant}</p>
-                                    <p className="text-xs text-gray-500">
+                                    <p className="text-neutral-500 text-xs mb-1">{item.variant}</p>
+                                    <p className="text-xs text-neutral-500">
                                         ({item.quantity}) ${item.price}
                                     </p>
                                 </div>
 
-                                <button className="text-xs text-gray-400 hover:text-black">
+                                <button className="text-xs text-neutral-400 hover:text-black transition">
                                     Change
                                 </button>
                             </div>
                         ))}
                     </div>
 
-                    <div className="text-sm border-t border-gray-200 pt-3">
-                        <div className="flex justify-between mb-1">
+                    <Separator className="my-5" />
+
+                    <div className="text-sm space-y-1">
+                        <div className="flex justify-between">
                             <span>Subtotal</span>
                             <span>${subtotal}</span>
                         </div>
-                        <div className="flex justify-between mb-1 text-gray-500">
+
+                        <div className="flex justify-between text-neutral-500">
                             <span>Shipping</span>
                             <span>Calculated at next step</span>
                         </div>
 
-                        <div className="flex justify-between mt-3 font-semibold">
+                        <div className="flex justify-between font-semibold pt-2">
                             <span>Total</span>
                             <span>${subtotal}</span>
                         </div>
                     </div>
-                </div>
+                </Card>
             </div>
         </main>
     );

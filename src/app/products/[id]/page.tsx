@@ -1,8 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import {useState} from "react";
-import {useParams} from "next/navigation";
+import { useState } from "react";
+import { useParams } from "next/navigation";
+
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 const mockProduct = {
     id: "1",
@@ -22,126 +26,130 @@ const mockProduct = {
 };
 
 export default function ProductPage() {
-    const {id} = useParams();
+    const { id } = useParams();
+    const [selectedImage, setSelectedImage] = useState(mockProduct.images[0]);
     const [selectedColor, setSelectedColor] = useState(mockProduct.colors[0]);
     const [selectedSize, setSelectedSize] = useState("");
-    const [selectedImage, setSelectedImage] = useState(mockProduct.images[0]);
 
     return (
-        <main className="min-h-screen w-full bg-[#fbfbfb] text-gray-800 px-24 py-16 font-[Poppins]">
-            <p className="text-xs text-gray-400 mb-4">
-                Home / Products / {mockProduct.name}
+        <main className="min-h-screen w-full bg-[#fafafa] text-neutral-900 px-20 py-16">
+
+            {/* Breadcrumb */}
+            <p className="text-xs text-neutral-500 mb-4 tracking-wide">
+                Home / Products / <span className="opacity-70">{mockProduct.name}</span>
             </p>
 
-            <div className="flex gap-24 items-start justify-evenly">
-                {/* LEFT — images */}
+            <div className="flex gap-20 justify-start">
+
+                {/* LEFT — IMAGES */}
                 <div className="flex gap-6">
-                    {/* Thumbnails */}
+                    {/* thumbnails */}
                     <div className="flex flex-col gap-3">
                         {mockProduct.images.map((img) => (
-                            <div
+                            <Card
                                 key={img}
                                 onClick={() => setSelectedImage(img)}
-                                className={`relative w-[70px] h-[100px] overflow-hidden cursor-pointer border ${
+                                className={`relative w-[80px] h-[110px] overflow-hidden cursor-pointer border 
+                  ${
                                     selectedImage === img
-                                        ? "border-gray-800"
-                                        : "border-gray-200 hover:border-gray-400"
-                                }`}
+                                        ? "border-black"
+                                        : "border-neutral-300 hover:border-neutral-500"
+                                } transition`}
                             >
                                 <Image
                                     src={img}
                                     alt="thumbnail"
                                     fill
-                                    sizes="70px"
                                     className="object-cover"
                                 />
-                            </div>
+                            </Card>
                         ))}
                     </div>
 
-                    {/* Main image */}
-                    <div className="relative w-[520px] h-[680px] bg-white">
+                    {/* main image */}
+                    <Card className="relative w-[520px] h-[680px] bg-white border border-neutral-200">
                         <Image
                             src={selectedImage}
                             alt={mockProduct.name}
                             fill
-                            sizes="520px"
-                            className="object-contain"
                             priority
+                            className="object-contain"
                         />
-                    </div>
+                    </Card>
                 </div>
 
-                {/* RIGHT — info */}
-                <div className="w-[350px] border border-gray-200 p-8">
-                    <h1 className="text-[15px] font-semibold tracking-wide uppercase mb-2">
+                {/* RIGHT — INFO */}
+                <Card className="w-[360px] border border-neutral-200 p-8 shadow-sm">
+
+                    <h1 className="text-lg font-semibold uppercase tracking-tight mb-2">
                         {mockProduct.name}
                     </h1>
 
                     <p className="text-[15px] mb-1">${mockProduct.price}</p>
-                    <p className="text-xs text-gray-400 mb-6">{mockProduct.details}</p>
+                    <p className="text-xs text-neutral-500 mb-6">{mockProduct.details}</p>
 
                     <p className="text-sm leading-relaxed mb-8">
                         {mockProduct.description}
                     </p>
 
-                    {/* Color */}
+                    {/* COLOR */}
                     <div className="mb-8">
-                        <p className="text-xs text-gray-400 uppercase mb-2">Color</p>
+                        <p className="text-xs text-neutral-500 uppercase mb-2 tracking-wide">Color</p>
 
-                        <div className="flex gap-2">
+                        <div className="flex gap-3">
                             {mockProduct.colors.map((color) => (
                                 <button
                                     key={color}
                                     onClick={() => setSelectedColor(color)}
-                                    style={{backgroundColor: color}}
-                                    className={`w-7 h-7 border rounded-sm ${
+                                    style={{ backgroundColor: color }}
+                                    className={`w-8 h-8 rounded-sm border transition
+                    ${
                                         selectedColor === color
-                                            ? "border-gray-900 scale-105"
-                                            : "border-gray-200 hover:border-gray-400"
-                                    } transition`}
+                                            ? "border-neutral-900 scale-105"
+                                            : "border-neutral-300 hover:border-neutral-500"
+                                    }`}
                                 />
                             ))}
                         </div>
                     </div>
 
-                    {/* Size */}
+                    {/* SIZE */}
                     <div className="mb-8">
-                        <p className="text-xs text-gray-400 uppercase mb-2">Size</p>
+                        <p className="text-xs text-neutral-500 uppercase mb-2 tracking-wide">Size</p>
 
                         <div className="flex flex-wrap gap-2">
                             {mockProduct.sizes.map((size) => (
-                                <button
+                                <Button
                                     key={size}
-                                    onClick={() => setSelectedSize(size)}
-                                    className={`border text-xs px-3 py-[5px] ${
+                                    variant={selectedSize === size ? "default" : "outline"}
+                                    className={`px-3 py-1 h-auto text-xs ${
                                         selectedSize === size
-                                            ? "border-gray-900 bg-gray-900 text-white"
-                                            : "border-gray-300 hover:border-gray-500"
-                                    } transition`}
+                                            ? "bg-neutral-900 text-white"
+                                            : "border-neutral-300 hover:border-neutral-500"
+                                    }`}
+                                    onClick={() => setSelectedSize(size)}
                                 >
                                     {size}
-                                </button>
+                                </Button>
                             ))}
                         </div>
 
-                        <div className="flex justify-between text-[11px] text-gray-400 mt-3">
-                            <span className="cursor-pointer hover:text-gray-600">
-                                FIND YOUR SIZE
-                            </span>
-
-                            <span className="cursor-pointer hover:text-gray-600">
-                                MEASUREMENT GUIDE
-                          </span>
+                        <div className="flex justify-between text-[11px] text-neutral-500 mt-3">
+              <span className="cursor-pointer hover:text-neutral-700">
+                FIND YOUR SIZE
+              </span>
+                            <span className="cursor-pointer hover:text-neutral-700">
+                MEASUREMENT GUIDE
+              </span>
                         </div>
                     </div>
 
-                    {/* Button */}
-                    <button
-                        className="w-full bg-[#efefef] border border-gray-300 py-3 text-sm font-semibold hover:bg-gray-900 hover:text-white transition">
-                        ADD
-                    </button>
-                </div>
+                    <Separator className="my-6" />
+
+                    <Button className="w-full bg-neutral-900 text-white hover:bg-neutral-800">
+                        Add to Cart
+                    </Button>
+                </Card>
             </div>
         </main>
     );
