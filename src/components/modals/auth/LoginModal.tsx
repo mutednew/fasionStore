@@ -7,7 +7,9 @@ import api from "@/lib/axios";
 import { AxiosError } from "axios";
 import { useAppDispatch } from "@/store/hooks";
 import { setProfile } from "@/store/slices/userSlice";
-import { motion } from "framer-motion";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 interface LoginModalProps {
     onSwitch: () => void;
@@ -30,8 +32,7 @@ export default function LoginModal({ onSwitch, onClose }: LoginModalProps) {
         try {
             const parsed = LoginSchema.parse(data);
             const res = await api.post("/auth/login", parsed, { withCredentials: true });
-            const { user } = res.data.data;
-            dispatch(setProfile(user));
+            dispatch(setProfile(res.data.data.user));
             onClose();
         } catch (err: unknown) {
             if (err instanceof z.ZodError) setError("Invalid form data");
@@ -45,49 +46,49 @@ export default function LoginModal({ onSwitch, onClose }: LoginModalProps) {
     };
 
     return (
-        <motion.div
-            key="login"
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -40 }}
-            transition={{ duration: 0.25 }}
-        >
-            <h1 className="text-2xl font-bold mb-3 text-gray-900">Sign In</h1>
-            <p className="text-sm text-gray-600 mb-6">Use your email and password</p>
+        <div>
+            <h1 className="text-xl font-semibold mb-2 text-neutral-900">Sign In</h1>
+            <p className="text-sm text-neutral-600 mb-6">
+                Use your email and password
+            </p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                <input
-                    name="email"
-                    type="email"
-                    placeholder="Email"
-                    className="bg-white/60 border border-white/50 shadow-inner text-sm rounded-xl px-4 py-2 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF4B2B]/40"
-                />
-                <input
-                    name="password"
-                    type="password"
-                    placeholder="Password"
-                    className="bg-white/60 border border-white/50 shadow-inner text-sm rounded-xl px-4 py-2 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#FF4B2B]/40"
-                />
+                <div>
+                    <Label htmlFor="email" className="text-xs">Email</Label>
+                    <Input
+                        name="email"
+                        type="email"
+                        placeholder="you@example.com"
+                        className="mt-1"
+                    />
+                </div>
+
+                <div>
+                    <Label htmlFor="password" className="text-xs">Password</Label>
+                    <Input
+                        name="password"
+                        type="password"
+                        placeholder="••••••••"
+                        className="mt-1"
+                    />
+                </div>
 
                 {error && <p className="text-red-500 text-xs">{error}</p>}
 
-                <button
-                    disabled={loading}
-                    className="mt-3 rounded-xl bg-[#FF4B2B] text-white text-sm font-bold px-8 py-3 uppercase tracking-wider hover:scale-[1.03] transition"
-                >
-                    {loading ? "..." : "Sign In"}
-                </button>
+                <Button disabled={loading} className="w-full mt-2">
+                    {loading ? "Loading..." : "Sign In"}
+                </Button>
             </form>
 
-            <p className="text-xs text-gray-600 mt-5">
-                Don’t have an account?{" "}
+            <p className="text-xs text-neutral-600 mt-5">
+                Don't have an account?{" "}
                 <span
+                    className="text-black font-medium cursor-pointer underline"
                     onClick={onSwitch}
-                    className="text-[#FF4B2B] font-semibold cursor-pointer hover:underline"
                 >
           Sign Up
         </span>
             </p>
-        </motion.div>
+        </div>
     );
 }

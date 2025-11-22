@@ -1,12 +1,17 @@
 "use client";
 
-import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logout } from "@/store/slices/userSlice";
 import api from "@/lib/axios";
+
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+
+import { Mail, User, Shield, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
-import { LogOut, User, Mail, Shield } from "lucide-react";
 
 export default function ProfilePage() {
     const dispatch = useAppDispatch();
@@ -23,7 +28,7 @@ export default function ProfilePage() {
         try {
             await api.post("/auth/logout", {}, { withCredentials: true });
         } catch (err) {
-            console.warn("Logout request failed:", err);
+            console.warn("Logout failed:", err);
         } finally {
             dispatch(logout());
             router.push("/login");
@@ -32,67 +37,66 @@ export default function ProfilePage() {
 
     if (!profile) {
         return (
-            <main className="flex items-center justify-center min-h-screen bg-gray-100">
-                <p className="text-gray-500 text-sm font-medium">Loading profile...</p>
+            <main className="flex items-center justify-center min-h-screen bg-neutral-100">
+                <p className="text-neutral-500 text-sm font-medium">Loading profile...</p>
             </main>
         );
     }
 
     return (
-        <main className="relative flex items-center justify-center min-h-screen bg-[#f4f5f7] overflow-hidden font-[Montserrat]">
-            {/* ===== Мягкий фон ===== */}
-            <div className="absolute inset-0 overflow-hidden">
-                <div className="absolute -top-40 left-0 w-[500px] h-[500px] bg-blue-200/40 blur-[120px]" />
-                <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-pink-200/40 blur-[120px]" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-white/10 blur-[180px]" />
-            </div>
+        <main className="min-h-screen w-full bg-neutral-100 flex items-center justify-center px-6 py-20">
 
-            {/* ===== Карточка профиля ===== */}
+            {/* CARD */}
             <motion.div
-                initial={{ opacity: 0, y: 40 }}
+                initial={{ opacity: 0, y: 35 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="relative z-10 w-[420px] bg-white/60 backdrop-blur-2xl border border-white/40 rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.2)] p-10 text-center"
+                transition={{ duration: 0.45 }}
             >
-                {/* Аватар */}
-                <div className="flex flex-col items-center mb-6">
-                    <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-pink-400 flex items-center justify-center shadow-lg">
-                        <User size={36} className="text-white" />
-                    </div>
-                    <h1 className="text-2xl font-bold text-gray-800 mt-4 tracking-tight">
-                        {profile.name}
-                    </h1>
-                    <p className="text-sm text-gray-500 mt-1">Welcome back 👋</p>
-                </div>
+                <Card className="w-[420px] bg-white border border-neutral-200 shadow-lg rounded-2xl">
+                    <CardContent className="p-8">
 
-                {/* Информация */}
-                <div className="bg-white/40 rounded-2xl py-5 px-6 text-left space-y-3 shadow-inner border border-white/30">
-                    <div className="flex items-center gap-3 text-gray-700">
-                        <Mail size={18} className="text-gray-500" />
-                        <span className="text-sm">
-              <strong>Email:</strong> {profile.email}
-            </span>
-                    </div>
+                        {/* AVATAR */}
+                        <div className="flex flex-col items-center mb-6">
+                            <div className="w-20 h-20 rounded-full bg-neutral-900 flex items-center justify-center">
+                                <User size={36} className="text-white" />
+                            </div>
 
-                    <div className="flex items-center gap-3 text-gray-700">
-                        <Shield size={18} className="text-gray-500" />
-                        <span className="text-sm">
-              <strong>Role:</strong>{" "}
-                            {profile.role ? profile.role : "CUSTOMER"}
-            </span>
-                    </div>
-                </div>
+                            <h1 className="text-xl font-semibold text-neutral-900 mt-4 tracking-tight">
+                                {profile.name}
+                            </h1>
+                            <p className="text-sm text-neutral-500">Welcome back 👋</p>
+                        </div>
 
-                {/* Кнопка выхода */}
-                <motion.button
-                    onClick={handleLogout}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.97 }}
-                    className="mt-8 flex items-center justify-center gap-2 w-full py-3 rounded-full bg-gradient-to-r from-[#FF4B2B] to-[#FF416C] text-white text-sm font-bold uppercase tracking-wider shadow-lg hover:shadow-[0_0_25px_rgba(255,75,43,0.4)] transition"
-                >
-                    <LogOut size={16} />
-                    Logout
-                </motion.button>
+                        <Separator className="my-6" />
+
+                        {/* INFO BLOCK */}
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3 text-neutral-700">
+                                <Mail size={18} className="text-neutral-500" />
+                                <span className="text-sm">
+                  <strong className="font-medium">Email:</strong> {profile.email}
+                </span>
+                            </div>
+
+                            <div className="flex items-center gap-3 text-neutral-700">
+                                <Shield size={18} className="text-neutral-500" />
+                                <span className="text-sm">
+                  <strong className="font-medium">Role:</strong>{" "}
+                                    {profile.role ?? "CUSTOMER"}
+                </span>
+                            </div>
+                        </div>
+
+                        {/* LOGOUT BUTTON */}
+                        <Button
+                            onClick={handleLogout}
+                            className="w-full mt-8 flex items-center justify-center gap-2 bg-neutral-900 text-white hover:bg-neutral-800 py-3 rounded-full text-sm font-semibold tracking-wide"
+                        >
+                            <LogOut size={16} />
+                            Logout
+                        </Button>
+                    </CardContent>
+                </Card>
             </motion.div>
         </main>
     );
