@@ -12,8 +12,15 @@ export const toPlainProduct = (p: PrismaProductWithCategory): ProductType => ({
     name: p.name,
     price: p.price instanceof Decimal ? p.price.toNumber() : Number(p.price),
     stock: p.stock,
+
     imageUrl: p.imageUrl ?? undefined,
+    images: p.images ?? [],
+    colors: p.colors ?? [],
+    sizes: p.sizes ?? [],
+    tags: p.tags ?? [],
+
     categoryId: p.categoryId ?? undefined,
+
     createdAt: p.createdAt,
     updatedAt: p.updatedAt,
 });

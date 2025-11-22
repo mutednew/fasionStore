@@ -29,6 +29,9 @@ export default function ProductsPage() {
         p.name.toLowerCase().includes(search.toLowerCase())
     );
 
+    const safeImage = (url?: string | null) =>
+        url && url.trim().length > 0 ? url : "/placeholder.png";
+
     return (
         <main className="w-full min-h-screen bg-[#f5f5f5] text-neutral-900 px-10 py-16">
             {/* BREADCRUMB */}
@@ -141,7 +144,7 @@ export default function ProductsPage() {
                                         {/* FIXED IMAGE HEIGHT */}
                                         <div className="relative w-full h-[380px] bg-neutral-200 overflow-hidden">
                                             <Image
-                                                src={product.imageUrl ?? "/placeholder.png"}
+                                                src={safeImage(product.imageUrl)}
                                                 alt={product.name}
                                                 fill
                                                 className="object-cover transition-transform duration-300 hover:scale-105"

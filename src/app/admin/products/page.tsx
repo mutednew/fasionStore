@@ -193,71 +193,135 @@ export default function AdminProducts() {
                     <table className="w-full border-collapse text-sm">
                         <thead className="bg-muted/40 text-left">
                         <tr>
-                            <th className="px-4 py-3">Image</th>
+                            <th className="px-4 py-3 w-[70px]">Image</th>
                             <th className="px-4 py-3">Product</th>
                             <th className="px-4 py-3">Category</th>
+                            <th className="px-4 py-3">Colors</th>
+                            <th className="px-4 py-3">Sizes</th>
+                            <th className="px-4 py-3">Tags</th>
                             <th className="px-4 py-3">Price</th>
                             <th className="px-4 py-3">Stock</th>
-                            <th className="px-4 py-3">Status</th>
                             <th className="px-4 py-3 text-right">Actions</th>
                         </tr>
                         </thead>
+
                         <AnimatePresence>
                             <tbody>
                             {filteredProducts.map((p) => (
                                 <motion.tr
                                     key={p.id}
                                     layout
-                                    initial={{ opacity: 0, y: 10 }}
+                                    initial={{ opacity: 0, y: 6 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -10 }}
+                                    exit={{ opacity: 0, y: -6 }}
                                     transition={{ duration: 0.25 }}
-                                    className="border-t hover:bg-muted/20 transition-colors"
+                                    className="border-t hover:bg-muted/10 transition"
                                 >
+                                    {/* MAIN IMAGE */}
                                     <td className="px-4 py-3">
                                         {p.imageUrl ? (
                                             <motion.img
-                                                src={
-                                                    p.imageUrl.startsWith("http")
-                                                        ? p.imageUrl
-                                                        : `${process.env.NEXT_PUBLIC_BASE_URL || ""}${p.imageUrl}`
-                                                }
+                                                src={p.imageUrl}
                                                 alt={p.name}
-                                                className="w-12 h-12 object-cover rounded-md border"
-                                                whileHover={{ scale: 1.05 }}
+                                                className="w-12 h-12 object-cover rounded-md border shadow-sm"
+                                                whileHover={{ scale: 1.1 }}
                                                 transition={{ duration: 0.2 }}
                                             />
                                         ) : (
-                                            <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center text-gray-400 text-xs">
+                                            <div className="w-12 h-12 bg-muted rounded-md flex items-center justify-center text-xs text-neutral-400">
                                                 —
                                             </div>
                                         )}
                                     </td>
-                                    <td className="px-4 py-3 font-medium">{p.name}</td>
+
+                                    {/* NAME */}
+                                    <td className="px-4 py-3 font-medium">
+                                        <div className="flex flex-col">
+                                            <span>{p.name}</span>
+
+                                            {p.images?.length > 1 && (
+                                                <span className="text-[11px] text-gray-500">
+                                            {p.images.length} images
+                                        </span>
+                                            )}
+                                        </div>
+                                    </td>
+
+                                    {/* CATEGORY */}
                                     <td className="px-4 py-3">
                                         {categories.find((c) => c.id === p.categoryId)?.name ?? "—"}
                                     </td>
-                                    <td className="px-4 py-3">${p.price.toFixed(2)}</td>
-                                    <td className="px-4 py-3">{p.stock ?? 0}</td>
+
+                                    {/* COLORS */}
                                     <td className="px-4 py-3">
-                                        {p.stock && p.stock > 0 ? (
-                                            <Badge variant="success">Active</Badge>
+                                        <div className="flex gap-1 flex-wrap">
+                                            {p.colors?.map((c) => (
+                                                <div
+                                                    key={c}
+                                                    className="w-4 h-4 rounded border"
+                                                    style={{ backgroundColor: c }}
+                                                    title={c}
+                                                />
+                                            ))}
+                                            {!p.colors?.length && <span className="text-xs text-gray-400">—</span>}
+                                        </div>
+                                    </td>
+
+                                    {/* SIZES */}
+                                    <td className="px-4 py-3">
+                                        <div className="flex gap-1 flex-wrap">
+                                            {p.sizes?.map((s) => (
+                                                <span
+                                                    key={s}
+                                                    className="px-1.5 py-0.5 bg-neutral-200 rounded text-[11px]"
+                                                >
+                                            {s}
+                                        </span>
+                                            ))}
+                                            {!p.sizes?.length && <span className="text-xs text-gray-400">—</span>}
+                                        </div>
+                                    </td>
+
+                                    {/* TAGS */}
+                                    <td className="px-4 py-3">
+                                        <div className="flex gap-1 flex-wrap">
+                                            {p.tags?.map((t) => (
+                                                <span
+                                                    key={t}
+                                                    className="px-2 py-0.5 bg-neutral-100 border rounded text-[11px]"
+                                                >
+                                            {t}
+                                        </span>
+                                            ))}
+                                            {!p.tags?.length && <span className="text-xs text-gray-400">—</span>}
+                                        </div>
+                                    </td>
+
+                                    {/* PRICE */}
+                                    <td className="px-4 py-3 font-medium">
+                                        ${p.price.toFixed(2)}
+                                    </td>
+
+                                    {/* STOCK */}
+                                    <td className="px-4 py-3">
+                                        {p.stock > 0 ? (
+                                            <Badge variant="success">In stock</Badge>
                                         ) : (
-                                            <Badge variant="destructive">Out of stock</Badge>
+                                            <Badge variant="destructive">Out</Badge>
                                         )}
                                     </td>
+
+                                    {/* ACTIONS */}
                                     <td className="px-4 py-3 text-right">
                                         <div className="flex justify-end gap-2">
                                             <EditProductModal product={p} />
+
                                             <Button
                                                 variant="destructive"
                                                 size="sm"
                                                 onClick={() => handleDelete(p.id)}
-                                                asChild
                                             >
-                                                <motion.div whileTap={{ scale: 0.9 }}>
-                                                    <Trash2 className="w-4 h-4" />
-                                                </motion.div>
+                                                <Trash2 className="w-4 h-4" />
                                             </Button>
                                         </div>
                                     </td>
