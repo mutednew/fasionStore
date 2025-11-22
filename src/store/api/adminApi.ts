@@ -1,5 +1,6 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import type { Product, Order, Category } from "@/types";
+import {CreateProductDto} from "@/types/product.dto";
 
 interface ApiResponse<T> {
     success: boolean;
@@ -37,7 +38,7 @@ export const adminApi = createApi({
             providesTags: ["Product"],
         }),
 
-        addProduct: builder.mutation<ApiResponse<{ product: Product }>, Omit<Product, "id" | "createdAt">>({
+        addProduct: builder.mutation<ApiResponse<{ product: Product }>, CreateProductDto>({
             query: (body) => ({
                 url: "/products",
                 method: "POST",

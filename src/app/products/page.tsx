@@ -11,44 +11,21 @@ import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-
-const mockProducts = [
-    {
-        id: "1",
-        name: "Basic Slim Fit T-Shirt",
-        category: "Cotton T Shirt",
-        price: 199,
-        image:
-            "https://img2.ans-media.com/i/542x813/AW25-TSM139-00X_F1_PRM.webp?v=1758779988",
-    },
-    {
-        id: "2",
-        name: "Basic Heavy Weight T-Shirt",
-        category: "Crewneck T Shirt",
-        price: 199,
-        image:
-            "https://img2.ans-media.com/i/628x942/AW25-BUU002-83X_F1_PRM.webp?v=1758607723",
-    },
-    {
-        id: "3",
-        name: "Full Sleeve Zipper",
-        category: "Cotton T Shirt",
-        price: 199,
-        image:
-            "https://img2.ans-media.com/i/628x942/AW25-TSM0AT-99X_F1_PRM.webp?v=1758011804",
-    },
-    {
-        id: "4",
-        name: "Basic Heavy Weight T-Shirt",
-        category: "Cotton T Shirt",
-        price: 199,
-        image:
-            "https://img2.ans-media.com/i/628x942/AW25-TSM0ZG-99X_F1_PRM.webp?v=1752828626",
-    },
-];
+import { useGetProductsQuery } from "@/store/api/adminApi";
+import Link from "next/link";
 
 export default function ProductsPage() {
     const [search, setSearch] = useState("");
+
+    // 🟢 Получаем реальные продукты
+    const { data, isLoading } = useGetProductsQuery();
+
+    const products = data?.data?.products ?? [];
+
+    // 🔎 client-side search
+    const filtered = products.filter((p) =>
+        p.name.toLowerCase().includes(search.toLowerCase())
+    );
 
     return (
         <main className="w-full min-h-screen bg-[#f5f5f5] text-neutral-900 px-10 py-16">
@@ -67,11 +44,9 @@ export default function ProductsPage() {
 
                 {/* ========== LEFT SIDEBAR ========== */}
                 <aside className="w-64 flex-shrink-0">
-
                     <h2 className="font-semibold text-sm text-neutral-700 mb-3">Filters</h2>
 
                     <Accordion type="multiple" className="space-y-3">
-
                         {/* SIZE */}
                         <AccordionItem value="size">
                             <AccordionTrigger className="text-xs uppercase tracking-wide text-neutral-500">
@@ -80,11 +55,7 @@ export default function ProductsPage() {
                             <AccordionContent>
                                 <div className="flex flex-wrap gap-2 mt-2">
                                     {["XS", "S", "M", "L", "XL", "2X"].map((size) => (
-                                        <Button
-                                            key={size}
-                                            variant="outline"
-                                            className="px-3 py-1 h-auto text-xs"
-                                        >
+                                        <Button key={size} variant="outline" className="px-3 py-1 h-auto text-xs">
                                             {size}
                                         </Button>
                                     ))}
@@ -100,16 +71,16 @@ export default function ProductsPage() {
                             <AccordionContent className="space-y-3 py-2">
                                 <label className="flex items-center text-sm gap-2">
                                     <Checkbox />
-                                    Availability <span className="ml-auto text-neutral-400">(450)</span>
+                                    Availability
                                 </label>
                                 <label className="flex items-center text-sm gap-2">
                                     <Checkbox />
-                                    Out of Stock <span className="ml-auto text-neutral-400">(18)</span>
+                                    Out of stock
                                 </label>
                             </AccordionContent>
                         </AccordionItem>
 
-                        {/* Other Filter Categories */}
+                        {/* STUB FILTERS */}
                         {["Category", "Colors", "Price Range", "Collections", "Tags", "Ratings"].map((item) => (
                             <AccordionItem key={item} value={item.toLowerCase()}>
                                 <AccordionTrigger className="text-xs uppercase tracking-wide text-neutral-500">
@@ -122,16 +93,15 @@ export default function ProductsPage() {
                                 </AccordionContent>
                             </AccordionItem>
                         ))}
-
                     </Accordion>
                 </aside>
 
                 {/* ========== MAIN SECTION ========== */}
                 <section className="flex-1">
 
-                    {/* SEARCH & TAGS */}
+                    {/* SEARCH + TAGS */}
                     <div className="flex items-center justify-between mb-8">
-                        {/* search */}
+
                         <div className="relative w-80">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 h-4 w-4" />
                             <Input
@@ -142,54 +112,56 @@ export default function ProductsPage() {
                             />
                         </div>
 
-                        {/* tags */}
                         <div className="flex gap-2">
-                            {["NEW", "BEST SELLERS", "T-SHIRTS", "JEANS", "JACKETS", "COATS"].map(
-                                (tag) => (
-                                    <Badge
-                                        key={tag}
-                                        variant="outline"
-                                        className="px-3 py-1 text-[11px] uppercase tracking-wide cursor-pointer"
-                                    >
-                                        {tag}
-                                    </Badge>
-                                )
-                            )}
+                            {["NEW", "BEST SELLERS", "T-SHIRTS", "JEANS", "JACKETS", "COATS"].map((tag) => (
+                                <Badge
+                                    key={tag}
+                                    variant="outline"
+                                    className="px-3 py-1 text-[11px] uppercase tracking-wide cursor-pointer"
+                                >
+                                    {tag}
+                                </Badge>
+                            ))}
                         </div>
                     </div>
 
                     <Separator className="mb-8" />
 
-                    {/* ====== PRODUCTS GRID ====== */}
-                    <div className="grid grid-cols-3 gap-10">
-                        {mockProducts.map((product) => (
-                            <Card
-                                key={product.id}
-                                className="rounded-none border border-neutral-300 shadow-sm hover:shadow-md transition cursor-pointer"
-                            >
-                                <div className="relative overflow-hidden aspect-[3/4] bg-neutral-200">
-                                    <Image
-                                        src={product.image}
-                                        alt={product.name}
-                                        fill
-                                        className="object-cover transition-transform duration-300 hover:scale-105"
-                                    />
-                                </div>
+                    {/* ===== PRODUCTS GRID ===== */}
+                    {isLoading ? (
+                        <p className="text-neutral-500">Loading products...</p>
+                    ) : (
+                        <div className="grid grid-cols-3 gap-10">
+                            {filtered.map((product) => (
+                                <Link href={`/products/${product.id}`} key={product.id}>
+                                    <Card
+                                        className="rounded-none border border-neutral-300 shadow-sm hover:shadow-md transition cursor-pointer"
+                                    >
+                                        <div className="relative overflow-hidden aspect-[3/4] bg-neutral-200">
+                                            <Image
+                                                src={product.imageUrl ?? "/placeholder.png"}
+                                                alt={product.name}
+                                                fill
+                                                className="object-cover transition-transform duration-300 hover:scale-105"
+                                            />
+                                        </div>
 
-                                <CardContent className="p-4">
-                                    <p className="text-xs text-neutral-500 uppercase tracking-wide">
-                                        {product.category}
-                                    </p>
-                                    <h3 className="text-sm mt-1 tracking-wide font-semibold">
-                                        {product.name}
-                                    </h3>
-                                    <p className="text-sm font-medium mt-1">
-                                        ${product.price}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                                        <CardContent className="p-4">
+                                            <p className="text-xs text-neutral-500 uppercase tracking-wide">
+                                                {product.categoryId}
+                                            </p>
+                                            <h3 className="text-sm mt-1 tracking-wide font-semibold">
+                                                {product.name}
+                                            </h3>
+                                            <p className="text-sm font-medium mt-1">
+                                                ${product.price}
+                                            </p>
+                                        </CardContent>
+                                    </Card>
+                                </Link>
+                            ))}
+                        </div>
+                    )}
                 </section>
             </div>
         </main>

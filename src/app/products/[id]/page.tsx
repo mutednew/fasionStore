@@ -1,56 +1,80 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { useGetProductByIdQuery } from "@/store/api/productsApi";
 
-const mockProduct = {
-    id: "1",
-    name: "ABSTRACT PRINT SHIRT",
-    price: 99,
-    description:
-        "Relaxed-fit shirt. Camp collar and short sleeves. Button-up front.",
-    details: "MRP incl. of all taxes",
-    colors: ["#d9d9d9", "#333333", "#000000", "#a7dcd1", "#b1b9ee"],
-    sizes: ["XS", "S", "M", "L", "XL", "2X"],
-    images: [
-        "https://img2.ans-media.com/i/542x813/AW25-TSM139-00X_F1_PRM.webp?v=1758779988",
-        "https://img2.ans-media.com/i/542x813/AW25-TSM139-00X_F2_PRM.webp?v=1758780593",
-        "https://img2.ans-media.com/i/542x813/AW25-TSM139-00X_F3_PRM.webp?v=1758780320",
-        "https://img2.ans-media.com/i/542x813/AW25-TSM139-00X_F4_PRM.webp?v=1758780593",
-    ],
-};
+const FALLBACK_IMAGES = [
+    "https://via.placeholder.com/600x800?text=No+Image",
+];
+
+const FALLBACK_COLORS = ["#000000", "#c4c4c4", "#ffffff"];
+const FALLBACK_SIZES = ["S", "M", "L", "XL"];
 
 export default function ProductPage() {
-    const { id } = useParams();
-    const [selectedImage, setSelectedImage] = useState(mockProduct.images[0]);
-    const [selectedColor, setSelectedColor] = useState(mockProduct.colors[0]);
+    const { id } = useParams() as { id: string };
+
+    // Загружаем товар
+    const { data, isLoading } = useGetProductByIdQuery(id);
+
+    const product = data?.data?.product;
+
+    const images = product?.imageUrl ? [product.imageUrl] : FALLBACK_IMAGES;
+
+    const [selectedImage, setSelectedImage] = useState(images[0]);
+    const [selectedColor, setSelectedColor] = useState(FALLBACK_COLORS[0]);
     const [selectedSize, setSelectedSize] = useState("");
+
+    // Обновить картинку после загрузки товара
+    useEffect(() => {
+        if (product?.imageUrl) {
+            setSelectedImage(product.imageUrl);
+        }
+    }, [product]);
+
+    if (isLoading) {
+        return (
+            <main className="min-h-screen flex items-center justify-center text-neutral-600">
+                Loading product...
+            </main>
+        );
+    }
+
+    if (!product) {
+        return (
+            <main className="min-h-screen flex items-center justify-center text-neutral-600">
+                Product not found
+            </main>
+        );
+    }
 
     return (
         <main className="min-h-screen w-full bg-[#fafafa] text-neutral-900 px-20 py-16">
 
             {/* Breadcrumb */}
             <p className="text-xs text-neutral-500 mb-4 tracking-wide">
-                Home / Products / <span className="opacity-70">{mockProduct.name}</span>
+                Home / Products /{" "}
+                <span className="opacity-70">{product.name}</span>
             </p>
 
             <div className="flex gap-20 justify-start">
 
                 {/* LEFT — IMAGES */}
                 <div className="flex gap-6">
-                    {/* thumbnails */}
+
+                    {/* Thumbnails */}
                     <div className="flex flex-col gap-3">
-                        {mockProduct.images.map((img) => (
+                        {images.map((img) => (
                             <Card
                                 key={img}
                                 onClick={() => setSelectedImage(img)}
-                                className={`relative w-[80px] h-[110px] overflow-hidden cursor-pointer border 
-                  ${
+                                className={`relative w-[80px] h-[110px] overflow-hidden cursor-pointer border
+                                    ${
                                     selectedImage === img
                                         ? "border-black"
                                         : "border-neutral-300 hover:border-neutral-500"
@@ -66,11 +90,11 @@ export default function ProductPage() {
                         ))}
                     </div>
 
-                    {/* main image */}
+                    {/* Main image */}
                     <Card className="relative w-[520px] h-[680px] bg-white border border-neutral-200">
                         <Image
                             src={selectedImage}
-                            alt={mockProduct.name}
+                            alt={product.name}
                             fill
                             priority
                             className="object-contain"
@@ -82,28 +106,34 @@ export default function ProductPage() {
                 <Card className="w-[360px] border border-neutral-200 p-8 shadow-sm">
 
                     <h1 className="text-lg font-semibold uppercase tracking-tight mb-2">
-                        {mockProduct.name}
+                        {product.name}
                     </h1>
 
-                    <p className="text-[15px] mb-1">${mockProduct.price}</p>
-                    <p className="text-xs text-neutral-500 mb-6">{mockProduct.details}</p>
+                    <p className="text-[15px] mb-1">${product.price}</p>
+
+                    <p className="text-xs text-neutral-500 mb-6">
+                        Added {new Date(product.createdAt ?? Date.now()).toLocaleDateString()}
+                    </p>
 
                     <p className="text-sm leading-relaxed mb-8">
-                        {mockProduct.description}
+                        {/* Если нет description — заглушка */}
+                        Relaxed-fit shirt. Camp collar and short sleeves. Button-up front.
                     </p>
 
                     {/* COLOR */}
                     <div className="mb-8">
-                        <p className="text-xs text-neutral-500 uppercase mb-2 tracking-wide">Color</p>
+                        <p className="text-xs text-neutral-500 uppercase mb-2 tracking-wide">
+                            Color
+                        </p>
 
                         <div className="flex gap-3">
-                            {mockProduct.colors.map((color) => (
+                            {FALLBACK_COLORS.map((color) => (
                                 <button
                                     key={color}
                                     onClick={() => setSelectedColor(color)}
                                     style={{ backgroundColor: color }}
                                     className={`w-8 h-8 rounded-sm border transition
-                    ${
+                                        ${
                                         selectedColor === color
                                             ? "border-neutral-900 scale-105"
                                             : "border-neutral-300 hover:border-neutral-500"
@@ -115,14 +145,17 @@ export default function ProductPage() {
 
                     {/* SIZE */}
                     <div className="mb-8">
-                        <p className="text-xs text-neutral-500 uppercase mb-2 tracking-wide">Size</p>
+                        <p className="text-xs text-neutral-500 uppercase mb-2 tracking-wide">
+                            Size
+                        </p>
 
                         <div className="flex flex-wrap gap-2">
-                            {mockProduct.sizes.map((size) => (
+                            {FALLBACK_SIZES.map((size) => (
                                 <Button
                                     key={size}
                                     variant={selectedSize === size ? "default" : "outline"}
-                                    className={`px-3 py-1 h-auto text-xs ${
+                                    className={`px-3 py-1 h-auto text-xs
+                                        ${
                                         selectedSize === size
                                             ? "bg-neutral-900 text-white"
                                             : "border-neutral-300 hover:border-neutral-500"
@@ -135,12 +168,13 @@ export default function ProductPage() {
                         </div>
 
                         <div className="flex justify-between text-[11px] text-neutral-500 mt-3">
-              <span className="cursor-pointer hover:text-neutral-700">
-                FIND YOUR SIZE
-              </span>
                             <span className="cursor-pointer hover:text-neutral-700">
-                MEASUREMENT GUIDE
-              </span>
+                                FIND YOUR SIZE
+                            </span>
+
+                            <span className="cursor-pointer hover:text-neutral-700">
+                                MEASUREMENT GUIDE
+                            </span>
                         </div>
                     </div>
 

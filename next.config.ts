@@ -5,6 +5,7 @@ const nextConfig: NextConfig = {
         domains: [
             "cdn.shopify.com",
             "img2.ans-media.com",
+            "via.placeholder.com",
         ],
     },
 };
