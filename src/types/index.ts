@@ -2,10 +2,20 @@ export interface Product {
     id: string;
     name: string;
     price: number;
-    categoryId?: string;
-    imageUrl?: string;
     stock: number;
-    createdAt?: Date;
+
+    imageUrl?: string;
+    images: string[];
+
+    colors: string[];
+    sizes: string[];
+    tags: string[];
+
+    createdAt: string;
+    updatedAt: string;
+
+    categoryId?: string;
+    category?: Category;
 }
 
 export interface Category {
