@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import {useState} from "react";
+import Link from "next/link";
 
 const mockCart = [
     {
@@ -97,8 +98,8 @@ export default function CartPage() {
                                             −
                                         </button>
                                         <span className="w-6 text-center text-sm">
-                      {item.quantity}
-                    </span>
+                                            {item.quantity}
+                                        </span>
                                         <button
                                             onClick={() => handleQuantity(item.id, 1)}
                                             className="text-sm"
@@ -151,11 +152,11 @@ export default function CartPage() {
                         <input type="checkbox" className="accent-black"/>
                         <p>I agree to the Terms and Conditions</p>
                     </div>
-
-                    <button
-                        className="mt-6 w-full bg-[#e5e5e5] text-[13px] font-semibold py-3 hover:bg-black hover:text-white transition">
-                        CONTINUE
-                    </button>
+                    <Link href="/checkout">
+                        <button className="mt-6 w-full bg-[#e5e5e5] text-[13px] font-semibold py-3 hover:bg-black hover:text-white transition">
+                                CONTINUE
+                        </button>
+                    </Link>
                 </div>
             </div>
         </main>
