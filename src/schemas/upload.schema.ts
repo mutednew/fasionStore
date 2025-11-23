@@ -6,15 +6,19 @@ export const uploadSchema = z.object({
         .refine((file) => file.size <= 5 * 1024 * 1024, "File too large (max 5MB)")
         .refine(
             (file) =>
-                ["image/jpeg", "image/png", "image/webp", "image/jpg"].includes(file.type),
-            "Only JPG, PNG or WEBP images are allowed"
+                ["image/jpeg", "image/png", "image/webp", "image/jpg", "image/avif"]
+                    .includes(file.type),
+            "Only JPG, PNG, WEBP or AVIF images are allowed"
         ),
 });
 
 export const deleteImageSchema = z.object({
     imageUrl: z
         .string()
-        .regex(/^\/uploads\/[\w\-]+\.(jpg|jpeg|png|webp)$/i, "Invalid image URL format"),
+        .regex(
+            /^\/uploads\/[\w\-]+\.(jpg|jpeg|png|webp|avif)$/i,
+            "Invalid image URL format"
+        ),
 });
 
 export type UploadInput = z.infer<typeof uploadSchema>;
