@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useRef, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -19,20 +19,29 @@ export function AddCategoryModal() {
     const [open, setOpen] = useState(false);
     const [name, setName] = useState("");
 
+    const inputRef = useRef<HTMLInputElement | null>(null);
+
     const [addCategory, { isLoading }] = useAddCategoryMutation();
+
+    // автофокус при открытии
+    useEffect(() => {
+        if (open) {
+            setTimeout(() => inputRef.current?.focus(), 50);
+        }
+    }, [open]);
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
         if (!name.trim()) {
-            toast.error("Enter category name");
+            toast.error("Please enter a category name");
             return;
         }
 
         try {
             await addCategory({ name }).unwrap();
 
-            toast.success(`"${name}" successfully created.`);
+            toast.success(`Category "${name}" added successfully!`);
 
             setName("");
             setOpen(false);
@@ -44,28 +53,39 @@ export function AddCategoryModal() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="secondary">
+                <Button
+                    variant="secondary"
+                    className="rounded-md px-4 py-2 font-medium"
+                >
                     + Add Category
                 </Button>
             </DialogTrigger>
 
-            <DialogContent className="max-w-sm">
+            <DialogContent className="max-w-[92vw] sm:max-w-sm rounded-xl">
                 <DialogHeader>
-                    <DialogTitle>Add New Category</DialogTitle>
+                    <DialogTitle className="text-lg font-semibold">
+                        Create New Category
+                    </DialogTitle>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+                <form onSubmit={handleSubmit} className="space-y-5 mt-4">
                     <div className="space-y-2">
-                        <Label>Name</Label>
+                        <Label className="text-sm">Name</Label>
                         <Input
+                            ref={inputRef}
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="Category name..."
+                            placeholder="Enter category name"
+                            className="h-10 text-sm"
                         />
                     </div>
 
                     <DialogFooter>
-                        <Button type="submit" disabled={isLoading}>
+                        <Button
+                            type="submit"
+                            disabled={isLoading}
+                            className="w-full sm:w-auto"
+                        >
                             {isLoading ? "Adding..." : "Add Category"}
                         </Button>
                     </DialogFooter>

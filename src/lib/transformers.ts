@@ -1,11 +1,13 @@
 import { Decimal } from "@prisma/client/runtime/library";
 import { Prisma } from "@prisma/client";
-import { ProductType } from "@/schemas/product.schema";
 import { OrderType } from "@/schemas/order.schema";
+import { ProductType } from "@/schemas/product.schema";
 
-export type PrismaProductWithCategory = Prisma.ProductGetPayload<{ include: { category: true } }>;
+export type PrismaProductWithCategory =
+    Prisma.ProductGetPayload<{ include: { category: true } }>;
 
-export type PrismaOrderWithItems  = Prisma.OrderGetPayload<{ include: { items: { include: { product: true } } } }>
+export type PrismaOrderWithItems =
+    Prisma.OrderGetPayload<{ include: { items: { include: { product: true } } } }>;
 
 export const toPlainProduct = (p: PrismaProductWithCategory): ProductType => ({
     id: p.id,
@@ -18,6 +20,8 @@ export const toPlainProduct = (p: PrismaProductWithCategory): ProductType => ({
     colors: p.colors ?? [],
     sizes: p.sizes ?? [],
     tags: p.tags ?? [],
+
+    description: p.description ?? undefined, // ⬅ добавлено
 
     categoryId: p.categoryId ?? undefined,
 

@@ -26,6 +26,8 @@ model Product {
   price Decimal
   stock Int     @default(0)
 
+  description String?
+
   imageUrl String?
   images   String[] @default([])
 

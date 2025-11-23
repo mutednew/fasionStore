@@ -20,20 +20,25 @@ import {
     SelectContent,
     SelectItem,
 } from "@/components/ui/select";
+
+import { Textarea } from "@/components/ui/textarea"; // ⬅ добавлено
+
 import {
     useAddProductMutation,
     useGetCategoriesQuery,
 } from "@/store/api/adminApi";
 
-import { PlusCircle, X, ImageIcon } from "lucide-react";
+import { PlusCircle, X } from "lucide-react";
 import { toast } from "sonner";
 
 export function AddProductModal() {
     const [open, setOpen] = useState(false);
+
     const [name, setName] = useState("");
     const [price, setPrice] = useState("");
     const [categoryId, setCategoryId] = useState("");
     const [stock, setStock] = useState("10");
+    const [description, setDescription] = useState(""); // ⬅ NEW
 
     const [images, setImages] = useState<File[]>([]);
     const [previews, setPreviews] = useState<string[]>([]);
@@ -51,7 +56,6 @@ export function AddProductModal() {
 
     const [addProduct, { isLoading }] = useAddProductMutation();
 
-    // Upload multiple images
     const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         setImages(files);
@@ -67,33 +71,35 @@ export function AddProductModal() {
         }
 
         try {
-            // upload each image
             const uploadedUrls: string[] = [];
 
             for (const img of images) {
                 const formData = new FormData();
                 formData.append("file", img);
 
-                const uploadRes = await fetch("/api/upload", {
+                const res = await fetch("/api/upload", {
                     method: "POST",
                     body: formData,
                     credentials: "include",
                 });
 
-                if (!uploadRes.ok) {
+                if (!res.ok) {
                     toast.error("Image upload failed");
                     return;
                 }
 
-                const uploadData = await uploadRes.json();
-                uploadedUrls.push(uploadData?.data?.url || "");
+                const data = await res.json();
+                uploadedUrls.push(data?.data?.url || "");
             }
 
             await addProduct({
                 name,
                 price: Number(price),
-                categoryId: categoryId || categories[0]?.id,
                 stock: Number(stock),
+                categoryId: categoryId || categories[0]?.id,
+
+                description: description || null, // ⬅ NEW
+
                 imageUrl: uploadedUrls[0] || "",
                 images: uploadedUrls,
                 colors,
@@ -112,6 +118,7 @@ export function AddProductModal() {
             setTempColor("");
             setTempSize("");
             setTempTag("");
+            setDescription("");
 
         } catch {
             toast.error("Failed to add product");
@@ -143,6 +150,17 @@ export function AddProductModal() {
                             value={name}
                             onChange={(e) => setName(e.target.value)}
                             placeholder="Product name"
+                        />
+                    </div>
+
+                    {/* DESCRIPTION (NEW) */}
+                    <div>
+                        <Label className="block mb-1">Description</Label>
+                        <Textarea
+                            placeholder="Write product description..."
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            className="min-h-[100px] resize-y text-sm"
                         />
                     </div>
 
@@ -223,7 +241,6 @@ export function AddProductModal() {
                             </Button>
                         </div>
 
-                        {/* LIST */}
                         <div className="flex flex-wrap gap-2 mt-2">
                             {colors.map((c) => (
                                 <span
@@ -324,7 +341,6 @@ export function AddProductModal() {
                         </div>
                     </div>
 
-                    {/* SUBMIT */}
                     <DialogFooter>
                         <Button type="submit" disabled={isLoading} className="w-full">
                             {isLoading ? "Adding..." : "Add Product"}

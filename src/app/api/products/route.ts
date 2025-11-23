@@ -9,13 +9,15 @@ export async function GET(req: Request) {
         const url = new URL(req.url);
 
         const filter = {
+            search: url.searchParams.get("search") ?? undefined,
             categoryId: url.searchParams.get("categoryId") ?? undefined,
-            tag: url.searchParams.get("tag") ?? undefined,
-            color: url.searchParams.get("color") ?? undefined,
             size: url.searchParams.get("size") ?? undefined,
+            price: url.searchParams.get("price") ?? undefined,
+            tag: url.searchParams.get("tag") ?? undefined,
         };
 
         const products = await productService.getAll(filter);
+
         return ok({ products });
 
     } catch (err) {
@@ -37,6 +39,7 @@ export async function POST(req: Request) {
         }
 
         const product = await productService.create(parsed.data);
+
         return ok({ product });
 
     } catch (err) {

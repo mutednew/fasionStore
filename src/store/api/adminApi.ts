@@ -35,7 +35,10 @@ export const adminApi = createApi({
     tagTypes: ["Product", "Category", "Order"],
 
     endpoints: (builder) => ({
-        // ===== PRODUCTS =====
+
+        // ===============================
+        // PRODUCTS
+        // ===============================
 
         getProducts: builder.query<ApiResponse<ProductsResponse>, void>({
             query: () => "/products",
@@ -79,7 +82,9 @@ export const adminApi = createApi({
             invalidatesTags: ["Product"],
         }),
 
-        // ===== ORDERS =====
+        // ===============================
+        // ORDERS
+        // ===============================
 
         getOrders: builder.query<ApiResponse<OrdersResponse>, void>({
             query: () => "/orders",
@@ -113,7 +118,9 @@ export const adminApi = createApi({
             invalidatesTags: ["Order"],
         }),
 
-        // ===== CATEGORIES =====
+        // ===============================
+        // CATEGORIES
+        // ===============================
 
         getCategories: builder.query<ApiResponse<CategoriesResponse>, void>({
             query: () => "/categories",

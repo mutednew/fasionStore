@@ -6,21 +6,40 @@ import { ApiError } from "@/lib/ApiError";
 export const productService = {
     async getAll(filter?: any): Promise<ProductType[]> {
         try {
-            const { categoryId, tag, color, size } = filter ?? {};
+            const { search, categoryId, size, price, tag } = filter ?? {};
+
+            const where: any = {
+                ...(search && {
+                    name: { contains: search, mode: "insensitive" },
+                }),
+
+                ...(categoryId && { categoryId }),
+
+                ...(size && { sizes: { has: size } }),
+
+                ...(tag && { tags: { has: tag } }),
+            };
+
+            const priceMap: Record<string, any> = {
+                low:  { lt: 50 },
+                mid:  { gte: 50, lte: 200 },
+                high: { gt: 200 },
+            };
+
+            if (price && priceMap[price]) {
+                where.price = priceMap[price];
+            }
 
             const products = await prisma.product.findMany({
-                where: {
-                    ...(categoryId && { categoryId }),
-                    ...(tag && { tags: { has: tag } }),
-                    ...(color && { colors: { has: color } }),
-                    ...(size && { sizes: { has: size } }),
-                },
+                where,
                 include: { category: true },
                 orderBy: { createdAt: "desc" },
             });
 
             return products.map(toPlainProduct);
+
         } catch (err) {
+            console.log(err);
             throw new ApiError("Failed to fetch products", 500);
         }
     },
@@ -32,7 +51,6 @@ export const productService = {
         });
 
         if (!product) throw new ApiError("Product not found", 404);
-
         return toPlainProduct(product);
     },
 
@@ -43,7 +61,6 @@ export const productService = {
             const exists = await prisma.product.findFirst({
                 where: { name: parsed.name },
             });
-
             if (exists) throw new ApiError("Product already exists", 409);
 
             const product = await prisma.product.create({
@@ -52,13 +69,15 @@ export const productService = {
                     price: parsed.price,
                     stock: parsed.stock,
 
+                    description: parsed.description ?? null,
+
                     imageUrl: parsed.imageUrl,
                     images: parsed.images ?? [],
                     colors: parsed.colors ?? [],
                     sizes: parsed.sizes ?? [],
                     tags: parsed.tags ?? [],
 
-                    categoryId: parsed.categoryId,
+                    categoryId: parsed.categoryId ?? null,
                 },
                 include: { category: true },
             });
@@ -66,6 +85,7 @@ export const productService = {
             return toPlainProduct(product);
         } catch (err) {
             if (err instanceof ApiError) throw err;
+            console.error(err);
             throw new ApiError("Failed to create product", 500);
         }
     },
@@ -74,17 +94,30 @@ export const productService = {
         try {
             const parsed = ProductSchema.partial().parse(data);
 
-            const exists = await prisma.product.findUnique({ where: { id } });
-            if (!exists) throw new ApiError("Product not found", 404);
+            const existing = await prisma.product.findUnique({
+                where: { id },
+            });
+            if (!existing) throw new ApiError("Product not found", 404);
 
             const updated = await prisma.product.update({
                 where: { id },
                 data: {
                     ...parsed,
-                    images: parsed.images ?? exists.images,
-                    colors: parsed.colors ?? exists.colors,
-                    sizes: parsed.sizes ?? exists.sizes,
-                    tags: parsed.tags ?? exists.tags,
+
+                    categoryId:
+                        parsed.categoryId === "" || parsed.categoryId === undefined
+                            ? existing.categoryId
+                            : parsed.categoryId,
+
+                    description:
+                        parsed.description !== undefined
+                            ? parsed.description
+                            : existing.description,
+
+                    images: parsed.images ?? existing.images,
+                    colors: parsed.colors ?? existing.colors,
+                    sizes: parsed.sizes ?? existing.sizes,
+                    tags: parsed.tags ?? existing.tags,
                 },
                 include: { category: true },
             });
@@ -92,6 +125,7 @@ export const productService = {
             return toPlainProduct(updated);
         } catch (err) {
             if (err instanceof ApiError) throw err;
+            console.error(err);
             throw new ApiError("Failed to update product", 500);
         }
     },
@@ -102,15 +136,11 @@ export const productService = {
                 where: { id },
             });
 
-            if (!existingProduct) {
-                throw new ApiError("Product not found", 404);
-            }
+            if (!existingProduct) throw new ApiError("Product not found", 404);
 
             await prisma.product.delete({ where: { id } });
         } catch (err) {
-            if (err instanceof ApiError) {
-                throw err;
-            }
+            if (err instanceof ApiError) throw err;
             throw new ApiError("Failed to delete product", 500);
         }
     },

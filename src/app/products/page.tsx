@@ -1,57 +1,147 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Search } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
     Accordion,
     AccordionItem,
     AccordionTrigger,
     AccordionContent,
 } from "@/components/ui/accordion";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { useGetProductsQuery } from "@/store/api/adminApi";
-import Link from "next/link";
+import { Separator } from "@/components/ui/separator";
+
+import { useGetProductsFilteredQuery } from "@/store/api/productsApi";
+import { useGetCategoriesQuery } from "@/store/api/adminApi";
 
 export default function ProductsPage() {
     const [search, setSearch] = useState("");
+    const [categoryId, setCategoryId] = useState("");
+    const [selectedSize, setSelectedSize] = useState("");
+    const [selectedTag, setSelectedTag] = useState("");
+    const [priceRange, setPriceRange] = useState<"all" | "low" | "mid" | "high">("all");
 
-    const { data, isLoading } = useGetProductsQuery();
-    const products = data?.data?.products ?? [];
+    // fetch categories
+    const { data: categoriesRes } = useGetCategoriesQuery();
+    const categories = categoriesRes?.data?.categories ?? [];
 
-    const filtered = products.filter((p) =>
-        p.name.toLowerCase().includes(search.toLowerCase())
-    );
+    // fetch products (без color)
+    const { data } = useGetProductsFilteredQuery({
+        categoryId: categoryId || undefined,
+        size: selectedSize || undefined,
+        tag: selectedTag || undefined,
+    });
+
+    const products = data?.products ?? [];
+
+    // собрать все теги из продуктов
+    const allTags = useMemo(() => {
+        const set = new Set<string>();
+        products.forEach((p) => p.tags?.forEach((t) => set.add(t)));
+        return Array.from(set);
+    }, [products]);
+
+    // поиск + фильтр по цене
+    const visibleProducts = useMemo(() => {
+        return products
+            .filter((p) =>
+                search.trim()
+                    ? p.name.toLowerCase().includes(search.toLowerCase().trim())
+                    : true
+            )
+            .filter((p) => {
+                const price = Number(p.price);
+                if (priceRange === "low") return price < 50;
+                if (priceRange === "mid") return price >= 50 && price <= 200;
+                if (priceRange === "high") return price > 200;
+                return true;
+            });
+    }, [products, search, priceRange]);
 
     const safeImage = (url?: string | null) =>
         url && url.trim().length > 0 ? url : "/placeholder.png";
 
     return (
         <main className="w-full min-h-screen bg-[#f5f5f5] text-neutral-900 px-10 py-16">
-            {/* BREADCRUMB */}
-            <p className="text-xs text-neutral-500 mb-1 tracking-wide">
-                Home / Products
-            </p>
 
-            {/* TITLE */}
+            <p className="text-xs text-neutral-500 mb-1 tracking-wide">Home / Products</p>
+
             <h1 className="text-3xl font-extrabold tracking-tight uppercase mb-10">
                 Products
             </h1>
 
             <div className="flex gap-14">
-                {/* LEFT SIDEBAR */}
+
+                {/* FILTER SIDEBAR */}
                 <aside className="w-64 flex-shrink-0">
                     <h2 className="font-semibold text-sm text-neutral-700 mb-3">
                         Filters
                     </h2>
 
                     <Accordion type="multiple" className="space-y-3">
+
+                        {/* CATEGORY */}
+                        <AccordionItem value="categories">
+                            <AccordionTrigger className="text-xs uppercase tracking-wide text-neutral-500">
+                                Category
+                            </AccordionTrigger>
+
+                            <AccordionContent className="flex flex-col gap-2 py-2">
+                                <Button
+                                    variant={categoryId === "" ? "default" : "outline"}
+                                    className="py-1 text-xs"
+                                    onClick={() => setCategoryId("")}
+                                >
+                                    All
+                                </Button>
+
+                                {categories.map((cat) => (
+                                    <Button
+                                        key={cat.id}
+                                        variant={categoryId === cat.id ? "default" : "outline"}
+                                        className="py-1 text-xs justify-start"
+                                        onClick={() =>
+                                            setCategoryId(categoryId === cat.id ? "" : cat.id)
+                                        }
+                                    >
+                                        {cat.name}
+                                    </Button>
+                                ))}
+                            </AccordionContent>
+                        </AccordionItem>
+
+                        {/* TAGS */}
+                        <AccordionItem value="tags">
+                            <AccordionTrigger className="text-xs uppercase tracking-wide text-neutral-500">
+                                Tags
+                            </AccordionTrigger>
+
+                            <AccordionContent className="flex flex-wrap gap-2 mt-2">
+                                {allTags.length === 0 && (
+                                    <p className="text-xs text-neutral-400">No tags found</p>
+                                )}
+
+                                {allTags.map((tag) => (
+                                    <Button
+                                        key={tag}
+                                        variant={selectedTag === tag ? "default" : "outline"}
+                                        className="px-3 py-1 h-auto text-xs"
+                                        onClick={() =>
+                                            setSelectedTag(selectedTag === tag ? "" : tag)
+                                        }
+                                    >
+                                        {tag}
+                                    </Button>
+                                ))}
+                            </AccordionContent>
+                        </AccordionItem>
+
+                        {/* SIZE */}
                         <AccordionItem value="size">
                             <AccordionTrigger className="text-xs uppercase tracking-wide text-neutral-500">
                                 Size
@@ -59,7 +149,14 @@ export default function ProductsPage() {
                             <AccordionContent>
                                 <div className="flex flex-wrap gap-2 mt-2">
                                     {["XS", "S", "M", "L", "XL", "2X"].map((size) => (
-                                        <Button key={size} variant="outline" className="px-3 py-1 h-auto text-xs">
+                                        <Button
+                                            key={size}
+                                            variant={selectedSize === size ? "default" : "outline"}
+                                            onClick={() =>
+                                                setSelectedSize(size === selectedSize ? "" : size)
+                                            }
+                                            className="px-3 py-1 h-auto text-xs"
+                                        >
                                             {size}
                                         </Button>
                                     ))}
@@ -67,41 +164,35 @@ export default function ProductsPage() {
                             </AccordionContent>
                         </AccordionItem>
 
-                        <AccordionItem value="availability">
+                        {/* PRICE RANGE */}
+                        <AccordionItem value="price">
                             <AccordionTrigger className="text-xs uppercase tracking-wide text-neutral-500">
-                                Availability
+                                Price Range
                             </AccordionTrigger>
-                            <AccordionContent className="space-y-3 py-2">
-                                <label className="flex items-center text-sm gap-2">
-                                    <Checkbox />
-                                    Availability
-                                </label>
-                                <label className="flex items-center text-sm gap-2">
-                                    <Checkbox />
-                                    Out of stock
-                                </label>
+                            <AccordionContent className="flex flex-col gap-2 py-2">
+                                {["all", "low", "mid", "high"].map((p) => (
+                                    <Button
+                                        key={p}
+                                        variant={priceRange === p ? "default" : "outline"}
+                                        onClick={() => setPriceRange(p as any)}
+                                        className="py-1 text-xs"
+                                    >
+                                        {p === "all" && "All"}
+                                        {p === "low" && "Under $50"}
+                                        {p === "mid" && "$50 – $200"}
+                                        {p === "high" && "Above $200"}
+                                    </Button>
+                                ))}
                             </AccordionContent>
                         </AccordionItem>
 
-                        {["Category", "Colors", "Price Range", "Collections", "Tags", "Ratings"].map((item) => (
-                            <AccordionItem key={item} value={item.toLowerCase()}>
-                                <AccordionTrigger className="text-xs uppercase tracking-wide text-neutral-500">
-                                    {item}
-                                </AccordionTrigger>
-                                <AccordionContent>
-                                    <p className="text-sm text-neutral-500 italic py-2">
-                                        Options coming soon...
-                                    </p>
-                                </AccordionContent>
-                            </AccordionItem>
-                        ))}
                     </Accordion>
                 </aside>
 
-                {/* MAIN SECTION */}
+                {/* MAIN PRODUCT GRID */}
                 <section className="flex-1 max-w-[1150px]">
 
-                    {/* SEARCH + TAGS */}
+                    {/* SEARCH */}
                     <div className="flex items-center justify-between mb-8">
                         <div className="relative w-80">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 h-4 w-4" />
@@ -112,43 +203,43 @@ export default function ProductsPage() {
                                 className="pl-9 bg-white border-neutral-300"
                             />
                         </div>
-
-                        <div className="flex gap-2">
-                            {["NEW", "BEST SELLERS", "T-SHIRTS", "JEANS", "JACKETS", "COATS"].map(
-                                (tag) => (
-                                    <Badge
-                                        key={tag}
-                                        variant="outline"
-                                        className="px-3 py-1 text-[11px] uppercase tracking-wide cursor-pointer"
-                                    >
-                                        {tag}
-                                    </Badge>
-                                )
-                            )}
-                        </div>
                     </div>
 
                     <Separator className="mb-8" />
 
-                    {/* GRID */}
-                    {isLoading ? (
-                        <p className="text-neutral-500">Loading products...</p>
+                    {visibleProducts.length === 0 ? (
+                        <p className="text-neutral-500">No products found</p>
                     ) : (
                         <div className="grid grid-cols-3 gap-10">
-                            {filtered.map((product) => (
-                                <Link
-                                    href={`/products/${product.id}`}
-                                    key={product.id}
-                                >
+                            {visibleProducts.map((product) => (
+                                <Link href={`/products/${product.id}`} key={product.id}>
                                     <Card className="rounded-none border border-neutral-300 shadow-sm hover:shadow-md transition cursor-pointer">
-                                        {/* FIXED IMAGE HEIGHT */}
-                                        <div className="relative w-full h-[380px] bg-neutral-200 overflow-hidden">
+
+                                        <div className="relative w-full h-[380px] bg-neutral-200 overflow-hidden group">
                                             <Image
                                                 src={safeImage(product.imageUrl)}
                                                 alt={product.name}
                                                 fill
-                                                className="object-cover transition-transform duration-300 hover:scale-105"
+                                                className="object-cover transition-transform duration-300 group-hover:scale-105"
                                             />
+
+                                            {/* Hover sizes */}
+                                            {product.sizes?.length > 0 && (
+                                                <div
+                                                    className="absolute bottom-0 left-0 right-0 bg-white/80
+                                                    opacity-0 group-hover:opacity-100 transition-opacity
+                                                    flex gap-2 justify-center py-2"
+                                                >
+                                                    {product.sizes.map((s) => (
+                                                        <span
+                                                            key={s}
+                                                            className="text-[10px] px-2 py-1 border rounded-sm"
+                                                        >
+                                                            {s}
+                                                        </span>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
 
                                         <CardContent className="p-4">

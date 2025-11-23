@@ -4,7 +4,10 @@ import { requireAuth } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { ApiError } from "@/lib/ApiError";
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(
+    req: Request,
+    { params }: { params: { id: string } }
+) {
     try {
         const product = await productService.getById(params.id);
         return ok({ product });
@@ -17,14 +20,16 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     }
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(
+    req: Request,
+    { params }: { params: { id: string } }
+) {
     try {
         const auth = await requireAuth(req, "ADMIN");
         if (auth) return auth;
 
         const body = await req.json();
 
-        // 🟡 ВАЖНО → допускаем частичное обновление
         const parsed = ProductSchema.partial().safeParse(body);
 
         if (!parsed.success) {
@@ -44,7 +49,10 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     }
 }
 
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(
+    req: Request,
+    { params }: { params: { id: string } }
+) {
     try {
         const auth = await requireAuth(req, "ADMIN");
         if (auth) return auth;

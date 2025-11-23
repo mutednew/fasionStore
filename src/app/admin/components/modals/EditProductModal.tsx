@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, ChangeEvent, FormEvent } from "react";
+import Image from "next/image";
+
 import {
     Dialog,
     DialogContent,
@@ -9,9 +11,12 @@ import {
     DialogTrigger,
     DialogFooter,
 } from "@/components/ui/dialog";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+
 import {
     Select,
     SelectTrigger,
@@ -22,8 +27,9 @@ import {
 
 import { useUpdateProductMutation, useGetCategoriesQuery } from "@/store/api/adminApi";
 
-import { Pencil, X, ImageIcon } from "lucide-react";
+import { Pencil, X } from "lucide-react";
 import { toast } from "sonner";
+
 import type { Product } from "@/types";
 
 interface EditProductModalProps {
@@ -35,12 +41,13 @@ export function EditProductModal({ product }: EditProductModalProps) {
 
     const [name, setName] = useState(product.name);
     const [price, setPrice] = useState(String(product.price));
-    const [stock, setStock] = useState(String(product.stock || 0));
-    const [categoryId, setCategoryId] = useState(product.categoryId || "");
+    const [stock, setStock] = useState(String(product.stock ?? 0));
+    const [categoryId, setCategoryId] = useState(product.categoryId ?? "");
+    const [description, setDescription] = useState(product.description ?? "");
 
     const [images, setImages] = useState<File[]>([]);
     const [gallery, setGallery] = useState<string[]>(product.images ?? []);
-    const [previewMain, setPreviewMain] = useState(product.imageUrl ?? null);
+    const [mainImage, setMainImage] = useState(product.imageUrl ?? null);
 
     const [colors, setColors] = useState<string[]>(product.colors ?? []);
     const [sizes, setSizes] = useState<string[]>(product.sizes ?? []);
@@ -55,12 +62,21 @@ export function EditProductModal({ product }: EditProductModalProps) {
 
     const [updateProduct, { isLoading }] = useUpdateProductMutation();
 
-    // Multiple images
+    // IMAGE UPLOAD + PREVIEW
     const handleImagesChange = (e: ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
         setImages(files);
+
         const previews = files.map((f) => URL.createObjectURL(f));
         setGallery((prev) => [...prev, ...previews]);
+
+        if (!mainImage && previews.length > 0) {
+            setMainImage(previews[0]);
+        }
+    };
+
+    const removeGalleryImage = (img: string) => {
+        setGallery((prev) => prev.filter((x) => x !== img));
     };
 
     const handleSubmit = async (e: FormEvent) => {
@@ -69,7 +85,7 @@ export function EditProductModal({ product }: EditProductModalProps) {
         try {
             const uploadedUrls: string[] = [];
 
-            // Upload all new images
+            // Upload new images
             for (const img of images) {
                 const formData = new FormData();
                 formData.append("file", img);
@@ -85,8 +101,8 @@ export function EditProductModal({ product }: EditProductModalProps) {
                 }
             }
 
-            const finalImages = [...(product.images ?? []), ...uploadedUrls];
-            const finalMainImage = uploadedUrls.length ? uploadedUrls[0] : product.imageUrl;
+            const finalImages = [...gallery.filter((x) => !x.startsWith("blob:")), ...uploadedUrls];
+            const finalMain = uploadedUrls[0] || mainImage;
 
             await updateProduct({
                 id: product.id,
@@ -94,7 +110,9 @@ export function EditProductModal({ product }: EditProductModalProps) {
                 price: Number(price),
                 stock: Number(stock),
                 categoryId,
-                imageUrl: finalMainImage,
+                description,
+
+                imageUrl: finalMain ?? undefined,
                 images: finalImages,
                 colors,
                 sizes,
@@ -103,13 +121,10 @@ export function EditProductModal({ product }: EditProductModalProps) {
 
             toast.success("Product updated!");
             setOpen(false);
-        } catch {
+
+        } catch (err) {
             toast.error("Failed to update product");
         }
-    };
-
-    const removeGalleryImage = (img: string) => {
-        setGallery((prev) => prev.filter((x) => x !== img));
     };
 
     return (
@@ -130,15 +145,26 @@ export function EditProductModal({ product }: EditProductModalProps) {
                 <form onSubmit={handleSubmit} className="space-y-5 py-2 sm:py-4">
 
                     {/* NAME */}
-                    <div className="space-y-1">
+                    <div>
                         <Label className="block mb-1">Name</Label>
                         <Input value={name} onChange={(e) => setName(e.target.value)} />
                     </div>
 
+                    {/* DESCRIPTION */}
+                    <div>
+                        <Label className="block mb-1">Description</Label>
+                        <Textarea
+                            className="min-h-[100px] resize-y"
+                            placeholder="Product description..."
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                        />
+                    </div>
+
                     {/* PRICE + STOCK */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                            <Label className="block mb-1">Price ($)</Label>
+                        <div>
+                            <Label>Price ($)</Label>
                             <Input
                                 type="number"
                                 value={price}
@@ -146,8 +172,8 @@ export function EditProductModal({ product }: EditProductModalProps) {
                             />
                         </div>
 
-                        <div className="space-y-1">
-                            <Label className="block mb-1">Stock</Label>
+                        <div>
+                            <Label>Stock</Label>
                             <Input
                                 type="number"
                                 value={stock}
@@ -157,8 +183,8 @@ export function EditProductModal({ product }: EditProductModalProps) {
                     </div>
 
                     {/* CATEGORY */}
-                    <div className="space-y-1">
-                        <Label className="block mb-1">Category</Label>
+                    <div>
+                        <Label>Category</Label>
                         <Select value={categoryId} onValueChange={setCategoryId}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select category" />
@@ -174,22 +200,19 @@ export function EditProductModal({ product }: EditProductModalProps) {
                     </div>
 
                     {/* IMAGES */}
-                    <div className="space-y-1">
-                        <Label className="block mb-1">Add Images</Label>
+                    <div>
+                        <Label>Add Images</Label>
                         <Input type="file" multiple accept="image/*" onChange={handleImagesChange} />
 
                         {/* Gallery preview */}
                         <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 mt-3">
                             {gallery.map((img) => (
-                                <div
-                                    key={img}
-                                    className="relative w-full h-24 border rounded-md overflow-hidden"
-                                >
-                                    <img src={img} className="object-cover w-full h-full" />
+                                <div key={img} className="relative w-full h-24 border rounded-md overflow-hidden">
+                                    <img src={img} className="w-full h-full object-cover" />
 
                                     <button
                                         type="button"
-                                        className="absolute top-1 right-1 bg-black/60 text-white p-[2px] rounded"
+                                        className="absolute top-1 right-1 bg-black/70 text-white p-1 rounded"
                                         onClick={() => removeGalleryImage(img)}
                                     >
                                         <X className="w-3 h-3" />
@@ -200,8 +223,8 @@ export function EditProductModal({ product }: EditProductModalProps) {
                     </div>
 
                     {/* COLORS */}
-                    <div className="space-y-1">
-                        <Label className="block mb-1">Colors</Label>
+                    <div>
+                        <Label>Colors</Label>
                         <div className="flex gap-2">
                             <Input
                                 placeholder="#000000 or Red"
@@ -223,23 +246,17 @@ export function EditProductModal({ product }: EditProductModalProps) {
 
                         <div className="flex flex-wrap gap-2 mt-2">
                             {colors.map((c) => (
-                                <span
-                                    key={c}
-                                    className="px-2 py-1 bg-neutral-200 rounded-md text-sm flex items-center gap-1"
-                                >
+                                <span key={c} className="px-2 py-1 bg-neutral-200 rounded-md text-sm flex items-center gap-1">
                                     {c}
-                                    <X
-                                        className="w-4 h-4 cursor-pointer"
-                                        onClick={() => setColors((x) => x.filter((v) => v !== c))}
-                                    />
+                                    <X className="w-4 h-4 cursor-pointer" onClick={() => setColors((x) => x.filter((v) => v !== c))} />
                                 </span>
                             ))}
                         </div>
                     </div>
 
                     {/* SIZES */}
-                    <div className="space-y-1">
-                        <Label className="block mb-1">Sizes</Label>
+                    <div>
+                        <Label>Sizes</Label>
                         <div className="flex gap-2">
                             <Input
                                 placeholder="XS, S, M..."
@@ -261,26 +278,20 @@ export function EditProductModal({ product }: EditProductModalProps) {
 
                         <div className="flex flex-wrap gap-2 mt-2">
                             {sizes.map((s) => (
-                                <span
-                                    key={s}
-                                    className="px-2 py-1 bg-neutral-200 rounded-md text-sm flex items-center gap-1"
-                                >
+                                <span key={s} className="px-2 py-1 bg-neutral-200 rounded-md text-sm flex items-center gap-1">
                                     {s}
-                                    <X
-                                        className="w-4 h-4 cursor-pointer"
-                                        onClick={() => setSizes((x) => x.filter((v) => v !== s))}
-                                    />
+                                    <X className="w-4 h-4 cursor-pointer" onClick={() => setSizes((x) => x.filter((v) => v !== s))} />
                                 </span>
                             ))}
                         </div>
                     </div>
 
                     {/* TAGS */}
-                    <div className="space-y-1">
-                        <Label className="block mb-1">Tags</Label>
+                    <div>
+                        <Label>Tags</Label>
                         <div className="flex gap-2">
                             <Input
-                                placeholder="New, summer..."
+                                placeholder="New, warm, trending..."
                                 value={tempTag}
                                 onChange={(e) => setTempTag(e.target.value)}
                             />
@@ -299,23 +310,17 @@ export function EditProductModal({ product }: EditProductModalProps) {
 
                         <div className="flex flex-wrap gap-2 mt-2">
                             {tags.map((t) => (
-                                <span
-                                    key={t}
-                                    className="px-2 py-1 bg-neutral-200 rounded-md text-sm flex items-center gap-1"
-                                >
+                                <span key={t} className="px-2 py-1 bg-neutral-200 rounded-md text-sm flex items-center gap-1">
                                     {t}
-                                    <X
-                                        className="w-4 h-4 cursor-pointer"
-                                        onClick={() => setTags((x) => x.filter((v) => v !== t))}
-                                    />
+                                    <X className="w-4 h-4 cursor-pointer" onClick={() => setTags((x) => x.filter((v) => v !== t))} />
                                 </span>
                             ))}
                         </div>
                     </div>
 
                     <DialogFooter>
-                        <Button className="w-full" type="submit" disabled={isLoading}>
-                            {isLoading ? "Saving..." : "Save"}
+                        <Button type="submit" disabled={isLoading} className="w-full">
+                            {isLoading ? "Saving..." : "Save Changes"}
                         </Button>
                     </DialogFooter>
                 </form>
