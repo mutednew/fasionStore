@@ -210,46 +210,52 @@ export default function ProductsPage() {
                     {visibleProducts.length === 0 ? (
                         <p className="text-neutral-500">No products found</p>
                     ) : (
-                        <div className="grid grid-cols-3 gap-10">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
                             {visibleProducts.map((product) => (
                                 <Link href={`/products/${product.id}`} key={product.id}>
-                                    <Card className="rounded-none border border-neutral-300 shadow-sm hover:shadow-md transition cursor-pointer">
+                                    <Card className="rounded-none border border-neutral-300 shadow-sm hover:shadow-lg transition-all duration-300 cursor-pointer">
 
-                                        <div className="relative w-full h-[380px] bg-neutral-200 overflow-hidden group">
+                                        {/* IMAGE BLOCK */}
+                                        <div className="relative w-full aspect-[3/4] bg-neutral-200 overflow-hidden group">
                                             <Image
                                                 src={safeImage(product.imageUrl)}
                                                 alt={product.name}
                                                 fill
-                                                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
                                             />
 
-                                            {/* Hover sizes */}
+                                            {/* Sizes on hover */}
                                             {product.sizes?.length > 0 && (
-                                                <div
-                                                    className="absolute bottom-0 left-0 right-0 bg-white/80
-                                                    opacity-0 group-hover:opacity-100 transition-opacity
-                                                    flex gap-2 justify-center py-2"
-                                                >
+                                                <div className="
+                            absolute bottom-0 left-0 right-0
+                            bg-white/80 backdrop-blur-sm
+                            opacity-0 group-hover:opacity-100
+                            transition-opacity duration-300
+                            flex gap-2 justify-center py-2
+                        ">
                                                     {product.sizes.map((s) => (
                                                         <span
                                                             key={s}
-                                                            className="text-[10px] px-2 py-1 border rounded-sm"
+                                                            className="text-[10px] px-2 py-1 border border-neutral-400 rounded-sm"
                                                         >
-                                                            {s}
-                                                        </span>
+                                    {s}
+                                </span>
                                                     ))}
                                                 </div>
                                             )}
                                         </div>
 
+                                        {/* TEXT BLOCK */}
                                         <CardContent className="p-4">
-                                            <p className="text-xs text-neutral-500 uppercase tracking-wide">
-                                                {product.categoryId}
+                                            <p className="text-[10px] font-medium text-neutral-500 tracking-wide uppercase">
+                                                {categories.find((cat) => cat.id === product.categoryId)?.name ?? "Category"}
                                             </p>
-                                            <h3 className="text-sm mt-1 tracking-wide font-semibold">
+
+                                            <h3 className="text-sm mt-1 font-semibold tracking-wide text-neutral-900">
                                                 {product.name}
                                             </h3>
-                                            <p className="text-sm font-medium mt-1">
+
+                                            <p className="text-sm font-medium mt-1 text-neutral-800">
                                                 ${product.price}
                                             </p>
                                         </CardContent>
