@@ -227,19 +227,19 @@ export default function ProductsPage() {
                                             {/* Sizes on hover */}
                                             {product.sizes?.length > 0 && (
                                                 <div className="
-                            absolute bottom-0 left-0 right-0
-                            bg-white/80 backdrop-blur-sm
-                            opacity-0 group-hover:opacity-100
-                            transition-opacity duration-300
-                            flex gap-2 justify-center py-2
-                        ">
+                                                    absolute bottom-0 left-0 right-0
+                                                    bg-white/80 backdrop-blur-sm
+                                                    opacity-0 group-hover:opacity-100
+                                                    transition-opacity duration-300
+                                                    flex gap-2 justify-center py-2
+                                                ">
                                                     {product.sizes.map((s) => (
                                                         <span
                                                             key={s}
                                                             className="text-[10px] px-2 py-1 border border-neutral-400 rounded-sm"
                                                         >
-                                    {s}
-                                </span>
+                                                            {s}
+                                                        </span>
                                                     ))}
                                                 </div>
                                             )}
