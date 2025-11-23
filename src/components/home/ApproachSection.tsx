@@ -7,7 +7,6 @@ export default function ApproachSection() {
     return (
         <section className="w-full bg-white border-t border-neutral-200 py-32">
 
-            {/* HEADER */}
             <div className="max-w-4xl mx-auto px-6 text-center mb-24">
                 <h2 className="uppercase font-extrabold tracking-tight text-neutral-900 text-4xl md:text-6xl leading-tight">
                     The Art of Modern Fashion
@@ -20,13 +19,10 @@ export default function ApproachSection() {
                 </p>
             </div>
 
-            {/* GRID */}
             <div className="max-w-7xl mx-auto px-6 grid gap-16">
 
-                {/* ROW 1 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
 
-                    {/* TEXT BLOCK */}
                     <motion.div
                         initial={{ opacity: 0, y: 40 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -46,7 +42,6 @@ export default function ApproachSection() {
                         </p>
                     </motion.div>
 
-                    {/* IMAGE 1 */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.92 }}
                         whileInView={{ opacity: 1, scale: 1 }}
@@ -63,10 +58,8 @@ export default function ApproachSection() {
                     </motion.div>
                 </div>
 
-                {/* ROW 2 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center md:flex-row-reverse">
 
-                    {/* IMAGE 2 */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.92 }}
                         whileInView={{ opacity: 1, scale: 1 }}
@@ -82,7 +75,6 @@ export default function ApproachSection() {
                         />
                     </motion.div>
 
-                    {/* TEXT BLOCK */}
                     <motion.div
                         initial={{ opacity: 0, y: 40 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -102,10 +94,8 @@ export default function ApproachSection() {
                     </motion.div>
                 </div>
 
-                {/* ROW 3 */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
 
-                    {/* TEXT BLOCK */}
                     <motion.div
                         initial={{ opacity: 0, y: 40 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -124,7 +114,6 @@ export default function ApproachSection() {
                         </p>
                     </motion.div>
 
-                    {/* IMAGE 3 */}
                     <motion.div
                         initial={{ opacity: 0, scale: 0.92 }}
                         whileInView={{ opacity: 1, scale: 1 }}

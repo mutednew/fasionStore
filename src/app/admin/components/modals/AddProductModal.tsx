@@ -141,7 +141,7 @@ export function AddProductModal() {
                     </DialogTitle>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-5 py-2 sm:py-4">
+                <form onSubmit={handleSubmit} className="space-y-5 overflow-auto py-2 sm:py-4">
 
                     {/* PRODUCT NAME */}
                     <div>

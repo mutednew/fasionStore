@@ -23,7 +23,6 @@ export function AddCategoryModal() {
 
     const [addCategory, { isLoading }] = useAddCategoryMutation();
 
-    // автофокус при открытии
     useEffect(() => {
         if (open) {
             setTimeout(() => inputRef.current?.focus(), 50);
