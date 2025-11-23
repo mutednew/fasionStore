@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import Image from "next/image";
 
 import { useGetLatestProductsQuery } from "@/store/api/productsApi";
+import Link from "next/link";
 
 export default function HeroSection() {
     const { data } = useGetLatestProductsQuery(2);
@@ -54,14 +55,16 @@ export default function HeroSection() {
                         </p>
 
                         <div className="flex items-center gap-3 pt-2">
-                            <Button
-                                variant="outline"
-                                className="px-6 py-5 uppercase tracking-wide font-medium
-                                border-neutral-400 bg-white hover:bg-neutral-900 hover:text-white"
-                            >
-                                Go To Shop
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
+                            <Link href="/products">
+                                <Button
+                                    variant="outline"
+                                    className="px-6 py-5 uppercase tracking-wide font-medium
+                                    border-neutral-400 bg-white hover:bg-neutral-900 hover:text-white"
+                                >
+                                    Go To Shop
+                                    <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            </Link>
                         </div>
                     </div>
 
@@ -79,25 +82,26 @@ export default function HeroSection() {
                         )}
 
                         {products.map((product) => (
-                            <Card
-                                key={product.id}
-                                className="aspect-[4/5] bg-white border-neutral-300 shadow-xs relative overflow-hidden"
-                            >
-                                <Image
-                                    src={product.imageUrl || "/placeholder.png"}
-                                    alt={product.name}
-                                    fill
-                                    className="object-cover"
-                                />
+                            <Link href={`/products/${product.id}`} key={product.id}>
+                                <Card
+                                    className="aspect-[4/5] bg-white border-neutral-300 shadow-xs relative overflow-hidden"
+                                >
+                                    <Image
+                                        src={product.imageUrl || "/placeholder.png"}
+                                        alt={product.name}
+                                        fill
+                                        className="object-cover"
+                                    />
 
-                                <div className="absolute bottom-0 left-0 w-full p-4 bg-white/80">
-                                    <p className="text-xs uppercase tracking-wide text-neutral-500">
-                                        {product.categoryId}
-                                    </p>
-                                    <h3 className="text-sm font-semibold">{product.name}</h3>
-                                    <p className="text-sm font-medium">${product.price}</p>
-                                </div>
-                            </Card>
+                                    <div className="absolute bottom-0 left-0 w-full p-4 bg-white/80">
+                                        <p className="text-xs uppercase tracking-wide text-neutral-500">
+                                            {product.categoryId}
+                                        </p>
+                                        <h3 className="text-sm font-semibold">{product.name}</h3>
+                                        <p className="text-sm font-medium">${product.price}</p>
+                                    </div>
+                                </Card>
+                            </Link>
                         ))}
                     </div>
                 </div>
