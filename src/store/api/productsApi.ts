@@ -14,7 +14,6 @@ interface ProductResponse {
 export const productsApi = mainApi.injectEndpoints({
     endpoints: (builder) => ({
 
-        // GET /products
         getProducts: builder.query<ProductsResponse, void>({
             query: () => `/products`,
             transformResponse: (res: any): ProductsResponse => res.data,
@@ -28,35 +27,43 @@ export const productsApi = mainApi.injectEndpoints({
                 size?: string;
                 tag?: string;
                 price?: string;
+                limit?: number;
+                sort?: string;
             }
         >({
-            query: ({ search, categoryId, size, tag, price }) => {
+            query: (paramsObj) => {
                 const params = new URLSearchParams();
 
-                if (search) params.append("search", search);
-                if (categoryId) params.append("categoryId", categoryId);
-                if (size) params.append("size", size);
-                if (tag) params.append("tag", tag);
-                if (price) params.append("price", price);
+                if (paramsObj.search) params.append("search", paramsObj.search);
+                if (paramsObj.categoryId) params.append("categoryId", paramsObj.categoryId);
+                if (paramsObj.size) params.append("size", paramsObj.size);
+                if (paramsObj.tag) params.append("tag", paramsObj.tag);
+                if (paramsObj.price) params.append("price", paramsObj.price);
+
+                // New ↓↓↓
+                if (paramsObj.limit) params.append("limit", paramsObj.limit.toString());
+                if (paramsObj.sort) params.append("sort", paramsObj.sort);
 
                 return `/products?${params.toString()}`;
             },
             transformResponse: (res: any): ProductsResponse => res.data,
         }),
 
-        // GET /products/[id]
+        getLatestProducts: builder.query<ProductsResponse, number>({
+            query: (limit = 4) => `/products?limit=${limit}&sort=new`,
+            transformResponse: (res: any) => res.data,
+        }),
+
         getProductById: builder.query<ProductResponse, string>({
             query: (id) => `/products/${id}`,
             transformResponse: (res: any): ProductResponse => res,
         }),
 
-        // GET /products?categoryId=xxx
         getProductsByCategory: builder.query<ProductsResponse, string>({
             query: (catId) => `/products?categoryId=${catId}`,
             transformResponse: (res: any): ProductsResponse => res.data,
         }),
 
-        // GET /products?search=xxx
         searchProducts: builder.query<ProductsResponse, string>({
             query: (term) => `/products?search=${term}`,
             transformResponse: (res: any): ProductsResponse => res.data,
@@ -70,4 +77,5 @@ export const {
     useGetProductsByCategoryQuery,
     useSearchProductsQuery,
     useGetProductsFilteredQuery,
+    useGetLatestProductsQuery,
 } = productsApi;

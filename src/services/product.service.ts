@@ -6,7 +6,7 @@ import { ApiError } from "@/lib/ApiError";
 export const productService = {
     async getAll(filter?: any): Promise<ProductType[]> {
         try {
-            const { search, categoryId, size, price, tag } = filter ?? {};
+            const { search, categoryId, size, price, tag, limit, sort } = filter ?? {};
 
             const where: any = {
                 ...(search && {
@@ -20,6 +20,7 @@ export const productService = {
                 ...(tag && { tags: { has: tag } }),
             };
 
+            // --- PRICE RANGE ---
             const priceMap: Record<string, any> = {
                 low:  { lt: 50 },
                 mid:  { gte: 50, lte: 200 },
@@ -33,7 +34,19 @@ export const productService = {
             const products = await prisma.product.findMany({
                 where,
                 include: { category: true },
-                orderBy: { createdAt: "desc" },
+
+                // --- SORTING ---
+                orderBy:
+                    sort === "new"
+                        ? { createdAt: "desc" }
+                        : sort === "price-asc"
+                            ? { price: "asc" }
+                            : sort === "price-desc"
+                                ? { price: "desc" }
+                                : undefined,
+
+                // --- LIMIT ---
+                take: limit ? Number(limit) : undefined,
             });
 
             return products.map(toPlainProduct);

@@ -12,8 +12,10 @@ export async function GET(req: Request) {
             search: url.searchParams.get("search") ?? undefined,
             categoryId: url.searchParams.get("categoryId") ?? undefined,
             size: url.searchParams.get("size") ?? undefined,
-            price: url.searchParams.get("price") ?? undefined,
             tag: url.searchParams.get("tag") ?? undefined,
+            price: url.searchParams.get("price") ?? undefined,
+            limit: url.searchParams.get("limit") ? Number(url.searchParams.get("limit")) : undefined,
+            sort: url.searchParams.get("sort") ?? undefined,
         };
 
         const products = await productService.getAll(filter);
