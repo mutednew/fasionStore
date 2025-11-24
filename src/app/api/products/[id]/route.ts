@@ -10,6 +10,8 @@ export async function GET(
 ) {
     try {
         const product = await productService.getById(params.id);
+
+        console.log(product);
         return ok({ product });
     } catch (err) {
         if (err instanceof ApiError) {
