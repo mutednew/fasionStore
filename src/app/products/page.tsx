@@ -203,7 +203,7 @@ export default function ProductsPage() {
                                                         {product.name}
                                                     </h3>
                                                 </div>
-                                                <p className="text-sm font-medium mt-3 text-neutral-800">${product.price}</p>
+                                                <p className="text-sm font-medium mt-3 text-neutral-800">{product.price} грн</p>
                                             </CardContent>
                                         </Card>
                                     </Link>
