@@ -98,7 +98,7 @@ export default function HeroSection() {
                                             {product.categoryId}
                                         </p>
                                         <h3 className="text-sm font-semibold">{product.name}</h3>
-                                        <p className="text-sm font-medium">${product.price}</p>
+                                        <p className="text-sm font-medium">{product.price} ₴</p>
                                     </div>
                                 </Card>
                             </Link>

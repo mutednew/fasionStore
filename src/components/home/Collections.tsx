@@ -113,7 +113,7 @@ export default function Collections() {
                                     </h3>
 
                                     <p className="text-sm font-medium mt-1">
-                                        ${product.price}
+                                        {product.price} ₴
                                     </p>
                                 </CardContent>
                             </Card>

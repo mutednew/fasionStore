@@ -86,7 +86,7 @@ export default function ThisWeek() {
                                 </h3>
 
                                 <p className="text-sm font-medium text-neutral-800 mt-1">
-                                    ${product.price}
+                                    {product.price} ₴
                                 </p>
                             </CardContent>
                         </Card>

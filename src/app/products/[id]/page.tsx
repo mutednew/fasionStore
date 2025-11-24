@@ -327,7 +327,7 @@ export default function ProductPage() {
                         </h1>
 
                         <p className="text-lg font-medium mb-1">
-                            ${product.price}
+                            {product.price} грн
                         </p>
 
                         <p className="text-[11px] text-neutral-500">
