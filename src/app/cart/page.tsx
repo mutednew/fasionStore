@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from "lucide-react"; // Added ArrowRight
+import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from "lucide-react"; // Import ArrowRight
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -20,26 +20,23 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 
 export default function CartPage() {
-    // 1. Receive cart data
+    // 1. Данные корзины
     const { data: cartData, isLoading } = useGetCartQuery();
     const items = cartData?.items ?? [];
 
-    // 2. Mutations
+    // 2. Мутации
     const [updateQuantity, { isLoading: isUpdating }] = useUpdateCartQuantityMutation();
     const [removeItem] = useRemoveFromCartMutation();
 
-    // Local state for "Optimistic removal"
+    // Локальный стейт для "Оптимистичного удаления"
     const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
 
-    // --- FIX 1: Automatic cleanup of removingIds ---
-    // Clean up IDs from removingIds only when the item REALLY disappears from items (from the server)
+    // Очистка removingIds при обновлении данных с сервера
     useEffect(() => {
         if (removingIds.size > 0 && items.length > 0) {
             setRemovingIds(prev => {
                 const next = new Set(prev);
                 const currentIds = new Set(items.map(i => i.id));
-                // Keep in removingIds only those that are still in items
-                // (i.e. those we "hid" but the server hasn't confirmed deletion yet)
                 let changed = false;
                 next.forEach(id => {
                     if (!currentIds.has(id)) {
@@ -52,25 +49,25 @@ export default function CartPage() {
         }
     }, [items, removingIds.size]);
 
-    // Filter items
+    // Фильтруем товары
     const visibleItems = items.filter(item => !removingIds.has(item.id));
 
-    // --- FIX 2: Delay empty screen ---
-    const [showEmptyScreen, setShowEmptyScreen] = useState(false);
+    // --- ЛОГИКА ПУСТОГО ЭКРАНА С ЗАДЕРЖКОЙ ---
+    const [showEmptyScreenDelay, setShowEmptyScreenDelay] = useState(false);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
         if (visibleItems.length === 0 && !isLoading) {
-            // Wait 300ms (animation time) before showing "Empty" screen
-            timer = setTimeout(() => setShowEmptyScreen(true), 300);
+            // Если товаров нет визуально, ждем окончания анимации
+            timer = setTimeout(() => setShowEmptyScreenDelay(true), 300);
         } else {
-            setShowEmptyScreen(false);
+            setShowEmptyScreenDelay(false);
         }
         return () => clearTimeout(timer);
     }, [visibleItems.length, isLoading]);
 
 
-    // 3. Calculate total
+    // 3. Подсчет суммы
     const subtotal = useMemo(() => {
         return visibleItems.reduce((acc, item) => {
             const price = Number(item.product.price);
@@ -78,7 +75,7 @@ export default function CartPage() {
         }, 0);
     }, [visibleItems]);
 
-    const shipping = subtotal > 200 ? 0 : 15;
+    const shipping = subtotal > 3000 ? 0 : 150;
     const total = subtotal + shipping;
 
     // --- HANDLERS ---
@@ -95,7 +92,6 @@ export default function CartPage() {
     };
 
     const handleRemove = async (itemId: string) => {
-        // Hide item instantly
         setRemovingIds((prev) => {
             const next = new Set(prev);
             next.add(itemId);
@@ -105,10 +101,7 @@ export default function CartPage() {
         try {
             await removeItem(itemId).unwrap();
             toast.success("Item removed");
-            // IMPORTANT: We do NOT remove itemId from removingIds here manually.
-            // The useEffect above will handle this when updated data arrives.
         } catch {
-            // If error - return item back
             setRemovingIds((prev) => {
                 const next = new Set(prev);
                 next.delete(itemId);
@@ -122,33 +115,15 @@ export default function CartPage() {
 
     if (isLoading) return <CartSkeleton />;
 
-    // Use state with delay showEmptyScreen
-    if (showEmptyScreen) {
-        return (
-            <main className="min-h-screen flex flex-col items-center justify-center bg-[#f9f9f9] text-center px-4 font-sans">
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                    className="bg-white p-8 rounded-full mb-6 shadow-sm border border-gray-100"
-                >
-                    <ShoppingBag size={48} className="text-neutral-300" />
-                </motion.div>
-                <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.1 }}
-                >
-                    <h1 className="text-2xl font-bold text-neutral-900 mb-2">Your bag is empty</h1>
-                    <p className="text-neutral-500 mb-8 max-w-sm mx-auto">
-                        Looks like you haven't added anything to your cart yet. Explore our products to find something you love.
-                    </p>
-                    <Button asChild size="lg" className="px-8 rounded-full bg-black hover:bg-neutral-800 text-white transition-all hover:scale-105">
-                        <Link href="/products">Start Shopping</Link>
-                    </Button>
-                </motion.div>
-            </main>
-        );
+    // ИСПРАВЛЕНИЕ: Если данных с сервера нет (items.length === 0), показываем пустой экран СРАЗУ.
+    // Это убирает задержку при первом открытии корзины.
+    if (items.length === 0) {
+        return <EmptyCartView />;
+    }
+
+    // Если мы удалили товары "оптимистично" и таймер анимации истек -> показываем пустой экран
+    if (showEmptyScreenDelay) {
+        return <EmptyCartView />;
     }
 
     return (
@@ -162,7 +137,7 @@ export default function CartPage() {
 
             <div className="flex flex-col lg:flex-row gap-12 items-start">
 
-                {/* ==== LEFT: ITEM LIST ==== */}
+                {/* ==== LEFT: СПИСОК ТОВАРОВ ==== */}
                 <div className="flex-1 w-full space-y-6">
                     <AnimatePresence initial={false} mode="popLayout">
                         {visibleItems.map((item) => (
@@ -174,7 +149,6 @@ export default function CartPage() {
                                 exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
                                 className="group relative flex gap-6 bg-white p-5 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-lg overflow-hidden"
                             >
-                                {/* Remove */}
                                 <button
                                     onClick={() => handleRemove(item.id)}
                                     className="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50 z-10"
@@ -183,7 +157,6 @@ export default function CartPage() {
                                     <Trash2 size={18} />
                                 </button>
 
-                                {/* Photo */}
                                 <Link href={`/products/${item.product.id}`} className="shrink-0 w-28 h-36 bg-gray-100 overflow-hidden relative rounded-md border border-gray-100">
                                     {item.product.imageUrl ? (
                                         <Image
@@ -197,7 +170,6 @@ export default function CartPage() {
                                     )}
                                 </Link>
 
-                                {/* Info */}
                                 <div className="flex flex-col justify-between flex-1 py-1 min-w-0">
                                     <div>
                                         <div className="flex justify-between pr-10">
@@ -212,7 +184,6 @@ export default function CartPage() {
                                             {item.product.category?.name || "Category"}
                                         </p>
 
-                                        {/* Attributes */}
                                         <div className="flex flex-wrap items-center gap-3 mt-3">
                                             {item.size && (
                                                 <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-200">
@@ -233,7 +204,6 @@ export default function CartPage() {
                                     </div>
 
                                     <div className="flex flex-wrap items-end justify-between gap-4 mt-4">
-                                        {/* Quantity Controller */}
                                         <div className="flex items-center bg-white border border-gray-300 rounded-md shadow-sm h-9">
                                             <button
                                                 onClick={() => handleQuantityChange(item.id, item.quantity, -1)}
@@ -256,10 +226,9 @@ export default function CartPage() {
                                             </button>
                                         </div>
 
-                                        {/* Price */}
                                         <div className="text-right">
                                             <p className="text-lg font-bold text-neutral-900">
-                                                ${(Number(item.product.price) * item.quantity).toFixed(2)}
+                                                {(Number(item.product.price) * item.quantity).toFixed(2)} ₴
                                             </p>
                                             {item.quantity > 1 && (
                                                 <p className="text-xs text-gray-400 font-medium">
@@ -287,14 +256,14 @@ export default function CartPage() {
                         <div className="space-y-4 text-sm text-gray-600">
                             <div className="flex justify-between">
                                 <span>Subtotal</span>
-                                <span className="font-medium text-black">${subtotal.toFixed(2)}</span>
+                                <span className="font-medium text-black">{subtotal.toFixed(2)} ₴</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Shipping</span>
                                 {shipping === 0 ? (
                                     <span className="text-green-600 font-medium">Free</span>
                                 ) : (
-                                    <span className="font-medium text-black">${shipping.toFixed(2)}</span>
+                                    <span className="font-medium text-black">{shipping.toFixed(2)} ₴</span>
                                 )}
                             </div>
 
@@ -312,7 +281,7 @@ export default function CartPage() {
                         <div className="flex justify-between items-center mb-8">
                             <span className="font-bold text-lg text-neutral-900">Total</span>
                             <div className="text-right">
-                                <span className="font-extrabold text-2xl block leading-none text-neutral-900">${total.toFixed(2)}</span>
+                                <span className="font-extrabold text-2xl block leading-none text-neutral-900">{total.toFixed(2)} ₴</span>
                                 <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mt-1 block">Including VAT</span>
                             </div>
                         </div>
@@ -334,7 +303,35 @@ export default function CartPage() {
     );
 }
 
-// --- SKELETON COMPONENT ---
+// --- ОТДЕЛЬНЫЙ КОМПОНЕНТ ДЛЯ ПУСТОЙ КОРЗИНЫ ---
+function EmptyCartView() {
+    return (
+        <main className="min-h-screen flex flex-col items-center justify-center bg-[#f9f9f9] text-center px-4 font-sans">
+            <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                className="bg-white p-8 rounded-full mb-6 shadow-sm border border-gray-100"
+            >
+                <ShoppingBag size={48} className="text-neutral-300" />
+            </motion.div>
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+            >
+                <h1 className="text-2xl font-bold text-neutral-900 mb-2">Your bag is empty</h1>
+                <p className="text-neutral-500 mb-8 max-w-sm mx-auto">
+                    Looks like you haven't added anything to your cart yet. Explore our products to find something you love.
+                </p>
+                <Button asChild size="lg" className="px-8 rounded-full bg-black hover:bg-neutral-800 text-white transition-all hover:scale-105">
+                    <Link href="/products">Start Shopping</Link>
+                </Button>
+            </motion.div>
+        </main>
+    );
+}
+
 function CartSkeleton() {
     return (
         <main className="min-h-screen w-full bg-[#f9f9f9] px-6 md:px-20 py-16">
