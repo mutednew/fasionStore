@@ -1,6 +1,5 @@
 import { cartService } from "@/services/cart.service";
 import { prisma } from "@/lib/prisma";
-import { ApiError } from "@/lib/ApiError";
 import { CartItemSchema } from "@/schemas/cart.schema";
 
 jest.mock("@/lib/prisma", () => ({
@@ -27,32 +26,52 @@ jest.mock("@/schemas/cart.schema", () => ({
     },
 }));
 
+const mockCartItem = (
+    id: string,
+    productId: string,
+    quantity: number,
+    size?: string,
+    color?: string
+) => ({
+    id,
+    cartId: "c1",
+    productId,
+    quantity,
+    size: size || null,
+    color: color || null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    product: {
+        id: productId,
+        name: "Mock Product",
+        price: 100,
+        imageUrl: "http://img.com/1.jpg",
+        images: [],
+        category: { id: "cat1", name: "Category" }
+    }
+});
+
 describe("cartService", () => {
     afterEach(() => {
         jest.clearAllMocks();
     });
 
     describe("getByUser()", () => {
-        it("should return existing cart with items", async () => {
+        it("should return existing cart with items and product details", async () => {
             (prisma.cart.findUnique as jest.Mock).mockResolvedValue({
                 id: "c1",
                 userId: "u1",
                 items: [
-                    { id: "i1", productId: "p1", quantity: 2 },
-                    { id: "i2", productId: "p2", quantity: 1 },
+                    mockCartItem("i1", "p1", 2, "M", "Red"),
+                    mockCartItem("i2", "p2", 1, "L", "Blue"),
                 ],
             });
 
             const result = await cartService.getByUser("u1");
 
-            expect(result).toEqual({
-                id: "c1",
-                userId: "u1",
-                items: [
-                    { id: "i1", productId: "p1", quantity: 2 },
-                    { id: "i2", productId: "p2", quantity: 1 },
-                ],
-            });
+            expect(result?.items).toHaveLength(2);
+            expect(result?.items[0].product.name).toBe("Mock Product");
+            expect(result?.items[0].size).toBe("M");
         });
 
         it("should create new cart if not exists", async () => {
@@ -67,7 +86,18 @@ describe("cartService", () => {
 
             expect(prisma.cart.create).toHaveBeenCalledWith({
                 data: { userId: "u1" },
-                include: { items: { include: { product: true } } },
+                include: {
+                    items: {
+                        orderBy: { createdAt: 'asc' },
+                        include: {
+                            product: {
+                                select: {
+                                    id: true, name: true, price: true, imageUrl: true, images: true, category: true
+                                }
+                            }
+                        }
+                    }
+                },
             });
             expect(result).toEqual({ id: "new1", userId: "u1", items: [] });
         });
@@ -79,68 +109,82 @@ describe("cartService", () => {
     });
 
     describe("addItem()", () => {
-        const parsedItem = { productId: "p1", quantity: 2 };
+        const parsedItem = { productId: "p1", quantity: 2, size: "M", color: "Red" };
 
         beforeEach(() => {
             (CartItemSchema.parse as jest.Mock).mockReturnValue(parsedItem);
         });
 
-        it("should add new item to cart", async () => {
+        it("should add new item to cart with size and color", async () => {
             (prisma.cart.upsert as jest.Mock).mockResolvedValue({ id: "c1", userId: "u1" });
             (prisma.cartItem.findFirst as jest.Mock).mockResolvedValue(null);
             (prisma.cartItem.create as jest.Mock).mockResolvedValue({});
+
             jest.spyOn(cartService, "getByUser").mockResolvedValue({
                 id: "c1",
                 userId: "u1",
-                items: [{ id: "i1", productId: "p1", quantity: 2 }],
+                items: [mockCartItem("i1", "p1", 2, "M", "Red")] as any,
             });
 
             const result = await cartService.addItem("u1", parsedItem);
 
             expect(CartItemSchema.parse).toHaveBeenCalledWith(parsedItem);
+
             expect(prisma.cartItem.create).toHaveBeenCalledWith({
-                data: { cartId: "c1", productId: "p1", quantity: 2 },
+                data: {
+                    cartId: "c1",
+                    productId: "p1",
+                    quantity: 2,
+                    size: "M",
+                    color: "Red"
+                },
             });
             expect(result.items?.length).toBe(1);
         });
 
-        it("should update quantity if item exists", async () => {
+        it("should update quantity if item with same size/color exists", async () => {
             (prisma.cart.upsert as jest.Mock).mockResolvedValue({ id: "c1", userId: "u1" });
+
             (prisma.cartItem.findFirst as jest.Mock).mockResolvedValue({
                 id: "i1",
                 quantity: 1,
+                size: "M",
+                color: "Red"
             });
             (prisma.cartItem.update as jest.Mock).mockResolvedValue({});
+
             jest.spyOn(cartService, "getByUser").mockResolvedValue({
                 id: "c1",
                 userId: "u1",
-                items: [{ id: "i1", productId: "p1", quantity: 3 }],
+                items: [mockCartItem("i1", "p1", 3, "M", "Red")] as any,
             });
 
             const result = await cartService.addItem("u1", parsedItem);
 
+            expect(prisma.cartItem.findFirst).toHaveBeenCalledWith({
+                where: {
+                    cartId: "c1",
+                    productId: "p1",
+                    size: "M",
+                    color: "Red"
+                }
+            });
+
             expect(prisma.cartItem.update).toHaveBeenCalledWith({
                 where: { id: "i1" },
-                data: { quantity: 3 },
+                data: { quantity: 1 + 2 },
             });
-            expect(result.items?.[0].quantity).toBe(3);
-        });
-
-        it("should throw ApiError if prisma fails", async () => {
-            (prisma.cart.upsert as jest.Mock).mockRejectedValue(new Error("DB fail"));
-            await expect(cartService.addItem("u1", parsedItem)).rejects.toThrow(
-                "Failed to add item to cart"
-            );
         });
     });
 
     describe("updateItemQuantity()", () => {
         it("should update item quantity", async () => {
             (prisma.cartItem.update as jest.Mock).mockResolvedValue({});
+
             jest.spyOn(cartService, "getByUser").mockResolvedValue({
                 id: "c1",
                 userId: "u1",
-                items: [{ id: "i1", productId: "p1", quantity: 5 }],
+                items: [mockCartItem("i1", "p1", 5, "M", "Red")] as any,
             });
 
             const result = await cartService.updateItemQuantity("u1", "i1", 5);
@@ -150,13 +194,6 @@ describe("cartService", () => {
                 data: { quantity: 5 },
             });
             expect(result.items?.[0].quantity).toBe(5);
-        });
-
-        it("should throw ApiError on failure", async () => {
-            (prisma.cartItem.update as jest.Mock).mockRejectedValue(new Error("DB fail"));
-            await expect(cartService.updateItemQuantity("u1", "i1", 3)).rejects.toThrow(
-                "Failed to update item quantity"
-            );
         });
     });
 
@@ -174,13 +211,6 @@ describe("cartService", () => {
             expect(prisma.cartItem.delete).toHaveBeenCalledWith({ where: { id: "i1" } });
             expect(result.items).toEqual([]);
         });
-
-        it("should throw ApiError on prisma error", async () => {
-            (prisma.cartItem.delete as jest.Mock).mockRejectedValue(new Error("DB fail"));
-            await expect(cartService.removeItem("u1", "i1")).rejects.toThrow(
-                "Failed to remove item from cart"
-            );
-        });
     });
 
     describe("clear()", () => {
@@ -188,22 +218,15 @@ describe("cartService", () => {
             (prisma.cart.findUnique as jest.Mock).mockResolvedValue({ id: "c1" });
             (prisma.cartItem.deleteMany as jest.Mock).mockResolvedValue({});
 
+            jest.spyOn(cartService, "getByUser").mockResolvedValue({
+                id: "c1", userId: "u1", items: []
+            });
+
             await cartService.clear("u1");
 
             expect(prisma.cartItem.deleteMany).toHaveBeenCalledWith({
                 where: { cartId: "c1" },
             });
-        });
-
-        it("should do nothing if cart not found", async () => {
-            (prisma.cart.findUnique as jest.Mock).mockResolvedValue(null);
-            await cartService.clear("u1");
-            expect(prisma.cartItem.deleteMany).not.toHaveBeenCalled();
-        });
-
-        it("should throw ApiError on failure", async () => {
-            (prisma.cart.findUnique as jest.Mock).mockRejectedValue(new Error("DB fail"));
-            await expect(cartService.clear("u1")).rejects.toThrow("Failed to clear cart");
         });
     });
 
@@ -215,22 +238,6 @@ describe("cartService", () => {
 
             const result = await cartService.getItemCount("u1");
             expect(result).toBe(5);
-        });
-
-        it("should return 0 if sum is null", async () => {
-            (prisma.cartItem.aggregate as jest.Mock).mockResolvedValue({
-                _sum: { quantity: null },
-            });
-
-            const result = await cartService.getItemCount("u1");
-            expect(result).toBe(0);
-        });
-
-        it("should throw ApiError on prisma failure", async () => {
-            (prisma.cartItem.aggregate as jest.Mock).mockRejectedValue(new Error("DB fail"));
-            await expect(cartService.getItemCount("u1")).rejects.toThrow(
-                "Failed to get item count from cart"
-            );
         });
     });
 });

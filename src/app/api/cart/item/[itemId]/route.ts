@@ -1,56 +1,47 @@
-import {requireAuth} from "@/lib/requireAuth";
-import {z} from "zod";
-import {cartService} from "@/services/cart.service";
-import {ok, fail} from "@/lib/response";
-import {ApiError} from "@/lib/ApiError";
+import { requireAuth } from "@/lib/requireAuth";
+import { cartService } from "@/services/cart.service";
+import { ok, fail } from "@/lib/response";
+import { ApiError } from "@/lib/ApiError";
+import { NextResponse } from "next/server";
 
-/**
- * PATCH /api/cart/item/[itemId]
- * Изменяет количество конкретного товара в корзине
- */
-export async function PATCH(
-    req: Request,
-    { params }: { params: { itemId: string } }
-) {
+interface AuthenticatedRequest extends Request {
+    user: {
+        userId: string;
+        role?: string;
+        email?: string;
+    }
+}
+
+export async function GET(req: Request) {
     try {
         const auth = await requireAuth(req);
-        if (auth) return auth;
+        if (auth instanceof NextResponse) return auth;
 
-        const user = (req as any).user;
-        const body = await req.json();
+        const userId = (req as AuthenticatedRequest).user.userId;
 
-        const QuantitySchema = z.object({ quantity: z.number().int().positive() });
-        const parsed = QuantitySchema.safeParse(body);
-
-        if (!parsed.success) return fail("Invalid data", 400, parsed.error.format());
-
-        const cart = await cartService.updateItemQuantity(user.userId, params.itemId, parsed.data.quantity);
-        return ok({ cart });
+        const cart = await cartService.getByUser(userId);
+        return ok(cart);
     } catch (err) {
-        if (err instanceof ApiError) return fail(err.message, err.status, err.details);
-        console.error("Cart item update error:", err);
+        if (err instanceof ApiError) return fail(err.message, err.status);
+        console.error("Get cart error:", err);
         return fail("Internal server error", 500);
     }
 }
 
-/**
- * DELETE /api/cart/item/[itemId]
- * Удаляет конкретный товар из корзины
- */
-export async function DELETE(
-    req: Request,
-    { params }: { params: { itemId: string } }
-) {
+export async function POST(req: Request) {
     try {
         const auth = await requireAuth(req);
-        if (auth) return auth;
+        if (auth instanceof NextResponse) return auth;
 
-        const user = (req as any).user;
-        const cart = await cartService.removeItem(user.userId, params.itemId);
-        return ok({ cart });
+        const userId = (req as AuthenticatedRequest).user.userId;
+        const body = await req.json();
+
+        const updatedCart = await cartService.addItem(userId, body);
+
+        return ok(updatedCart);
     } catch (err) {
-        if (err instanceof ApiError) return fail(err.message, err.status, err.details);
-        console.error("Cart item delete error:", err);
+        if (err instanceof ApiError) return fail(err.message, err.status);
+        console.error("Add to cart error:", err);
         return fail("Internal server error", 500);
     }
 }

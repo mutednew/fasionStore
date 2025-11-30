@@ -65,6 +65,12 @@ model CartItem {
   product   Product @relation(fields: [productId], references: [id])
   productId String
   quantity  Int     @default(1)
+
+  size  String?
+  color String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Order {
@@ -85,6 +91,9 @@ model OrderItem {
   productId String
   quantity  Int
   price     Decimal
+
+  size  String?
+  color String?
 }
 
 enum Role {

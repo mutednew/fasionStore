@@ -1,46 +1,57 @@
 import { prisma } from "@/lib/prisma";
-import { CartItemSchema, CartType } from "@/schemas/cart.schema";
+import { CartItemSchema } from "@/schemas/cart.schema";
 import { ApiError } from "@/lib/ApiError";
 
 export const cartService = {
-    async getByUser(userId: string): Promise<CartType> {
+    async getByUser(userId: string) {
         try {
             const cart = await prisma.cart.findUnique({
                 where: { userId },
                 include: {
                     items: {
-                        include: { product: { include: { category: true } } },
+                        orderBy: { createdAt: "asc" },
+                        include: {
+                            product: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    price: true,
+                                    imageUrl: true,
+                                    images: true,
+                                    category: true
+                                }
+                            }
+                        },
                     },
                 },
             });
 
             if (!cart) {
-                const newCart = await prisma.cart.create({
+                return await prisma.cart.create({
                     data: { userId },
-                    include: { items: { include: { product: true } } },
+                    include: {
+                        items: {
+                            orderBy: { createdAt: "asc" },
+                            include: {
+                                product: {
+                                    select: {
+                                        id: true, name: true, price: true, imageUrl: true, images: true, category: true
+                                    }
+                                }
+                            }
+                        }
+                    },
                 });
-                return {
-                    id: newCart.id,
-                    userId: newCart.userId,
-                    items: [],
-                };
             }
 
-            return {
-                id: cart.id,
-                userId: cart.userId,
-                items: cart.items.map((item) => ({
-                    id: item.id,
-                    productId: item.productId,
-                    quantity: item.quantity,
-                })),
-            };
+            return cart;
         } catch (err) {
+            console.error(err);
             throw new ApiError("Failed to fetch cart", 500);
         }
     },
 
-    async addItem(userId: string, data: unknown): Promise<CartType> {
+    async addItem(userId: string, data: unknown) {
         try {
             const parsed = CartItemSchema.parse(data);
 
@@ -54,6 +65,8 @@ export const cartService = {
                 where: {
                     cartId: cart.id,
                     productId: parsed.productId,
+                    size: parsed.size,
+                    color: parsed.color,
                 },
             });
 
@@ -68,24 +81,21 @@ export const cartService = {
                         cartId: cart.id,
                         productId: parsed.productId,
                         quantity: parsed.quantity,
+                        size: parsed.size,
+                        color: parsed.color,
                     },
                 });
             }
 
             return await this.getByUser(userId);
         } catch (err) {
-            if (err instanceof ApiError) {
-                throw err;
-            }
+            if (err instanceof ApiError) throw err;
+            console.error(err);
             throw new ApiError("Failed to add item to cart", 500);
         }
     },
 
-    async updateItemQuantity(
-        userId: string,
-        cartItemId: string,
-        quantity: number
-    ): Promise<CartType> {
+    async updateItemQuantity(userId: string, cartItemId: string, quantity: number) {
         try {
             await prisma.cartItem.update({
                 where: { id: cartItemId },
@@ -98,7 +108,7 @@ export const cartService = {
         }
     },
 
-    async removeItem(userId: string, cartItemId: string): Promise<CartType> {
+    async removeItem(userId: string, cartItemId: string) {
         try {
             await prisma.cartItem.delete({ where: { id: cartItemId } });
             return await this.getByUser(userId);
@@ -107,12 +117,13 @@ export const cartService = {
         }
     },
 
-    async clear(userId: string): Promise<void> {
+    async clear(userId: string) {
         try {
             const cart = await prisma.cart.findUnique({ where: { userId } });
             if (cart) {
                 await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
             }
+            return await this.getByUser(userId);
         } catch (err) {
             throw new ApiError("Failed to clear cart", 500);
         }
