@@ -180,7 +180,7 @@ export default function ProductPage() {
                         </div>
                         <div className="flex items-center gap-4 mb-6">
                             <span className="text-2xl font-medium text-gray-900">
-                                ${Number(product.price).toFixed(2)}
+                                {Number(product.price).toFixed(2)} ₴
                             </span>
                             <div className="flex items-center gap-1 text-sm text-gray-500">
                                 <div className="flex text-yellow-400">
@@ -207,7 +207,7 @@ export default function ProductPage() {
                                             onClick={() => setColor(c)}
                                             className={cn(
                                                 "w-8 h-8 rounded-full border border-gray-200 shadow-sm transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black relative",
-                                                color === c && "ring-2 ring-offset-2 ring-black scale-110"
+                                                color === c && "ring-1 ring-offset-2 ring-black scale-110"
                                             )}
                                             style={{ backgroundColor: c }}
                                             title={c}
@@ -279,7 +279,7 @@ export default function ProductPage() {
                     <div className="grid grid-cols-2 gap-4 text-xs text-gray-500 mt-2">
                         <div className="flex items-center gap-2">
                             <Truck size={16} />
-                            <span>Free shipping over $200</span>
+                            <span>Free shipping over 200 ₴</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <ShieldCheck size={16} />
