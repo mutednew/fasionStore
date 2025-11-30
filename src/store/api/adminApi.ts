@@ -1,8 +1,7 @@
-import { mainApi } from "./mainApi"; // Импортируем наш главный API
+import { mainApi } from "./mainApi";
 import type { Product, Order, Category } from "@/types";
 import { CreateProductDto } from "@/types/product.dto";
 
-// Типы ответов (DTO)
 interface ApiResponse<T> {
     success: boolean;
     message?: string;
@@ -28,13 +27,8 @@ interface OrdersResponse {
 export const adminApi = mainApi.injectEndpoints({
     endpoints: (builder) => ({
 
-        // ===============================
-        // PRODUCTS (Админка)
-        // ===============================
-
         getAdminProducts: builder.query<ApiResponse<ProductsResponse>, void>({
             query: () => "/products",
-            // Используем тег, который обновляется при добавлении/удалении товаров
             providesTags: ["Products"],
         }),
 
@@ -49,7 +43,6 @@ export const adminApi = mainApi.injectEndpoints({
                 method: "POST",
                 body,
             }),
-            // Инвалидируем список продуктов, чтобы он обновился
             invalidatesTags: ["Products"],
         }),
 
@@ -59,7 +52,6 @@ export const adminApi = mainApi.injectEndpoints({
                 method: "PUT",
                 body: data,
             }),
-            // Инвалидируем конкретный продукт и общий список
             invalidatesTags: (_result, _error, arg) => [{ type: "Product", id: arg.id }, "Products"],
         }),
 
@@ -70,10 +62,6 @@ export const adminApi = mainApi.injectEndpoints({
             }),
             invalidatesTags: ["Products"],
         }),
-
-        // ===============================
-        // ORDERS (Админка)
-        // ===============================
 
         getOrders: builder.query<ApiResponse<OrdersResponse>, void>({
             query: () => "/orders",
@@ -94,14 +82,10 @@ export const adminApi = mainApi.injectEndpoints({
                 method: "PUT",
                 body: { status },
             }),
-            invalidatesTags: ["Orders"], // Обновит список заказов и статистику
+            invalidatesTags: ["Orders"],
         }),
 
-        // ===============================
-        // CATEGORIES (Админка)
-        // ===============================
-
-        getCategories: builder.query<ApiResponse<CategoriesResponse>, void>({
+        getAdminCategories: builder.query<ApiResponse<CategoriesResponse>, void>({
             query: () => "/categories",
             providesTags: ["Categories"],
         }),
@@ -136,7 +120,7 @@ export const {
     useGetOrderStatsQuery,
     useUpdateOrderStatusMutation,
 
-    useGetCategoriesQuery,
+    useGetAdminCategoriesQuery,
     useAddCategoryMutation,
     useDeleteCategoryMutation,
 } = adminApi;

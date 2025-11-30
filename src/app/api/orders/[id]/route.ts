@@ -7,14 +7,16 @@ import { ApiError } from "@/lib/ApiError";
 
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
+
         const auth = await requireAuth(req);
         if (auth) return auth;
 
         const user = (req as any).user;
-        const order = await orderService.getById(params.id);
+        const order = await orderService.getById(id);
 
         if (!order) return fail("Order not found", 404);
         if (user.role !== "ADMIN" && order.userId !== user.userId)
@@ -30,9 +32,11 @@ export async function GET(
 
 export async function PUT(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
+
         const auth = await requireAuth(req);
         if (auth) return auth;
 
@@ -48,7 +52,7 @@ export async function PUT(
             return fail("Invalid data", 400, parsed.error.format());
         }
 
-        const order = await orderService.getById(params.id);
+        const order = await orderService.getById(id);
         if (!order) return fail("Order not found", 404);
 
         if (user.role !== "ADMIN") {
@@ -57,7 +61,7 @@ export async function PUT(
                 return fail("You can only cancel your own order", 403);
         }
 
-        const updated = await orderService.updateStatus(params.id, parsed.data.status);
+        const updated = await orderService.updateStatus(id, parsed.data.status);
 
         return ok({ order: updated });
     } catch (err) {
@@ -69,13 +73,15 @@ export async function PUT(
 
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
+
         const auth = await requireAuth(req, "ADMIN");
         if (auth) return auth;
 
-        await orderService.delete(params.id);
+        await orderService.delete(id);
         return ok({ message: "Order deleted successfully" });
     } catch (err) {
         if (err instanceof ApiError) return fail(err.message, err.status, err.details);

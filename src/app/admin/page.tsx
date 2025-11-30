@@ -3,7 +3,7 @@
 import {
     useGetAdminProductsQuery,
     useGetOrdersQuery,
-    useGetCategoriesQuery,
+    useGetAdminCategoriesQuery,
 } from "@/store/api/adminApi";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { AdminSkeleton } from "@/app/admin/components/skeletons/AdminSkeleton";
@@ -11,7 +11,7 @@ import { AdminSkeleton } from "@/app/admin/components/skeletons/AdminSkeleton";
 export default function AdminDashboard() {
     const { data: productsRes, isLoading: loadingProducts } = useGetAdminProductsQuery();
     const { data: ordersRes, isLoading: loadingOrders } = useGetOrdersQuery();
-    const { data: categoriesRes, isLoading: loadingCategories } = useGetCategoriesQuery();
+    const { data: categoriesRes, isLoading: loadingCategories } = useGetAdminCategoriesQuery();
 
     if (loadingProducts || loadingOrders || loadingCategories)
         return <AdminSkeleton type="dashboard" />;

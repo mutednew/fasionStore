@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { useGetCategoriesQuery } from "@/store/api/adminApi";
+import { useGetCategoriesQuery } from "@/store/api/productsApi";
 import { useGetProductsFilteredQuery } from "@/store/api/productsApi";
 import Image from "next/image";
 import Link from "next/link";
@@ -15,7 +15,7 @@ export default function Collections() {
     const [activeCategory, setActiveCategory] = useState("all");
 
     const { data: categoriesRes, isLoading: loadingCategories } = useGetCategoriesQuery();
-    const categories = categoriesRes?.data.categories ?? [];
+    const categories = categoriesRes?.categories ?? [];
 
     const { data: productsRes, isLoading: loadingProducts } =
         useGetProductsFilteredQuery({

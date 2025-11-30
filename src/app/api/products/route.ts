@@ -16,11 +16,16 @@ export async function GET(req: Request) {
             price: url.searchParams.get("price") ?? undefined,
             limit: url.searchParams.get("limit") ? Number(url.searchParams.get("limit")) : undefined,
             sort: url.searchParams.get("sort") ?? undefined,
+
+            // ВАЖНО: Добавили page
+            page: url.searchParams.get("page") ? Number(url.searchParams.get("page")) : undefined,
         };
 
-        const products = await productService.getAll(filter);
+        // Сервис теперь вернет { products, meta }
+        const result = await productService.getAll(filter);
 
-        return ok({ products });
+        // Мы возвращаем результат напрямую, так как он уже содержит нужную структуру
+        return ok(result);
 
     } catch (err) {
         console.error("Products fetch error:", err);
@@ -28,27 +33,22 @@ export async function GET(req: Request) {
     }
 }
 
+// POST оставляем без изменений
 export async function POST(req: Request) {
     try {
         const auth = await requireAuth(req, "ADMIN");
         if (auth) return auth;
 
         const body = await req.json();
-
         const parsed = ProductSchema.safeParse(body);
         if (!parsed.success) {
             return fail("Invalid data", 400, parsed.error.format());
         }
 
         const product = await productService.create(parsed.data);
-
         return ok({ product });
-
     } catch (err) {
-        if (err instanceof ApiError) {
-            return fail(err.message, err.status, err.details);
-        }
-
+        if (err instanceof ApiError) return fail(err.message, err.status, err.details);
         console.error("Product creation error:", err);
         return fail("Internal server error", 500);
     }

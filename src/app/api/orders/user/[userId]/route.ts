@@ -5,13 +5,15 @@ import {ApiError} from "@/lib/ApiError";
 
 export async function GET(
     req: Request,
-    { params }: { params: { userId: string } }
+    { params }: { params: Promise<{ userId: string }> }
 ) {
     try {
+        const { userId } = await params;
+
         const auth = await requireAuth(req, "ADMIN");
         if (auth) return auth;
 
-        const orders = await orderService.getByUser(params.userId);
+        const orders = await orderService.getByUser(userId);
 
         return ok({ orders });
     } catch (err) {

@@ -6,10 +6,11 @@ import { ApiError } from "@/lib/ApiError";
 
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const product = await productService.getById(params.id);
+        const { id } = await params;
+        const product = await productService.getById(id);
 
         console.log(product);
         return ok({ product });
@@ -24,9 +25,11 @@ export async function GET(
 
 export async function PUT(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
+
         const auth = await requireAuth(req, "ADMIN");
         if (auth) return auth;
 
@@ -38,7 +41,7 @@ export async function PUT(
             return fail("Invalid data", 400, parsed.error.format());
         }
 
-        const updated = await productService.update(params.id, parsed.data);
+        const updated = await productService.update(id, parsed.data);
         return ok({ product: updated });
 
     } catch (err) {
@@ -53,13 +56,15 @@ export async function PUT(
 
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
+
         const auth = await requireAuth(req, "ADMIN");
         if (auth) return auth;
 
-        await productService.delete(params.id);
+        await productService.delete(id);
 
         return ok({ message: "Product deleted successfully" });
 

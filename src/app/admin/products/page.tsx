@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import {
     useGetAdminProductsQuery,
     useDeleteProductMutation,
-    useGetCategoriesQuery,
+    useGetAdminCategoriesQuery,
 } from "@/store/api/adminApi";
 import {
     Card,
@@ -38,7 +38,7 @@ export default function AdminProducts() {
     const [sortBy, setSortBy] = useState("newest");
 
     const { data: productsRes, isLoading } = useGetAdminProductsQuery();
-    const { data: categoriesRes } = useGetCategoriesQuery();
+    const { data: categoriesRes } = useGetAdminCategoriesQuery();
     const [deleteProduct] = useDeleteProductMutation();
 
     const products = productsRes?.data.products ?? [];

@@ -25,7 +25,7 @@ import {
     SelectItem,
 } from "@/components/ui/select";
 
-import { useUpdateProductMutation, useGetCategoriesQuery } from "@/store/api/adminApi";
+import { useUpdateProductMutation, useGetAdminCategoriesQuery } from "@/store/api/adminApi";
 
 import { Pencil, X } from "lucide-react";
 import { toast } from "sonner";
@@ -64,7 +64,7 @@ export function EditProductModal({ product }: EditProductModalProps) {
     const [tempSize, setTempSize] = useState("");
     const [tempTag, setTempTag] = useState("");
 
-    const { data: categoriesRes } = useGetCategoriesQuery();
+    const { data: categoriesRes } = useGetAdminCategoriesQuery();
     const categories = categoriesRes?.data.categories ?? [];
 
     const [updateProduct, { isLoading }] = useUpdateProductMutation();

@@ -1,532 +1,447 @@
 "use client";
 
-import Image from "next/image";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { useParams } from "next/navigation";
+import {Minus, Plus, Star, Truck, ShieldCheck, User} from "lucide-react";
+import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { useGetProductByIdQuery } from "@/store/api/productsApi";
+import { useAddToCartMutation } from "@/store/api/cartApi";
+import { useAppSelector } from "@/store/hooks";
 
-import {motion, AnimatePresence, Variants} from "framer-motion";
-import {X} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion";
+import { cn } from "@/lib/utils";
+import AuthModal from "@/components/modals/auth/AuthModal";
+import { Separator } from "@/components/ui/separator";
 
 export default function ProductPage() {
-    const { id } = useParams() as { id: string };
-    const { data, isLoading } = useGetProductByIdQuery(id);
+    const params = useParams();
+    const id = params?.id as string;
 
-    const product = data?.data?.product;
+    // --- ЗАПРОСЫ ---
+    const { data: productRes, isLoading } = useGetProductByIdQuery(id);
+    const [addToCart, { isLoading: isAdding }] = useAddToCartMutation();
 
-    // ==== REAL DATA ====
-    const images =
-        product?.images?.length
-            ? product.images
-            : product?.imageUrl
-                ? [product.imageUrl]
-                : ["/placeholder.png"];
+    // Auth check
+    const { profile } = useAppSelector((state) => state.user);
+    const [isLoginOpen, setIsLoginOpen] = useState(false);
 
-    const colors = product?.colors ?? [];
-    const sizes = product?.sizes ?? [];
-    const tags = product?.tags ?? [];
+    // --- ЛОКАЛЬНЫЙ СТЕЙТ ---
+    const product = productRes?.data?.product;
 
-    // ==== LOCAL STATE ====
-    const [selectedIndex, setSelectedIndex] = useState(0);
-    const [selectedImage, setSelectedImage] = useState(images[0]);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+    const [color, setColor] = useState<string | null>(null);
+    const [size, setSize] = useState<string | null>(null);
+    const [quantity, setQuantity] = useState(1);
 
-    const [selectedColor, setSelectedColor] = useState(colors[0] ?? "");
-    const [selectedSize, setSelectedSize] = useState("");
-
-    const [thumbIndex, setThumbIndex] = useState(0);
-    const VISIBLE_THUMBS = 5;
-
-    const [direction, setDirection] = useState<1 | -1>(1);
-
-    // fullscreen
-    const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
-    const [fullscreenIndex, setFullscreenIndex] = useState(0);
-
-    const visibleThumbs = images.slice(thumbIndex, thumbIndex + VISIBLE_THUMBS);
-
-    const scrollUp = () => {
-        if (thumbIndex > 0) setThumbIndex(i => i - 1);
-    };
-
-    const scrollDown = () => {
-        if (thumbIndex < images.length - VISIBLE_THUMBS)
-            setThumbIndex(i => i + 1);
-    };
-
-    const handleSelectImage = (i: number) => {
-        if (i === selectedIndex) return;
-
-        setDirection(i > selectedIndex ? 1 : -1);
-
-        setSelectedIndex(i);
-        setSelectedImage(images[i]);
-
-        if (i === thumbIndex + VISIBLE_THUMBS - 1) scrollDown();
-        if (i === thumbIndex) scrollUp();
-    };
-
-    // fullscreen
-    const openFullscreen = (index: number) => {
-        setFullscreenIndex(index);
-        setIsFullscreenOpen(true);
-    };
-
-    const closeFullscreen = () => setIsFullscreenOpen(false);
-
-    const goFullscreenNext = () => {
-        setFullscreenIndex(prev => (prev + 1) % images.length);
-    };
-
-    const goFullscreenPrev = () => {
-        setFullscreenIndex(prev => (prev - 1 + images.length) % images.length);
-    };
-
+    // Сброс стейта при смене продукта
     useEffect(() => {
-        if (!isFullscreenOpen) return;
-
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === "Escape") closeFullscreen();
-            if (e.key === "ArrowRight") goFullscreenNext();
-            if (e.key === "ArrowLeft") goFullscreenPrev();
-        };
-
-        window.addEventListener("keydown", onKey);
-        return () => window.removeEventListener("keydown", onKey);
-    }, [isFullscreenOpen, images.length]);
-
-    useEffect(() => {
-        if (images.length > 0) {
-            setSelectedImage(images[0]);
-            setSelectedIndex(0);
+        if (product) {
+            setSelectedImageIndex(0);
+            setColor(product.colors?.[0] || null);
+            setSize(null);
+            setQuantity(1);
         }
     }, [product]);
 
-    if (isLoading) {
-        return (
-            <main className="min-h-screen flex items-center justify-center">
-                Loading product...
-            </main>
-        );
-    }
+    const images = product?.images?.length ? product.images : product?.imageUrl ? [product.imageUrl] : [];
+    const hasColors = product?.colors && product.colors.length > 0;
+    const hasSizes = product?.sizes && product.sizes.length > 0;
 
+    // --- HANDLERS ---
+
+    const handleQuantity = (type: "inc" | "dec") => {
+        setQuantity((prev) => (type === "inc" ? prev + 1 : Math.max(1, prev - 1)));
+    };
+
+    const handleAddToCart = async () => {
+        if (!profile) {
+            setIsLoginOpen(true);
+            return;
+        }
+
+        if (hasSizes && !size) {
+            toast.error("Please select a size", { position: "top-center" });
+            return;
+        }
+
+        try {
+            await addToCart({
+                productId: product!.id,
+                quantity,
+                size: size || undefined,
+                color: color || undefined,
+            }).unwrap();
+            toast.success("Added to cart");
+        } catch {
+            toast.error("Failed to add to cart");
+        }
+    };
+
+    // --- LOADING STATE ---
+    if (isLoading) return <ProductSkeleton />;
+
+    // --- NOT FOUND ---
     if (!product) {
         return (
-            <main className="min-h-screen flex items-center justify-center">
+            <div className="min-h-screen flex items-center justify-center">
                 Product not found
-            </main>
+            </div>
         );
     }
 
-    // NEXT IMAGE
-    const nextIndex = (selectedIndex + 1) % images.length;
-    const secondImage = images[nextIndex];
-
-    const sliderVariants: Variants = {
-        enter: (direction: number) => ({
-            x: direction > 0 ? 300 : -300,
-            opacity: 0,
-            transition: { duration: 0.35 }
-        }),
-        center: {
-            x: 0,
-            opacity: 1,
-            transition: {
-                duration: 0.45,
-                ease: "easeOut"
-            }
-        },
-        exit: (direction: number) => ({
-            x: direction > 0 ? -300 : 300,
-            opacity: 0,
-            transition: { duration: 0.35 }
-        })
-    };
-
-    const sliderVariantsSecond: Variants = {
-        enter: (direction: number) => ({
-            x: direction > 0 ? 300 : -300,
-            opacity: 0,
-            transition: { duration: 0.35, delay: 0.15 } // задержка
-        }),
-        center: {
-            x: 0,
-            opacity: 1,
-            transition: {
-                duration: 0.45,
-                ease: "easeOut",
-                delay: 0.1
-            }
-        },
-        exit: (direction: number) => ({
-            x: direction > 0 ? -300 : 300,
-            opacity: 0,
-            transition: { duration: 0.35, delay: 0.05 }
-        })
-    };
-
-    const fsBackdrop: Variants = {
-        initial: { opacity: 0 },
-        animate: { opacity: 1, transition: { duration: 0.2, ease: "linear" } },
-        exit: { opacity: 0, transition: { duration: 0.15, ease: "linear" } },
-    };
-
-    const fsImage: Variants = {
-        initial: { opacity: 0, scale: 0.92, y: 20 },
-        animate: {
-            opacity: 1,
-            scale: 1,
-            y: 0,
-            transition: { duration: 0.3, ease: "easeOut" },
-        },
-        exit: {
-            opacity: 0,
-            scale: 0.92,
-            y: 20,
-            transition: { duration: 0.2, ease: "easeIn" },
-        },
-    };
-
     return (
-        <main className="min-h-screen w-full bg-white text-neutral-900 px-8 md:px-20 lg:px-32 py-12">
+        <main className="min-h-screen bg-white py-12 px-4 md:px-10 lg:px-20 font-sans">
+            <AuthModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
 
-            {/* Breadcrumb */}
-            <p className="text-xs text-neutral-500 mb-6 tracking-wide">
-                Home / Products / <span className="opacity-70">{product.name}</span>
-            </p>
+            {/* ВАЖНО: items-start выравнивает колонки по верху, чтобы они не растягивались */}
+            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mb-24">
 
-            {/* MAIN GRID */}
-            <div className="grid grid-cols-12 gap-10 lg:gap-20">
-
-                {/* LEFT SIDE — IMAGES */}
-                <div className="col-span-12 lg:col-span-7 flex gap-6">
+                {/* ==== LEFT: GALLERY ==== */}
+                {/* ВАЖНО: h-fit и self-start гарантируют, что высота блока не будет зависеть от соседа */}
+                <div className="lg:col-span-7 flex flex-col-reverse lg:flex-row gap-6 lg:sticky lg:top-24 h-fit self-start">
 
                     {/* THUMBNAILS */}
-                    <div className="flex flex-col items-center w-20">
-
-                        {images.length > VISIBLE_THUMBS && (
-                            <button
-                                onClick={scrollUp}
-                                disabled={thumbIndex === 0}
-                                className={`w-8 h-8 mb-2 text-neutral-600 hover:text-black transition ${
-                                    thumbIndex === 0 ? "opacity-30 cursor-default" : ""
-                                }`}
-                            >
-                                ▲
-                            </button>
-                        )}
-
-                        <div className="flex flex-col gap-3">
-                            {visibleThumbs.map((img) => {
-                                const realIndex = images.indexOf(img);
-
-                                return (
-                                    <Card
-                                        key={img}
-                                        onClick={() => handleSelectImage(realIndex)}
-                                        className={`relative w-full aspect-[3/4] overflow-hidden cursor-pointer border transition ${
-                                            realIndex === selectedIndex
-                                                ? "border-black ring-1 ring-black"
-                                                : "border-neutral-300 hover:border-neutral-500"
-                                        }`}
-                                    >
-                                        <Image
-                                            src={img}
-                                            alt=""
-                                            fill
-                                            className="object-cover"
-                                        />
-                                    </Card>
-                                );
-                            })}
-                        </div>
-
-                        {images.length > VISIBLE_THUMBS && (
-                            <button
-                                onClick={scrollDown}
-                                disabled={thumbIndex >= images.length - VISIBLE_THUMBS}
-                                className={`w-8 h-8 mt-2 text-neutral-600 hover:text-black transition ${
-                                    thumbIndex >= images.length - VISIBLE_THUMBS
-                                        ? "opacity-30 cursor-default"
-                                        : ""
-                                }`}
-                            >
-                                ▼
-                            </button>
-                        )}
-                    </div>
-
-                    {/* ==========================
-                       TWO MAIN IMAGES (motion)
-                       ========================== */}
-                    <div className="grid grid-cols-2 gap-6 flex-1">
-
-                        {/* IMAGE 1 */}
-                        <div
-                            className="relative w-full h-[700px] border border-neutral-200 rounded-md overflow-hidden shadow-sm cursor-zoom-in"
-                            onClick={() => openFullscreen(selectedIndex)}
-                        >
-                            <AnimatePresence mode="wait" custom={direction}>
-                                <motion.div
-                                    key={selectedImage}
-                                    custom={direction}
-                                    variants={sliderVariants}
-                                    initial="enter"
-                                    animate="center"
-                                    exit="exit"
-                                    className="absolute inset-0"
+                    {images.length > 1 && (
+                        <div className="flex lg:flex-col gap-4 overflow-x-auto lg:overflow-visible no-scrollbar">
+                            {images.map((img, idx) => (
+                                <button
+                                    key={idx}
+                                    onClick={() => setSelectedImageIndex(idx)}
+                                    className={cn(
+                                        "relative w-20 h-24 lg:w-24 lg:h-32 flex-shrink-0 border rounded-md overflow-hidden transition-all",
+                                        selectedImageIndex === idx
+                                            ? "border-black ring-1 ring-black"
+                                            : "border-transparent hover:border-gray-300"
+                                    )}
                                 >
                                     <Image
-                                        src={selectedImage}
+                                        src={img}
+                                        alt={`Thumbnail ${idx}`}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </button>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* MAIN IMAGE */}
+                    <div className="flex-1 relative aspect-[3/4] bg-gray-50 rounded-lg overflow-hidden group">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={selectedImageIndex}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="absolute inset-0"
+                            >
+                                {images[selectedImageIndex] ? (
+                                    <Image
+                                        src={images[selectedImageIndex]}
                                         alt={product.name}
                                         fill
                                         priority
                                         className="object-cover"
                                     />
-                                </motion.div>
-                            </AnimatePresence>
-                        </div>
+                                ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-gray-300">No Image</div>
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
 
-                        {/* IMAGE 2 */}
-                        <div
-                            className="relative w-full h-[700px] border border-neutral-200 rounded-md overflow-hidden shadow-sm cursor-zoom-in"
-                            onClick={() => openFullscreen(nextIndex)}
-                        >
-                            <AnimatePresence mode="wait" custom={direction}>
-                                <motion.div
-                                    key={secondImage}
-                                    custom={direction}
-                                    variants={sliderVariantsSecond}
-                                    initial="enter"
-                                    animate="center"
-                                    exit="exit"
-                                    className="absolute inset-0"
-                                >
-                                    <Image
-                                        src={secondImage}
-                                        alt="second"
-                                        fill
-                                        className="object-cover"
-                                    />
-                                </motion.div>
-                            </AnimatePresence>
-                        </div>
+                        {product.stock <= 0 && (
+                            <div className="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded">
+                                OUT OF STOCK
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* RIGHT SIDE — INFO */}
-                <div className="col-span-12 lg:col-span-5 flex flex-col gap-10 pr-4">
+                {/* ==== RIGHT: DETAILS ==== */}
+                <div className="lg:col-span-5 flex flex-col gap-8 pt-4">
 
-                    {/* NAME + PRICE */}
+                    {/* HEADER */}
                     <div>
-                        <h1 className="text-3xl font-light tracking-tight mb-2">
-                            {product.name}
-                        </h1>
-
-                        <p className="text-lg font-medium mb-1">
-                            {product.price} грн
-                        </p>
-
-                        <p className="text-[11px] text-neutral-500">
-                            Added {new Date(product.createdAt).toLocaleDateString()}
-                        </p>
-                    </div>
-
-                    {/* COLORS */}
-                    <div>
-                        <p className="text-xs text-neutral-500 uppercase mb-2">Color</p>
-
-                        {colors.length > 0 ? (
-                            <div className="flex gap-3">
-                                {colors.map((color) => (
-                                    <button
-                                        key={color}
-                                        onClick={() => setSelectedColor(color)}
-                                        style={{ backgroundColor: color }}
-                                        className={`w-8 h-8 rounded-sm border transition ${
-                                            selectedColor === color
-                                                ? "border-neutral-900 scale-105"
-                                                : "border-neutral-300 hover:border-neutral-500"
-                                        }`}
-                                    />
-                                ))}
+                        <div className="flex items-center justify-between mb-2">
+                            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+                                {product.name}
+                            </h1>
+                        </div>
+                        <div className="flex items-center gap-4 mb-6">
+                            <span className="text-2xl font-medium text-gray-900">
+                                ${Number(product.price).toFixed(2)}
+                            </span>
+                            <div className="flex items-center gap-1 text-sm text-gray-500">
+                                <div className="flex text-yellow-400">
+                                    {[1,2,3,4,5].map(i => <Star key={i} size={14} fill="currentColor" />)}
+                                </div>
+                                <span className="ml-1">(42 reviews)</span>
                             </div>
-                        ) : (
-                            <p className="text-xs text-neutral-400 italic">No colors available</p>
-                        )}
-                    </div>
-
-                    {/*  SIZES  */}
-                    <div>
-                        <p className="text-xs text-neutral-500 uppercase mb-2">Size</p>
-
-                        {sizes.length > 0 ? (
-                            <div className="flex gap-2 flex-wrap">
-                                {sizes.map((size) => (
-                                    <Button
-                                        key={size}
-                                        variant={selectedSize === size ? "default" : "outline"}
-                                        className={`px-4 py-1 h-auto text-xs rounded-none ${
-                                            selectedSize === size
-                                                ? "bg-neutral-900 text-white"
-                                                : "border-neutral-300 hover:border-neutral-500"
-                                        }`}
-                                        onClick={() => setSelectedSize(size)}
-                                    >
-                                        {size}
-                                    </Button>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-xs text-neutral-400 italic">No sizes available</p>
-                        )}
-
-                        <div className="flex justify-between text-[11px] text-neutral-500 mt-3">
-                            <span className="cursor-pointer hover:text-neutral-700">Find your size</span>
-                            <span className="cursor-pointer hover:text-neutral-700">Measurement guide</span>
                         </div>
                     </div>
-
-                    {/* TAGS */}
-                    {tags.length > 0 && (
-                        <div>
-                            <p className="text-xs text-neutral-500 uppercase mb-2">Tags</p>
-                            <div className="flex gap-2 flex-wrap">
-                                {tags.map((tag) => (
-                                    <span
-                                        key={tag}
-                                        className="px-3 py-1 text-xs border border-neutral-300 rounded-full"
-                                    >
-                                        {tag}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
-                    )}
 
                     <Separator />
 
-                    <Button className="w-full rounded-none bg-neutral-900 text-white hover:bg-neutral-800 py-4">
-                        Add to Cart
+                    {/* SELECTORS */}
+                    <div className="space-y-6">
+
+                        {/* COLOR */}
+                        {hasColors && (
+                            <div className="space-y-3">
+                                <span className="text-sm font-semibold text-gray-900">Color</span>
+                                <div className="flex flex-wrap gap-3">
+                                    {product.colors.map((c) => (
+                                        <button
+                                            key={c}
+                                            onClick={() => setColor(c)}
+                                            className={cn(
+                                                "w-8 h-8 rounded-full border border-gray-200 shadow-sm transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black relative",
+                                                color === c && "ring-2 ring-offset-2 ring-black scale-110"
+                                            )}
+                                            style={{ backgroundColor: c }}
+                                            title={c}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* SIZE */}
+                        {hasSizes && (
+                            <div className="space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-sm font-semibold text-gray-900">Size</span>
+                                    <button className="text-xs text-gray-500 underline hover:text-black">
+                                        Size Guide
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                                    {product.sizes.map((s) => (
+                                        <button
+                                            key={s}
+                                            onClick={() => setSize(s)}
+                                            className={cn(
+                                                "h-10 border rounded-md text-sm font-medium transition-all hover:border-gray-400",
+                                                size === s
+                                                    ? "bg-black text-white border-black"
+                                                    : "bg-white text-gray-900 border-gray-200"
+                                            )}
+                                        >
+                                            {s}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* QUANTITY */}
+                        <div className="space-y-3">
+                            <span className="text-sm font-semibold text-gray-900">Quantity</span>
+                            <div className="flex items-center w-32 border border-gray-300 rounded-md">
+                                <button
+                                    onClick={() => handleQuantity("dec")}
+                                    className="px-3 py-2 hover:bg-gray-100 transition text-gray-600"
+                                >
+                                    <Minus size={16} />
+                                </button>
+                                <span className="flex-1 text-center font-medium text-sm">
+                                    {quantity}
+                                </span>
+                                <button
+                                    onClick={() => handleQuantity("inc")}
+                                    className="px-3 py-2 hover:bg-gray-100 transition text-gray-600"
+                                >
+                                    <Plus size={16} />
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <Button
+                        onClick={handleAddToCart}
+                        disabled={isAdding || product.stock <= 0}
+                        className="w-full h-12 text-sm font-bold uppercase tracking-widest rounded-md bg-black hover:bg-neutral-800 transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                        {isAdding ? "Adding..." : product.stock <= 0 ? "Out of Stock" : "Add to Cart"}
                     </Button>
+
+                    <div className="grid grid-cols-2 gap-4 text-xs text-gray-500 mt-2">
+                        <div className="flex items-center gap-2">
+                            <Truck size={16} />
+                            <span>Free shipping over $200</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <ShieldCheck size={16} />
+                            <span>Secure checkout</span>
+                        </div>
+                    </div>
+
+                    {/* ACCORDION INFO (Без отзывов) */}
+                    <Accordion type="single" collapsible className="w-full border-t pt-4">
+                        <AccordionItem value="desc" className="border-b-0">
+                            <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">
+                                Description
+                            </AccordionTrigger>
+                            <AccordionContent className="text-sm text-gray-600 leading-relaxed">
+                                {product.description || "No description available for this product."}
+                            </AccordionContent>
+                        </AccordionItem>
+                        <AccordionItem value="shipping" className="border-b-0">
+                            <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">
+                                Shipping & Returns
+                            </AccordionTrigger>
+                            <AccordionContent className="text-sm text-gray-600 leading-relaxed">
+                                Free standard shipping on orders over $200. Returns accepted within 30 days of purchase.
+                            </AccordionContent>
+                        </AccordionItem>
+                        <AccordionItem value="care" className="border-b-0">
+                            <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">
+                                Care Instructions
+                            </AccordionTrigger>
+                            <AccordionContent className="text-sm text-gray-600 leading-relaxed">
+                                Machine wash cold. Do not bleach. Tumble dry low. Iron low heat.
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+
                 </div>
             </div>
 
-            {/* =======================================================
-                            DESCRIPTION
-            ======================================================= */}
-            <section className="mt-20">
-                <h2 className="text-xl font-semibold mb-4">Description</h2>
-
-                <div className="text-sm leading-relaxed text-neutral-700 whitespace-pre-line">
-                    {product.description?.trim()
-                        ? product.description
-                        : "There is no description for this product yet."}
+            {/* --- REVIEWS SECTION (FULL WIDTH) --- */}
+            <div className="max-w-7xl mx-auto pt-16 border-t border-gray-200">
+                <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-2xl font-bold tracking-tight text-gray-900">Customer Reviews</h2>
+                    <Button variant="outline">Write a Review</Button>
                 </div>
-            </section>
 
-            {/* =======================================================
-                        FULLSCREEN GALLERY (variant B)
-            ======================================================= */}
-            <AnimatePresence>
-                {isFullscreenOpen && (
-                    <motion.div
-                        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-[2px] flex flex-col"
-                        variants={fsBackdrop}
-                        initial="initial"
-                        animate="animate"
-                        exit="exit"
-                        onClick={closeFullscreen}
-                    >
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
 
-                        {/* Top bar */}
-                        <div className="flex items-center justify-end px-6 py-4 text-white">
-                            <button
-                                className="hover:opacity-80 transition"
-                                onClick={closeFullscreen}
-                            >
-                                <X size={30} strokeWidth={1.5} />
-                            </button>
+                    {/* Summary Rating */}
+                    <div className="col-span-1 bg-gray-50 p-6 rounded-lg h-fit">
+                        <div className="flex items-end gap-2 mb-2">
+                            <span className="text-5xl font-bold text-gray-900">4.8</span>
+                            <span className="text-gray-500 mb-2">/ 5</span>
                         </div>
-
-                        {/* CENTER AREA */}
-                        <div
-                            className="flex-1 flex items-center justify-center relative px-6 md:px-16"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            {/* Left Arrow */}
-                            {images.length > 1 && (
-                                <button
-                                    className="absolute left-6 md:left-10 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition text-4xl"
-                                    onClick={goFullscreenPrev}
-                                >
-                                    ‹
-                                </button>
-                            )}
-
-                            {/* IMAGE */}
-                            <motion.div
-                                variants={fsImage}
-                                initial="initial"
-                                animate="animate"
-                                exit="exit"
-                                className="relative flex items-center justify-center w-full"
-                            >
-                                <div className="relative max-w-[85vw] max-h-[70vh] flex items-center justify-center">
-                                    <Image
-                                        src={images[fullscreenIndex]}
-                                        alt={`image-${fullscreenIndex}`}
-                                        width={600}
-                                        height={1100}
-                                        className="object-contain select-none pointer-events-none"
-                                    />
-                                </div>
-                            </motion.div>
-
-                            {/* Right Arrow */}
-                            {images.length > 1 && (
-                                <button
-                                    className="absolute right-6 md:right-10 top-1/2 -translate-y-1/2 text-white/70 hover:text-white transition text-4xl"
-                                    onClick={goFullscreenNext}
-                                >
-                                    ›
-                                </button>
-                            )}
+                        <div className="flex text-yellow-400 mb-4">
+                            {[1, 2, 3, 4, 5].map((i) => (
+                                <Star key={i} size={20} fill="currentColor" />
+                            ))}
                         </div>
+                        <p className="text-sm text-gray-500">Based on 42 reviews</p>
 
-                        {/* THUMBNAILS */}
-                        <div
-                            className="w-full px-4 md:px-10 pb-2"
-                            onClick={(e) => e.stopPropagation()}
-                        >
-                            <div className="flex gap-2 overflow-x-auto justify-center">
-                                {images.map((img, idx) => (
-                                    <button
-                                        key={img + idx}
-                                        onClick={() => setFullscreenIndex(idx)}
-                                        className={`relative w-16 h-20 rounded-md overflow-hidden border ${
-                                            fullscreenIndex === idx
-                                                ? "border-white"
-                                                : "border-white/40"
-                                        }`}
-                                    >
-                                        <Image
-                                            src={img}
-                                            alt={`thumb-${idx}`}
-                                            fill
-                                            className="object-cover"
+                        <div className="mt-6 space-y-2">
+                            {[5, 4, 3, 2, 1].map((stars) => (
+                                <div key={stars} className="flex items-center gap-2 text-xs">
+                                    <span className="w-3">{stars}</span>
+                                    <Star size={10} className="text-gray-400" />
+                                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-yellow-400"
+                                            style={{ width: stars === 5 ? '70%' : stars === 4 ? '20%' : '5%' }}
                                         />
-                                    </button>
-                                ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Review List Placeholder */}
+                    <div className="col-span-1 md:col-span-2 space-y-8">
+                        {/* Mock Review 1 */}
+                        <div className="border-b border-gray-100 pb-8">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <User size={16} className="text-gray-500" />
+                                    </div>
+                                    <span className="font-semibold text-sm">Alex M.</span>
+                                    <span className="text-xs text-gray-400 px-2 border-l border-gray-300">Verified Buyer</span>
+                                </div>
+                                <span className="text-xs text-gray-400">2 days ago</span>
                             </div>
+                            <div className="flex text-yellow-400 mb-2">
+                                {[1, 2, 3, 4, 5].map(i => <Star key={i} size={14} fill="currentColor" />)}
+                            </div>
+                            <h4 className="text-sm font-bold text-gray-900 mb-1">Great quality!</h4>
+                            <p className="text-sm text-gray-600 leading-relaxed">
+                                Absolutely love this product. The material feels premium and the fit is perfect. Highly recommend!
+                            </p>
                         </div>
 
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                        {/* Mock Review 2 */}
+                        <div className="border-b border-gray-100 pb-8">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                        <User size={16} className="text-gray-500" />
+                                    </div>
+                                    <span className="font-semibold text-sm">Sarah J.</span>
+                                </div>
+                                <span className="text-xs text-gray-400">1 week ago</span>
+                            </div>
+                            <div className="flex text-yellow-400 mb-2">
+                                {[1, 2, 3, 4].map(i => <Star key={i} size={14} fill="currentColor" />)}
+                                <Star size={14} className="text-gray-300" />
+                            </div>
+                            <h4 className="text-sm font-bold text-gray-900 mb-1">Good, but runs small</h4>
+                            <p className="text-sm text-gray-600 leading-relaxed">
+                                Really nice design but I had to size up. Delivery was super fast though.
+                            </p>
+                        </div>
+
+                        <div className="text-center pt-4">
+                            <Button variant="outline" disabled>Load More Reviews</Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     );
+}
+
+// --- SKELETON ---
+function ProductSkeleton() {
+    return (
+        <main className="min-h-screen bg-white py-12 px-4 md:px-20 font-sans">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12">
+                <div className="lg:col-span-7 flex gap-6">
+                    <div className="flex flex-col gap-4">
+                        {[1, 2, 3, 4].map(i => <Skeleton key={i} className="w-24 h-32 rounded-md" />)}
+                    </div>
+                    <Skeleton className="flex-1 aspect-[3/4] rounded-lg" />
+                </div>
+                <div className="lg:col-span-5 flex flex-col gap-8 pt-4">
+                    <div className="space-y-4">
+                        <Skeleton className="h-10 w-3/4" />
+                        <Skeleton className="h-8 w-1/4" />
+                    </div>
+                    <Skeleton className="h-px w-full" />
+                    <div className="space-y-6">
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-12" />
+                            <div className="flex gap-3"><Skeleton className="w-8 h-8 rounded-full" /><Skeleton className="w-8 h-8 rounded-full" /></div>
+                        </div>
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-12" />
+                            <div className="grid grid-cols-5 gap-2">
+                                {[1,2,3,4,5].map(i => <Skeleton key={i} className="h-10 rounded-md" />)}
+                            </div>
+                        </div>
+                    </div>
+                    <Skeleton className="h-12 w-full rounded-md mt-4" />
+                </div>
+            </div>
+        </main>
+    )
 }

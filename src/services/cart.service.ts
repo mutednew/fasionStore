@@ -3,44 +3,25 @@ import { CartItemSchema } from "@/schemas/cart.schema";
 import { ApiError } from "@/lib/ApiError";
 
 export const cartService = {
+    // Получение корзины
     async getByUser(userId: string) {
         try {
-            const cart = await prisma.cart.findUnique({
+            let cart = await prisma.cart.findUnique({
                 where: { userId },
                 include: {
                     items: {
-                        orderBy: { createdAt: "asc" },
+                        orderBy: { createdAt: 'asc' },
                         include: {
-                            product: {
-                                select: {
-                                    id: true,
-                                    name: true,
-                                    price: true,
-                                    imageUrl: true,
-                                    images: true,
-                                    category: true
-                                }
-                            }
+                            product: true,
                         },
                     },
                 },
             });
 
             if (!cart) {
-                return await prisma.cart.create({
+                cart = await prisma.cart.create({
                     data: { userId },
-                    include: {
-                        items: {
-                            orderBy: { createdAt: "asc" },
-                            include: {
-                                product: {
-                                    select: {
-                                        id: true, name: true, price: true, imageUrl: true, images: true, category: true
-                                    }
-                                }
-                            }
-                        }
-                    },
+                    include: { items: { include: { product: true } } },
                 });
             }
 
@@ -51,38 +32,47 @@ export const cartService = {
         }
     },
 
+    // Добавление товара
     async addItem(userId: string, data: unknown) {
         try {
             const parsed = CartItemSchema.parse(data);
 
+            // 1. Убеждаемся, что корзина существует
             const cart = await prisma.cart.upsert({
                 where: { userId },
                 update: {},
                 create: { userId },
             });
 
+            // 2. Приводим undefined к null для Prisma
+            const size = parsed.size ?? null;
+            const color = parsed.color ?? null;
+
+            // 3. Ищем, есть ли уже такой товар с ТАКИМИ ЖЕ параметрами
             const existingItem = await prisma.cartItem.findFirst({
                 where: {
                     cartId: cart.id,
                     productId: parsed.productId,
-                    size: parsed.size,
-                    color: parsed.color,
+                    size: size,
+                    color: color,
                 },
             });
 
             if (existingItem) {
+                // Если есть - увеличиваем количество
                 await prisma.cartItem.update({
                     where: { id: existingItem.id },
                     data: { quantity: existingItem.quantity + parsed.quantity },
                 });
             } else {
+                // Если нет - создаем новый
                 await prisma.cartItem.create({
                     data: {
                         cartId: cart.id,
                         productId: parsed.productId,
                         quantity: parsed.quantity,
-                        size: parsed.size,
-                        color: parsed.color,
+                        size: size,
+                        color: color,
                     },
                 });
             }
@@ -90,7 +80,7 @@ export const cartService = {
             return await this.getByUser(userId);
         } catch (err) {
             if (err instanceof ApiError) throw err;
-            console.error(err);
+            console.error("Cart Service Error:", err);
             throw new ApiError("Failed to add item to cart", 500);
         }
     },
@@ -101,10 +91,9 @@ export const cartService = {
                 where: { id: cartItemId },
                 data: { quantity },
             });
-
             return await this.getByUser(userId);
         } catch (err) {
-            throw new ApiError("Failed to update item quantity", 500);
+            throw new ApiError("Failed to update quantity", 500);
         }
     },
 
@@ -113,7 +102,7 @@ export const cartService = {
             await prisma.cartItem.delete({ where: { id: cartItemId } });
             return await this.getByUser(userId);
         } catch (err) {
-            throw new ApiError("Failed to remove item from cart", 500);
+            throw new ApiError("Failed to remove item", 500);
         }
     },
 
@@ -130,14 +119,10 @@ export const cartService = {
     },
 
     async getItemCount(userId: string): Promise<number> {
-        try {
-            const count = await prisma.cartItem.aggregate({
-                where: { cart: { userId } },
-                _sum: { quantity: true },
-            });
-            return count._sum.quantity ?? 0;
-        } catch (err) {
-            throw new ApiError("Failed to get item count from cart", 500);
-        }
-    },
+        const count = await prisma.cartItem.aggregate({
+            where: { cart: { userId } },
+            _sum: { quantity: true },
+        });
+        return count._sum.quantity ?? 0;
+    }
 };

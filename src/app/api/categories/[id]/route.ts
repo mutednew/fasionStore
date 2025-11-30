@@ -6,10 +6,12 @@ import { ApiError } from "@/lib/ApiError";
 
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
-        const category = await categoryService.getById(params.id);
+        const { id } = await params;
+
+        const category = await categoryService.getById(id);
 
         if (!category) {
             return fail("Category not found", 404);
@@ -24,9 +26,11 @@ export async function GET(
 
 export async function PUT(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
+
         const auth = await requireAuth(req, "ADMIN");
         if (auth) return auth;
 
@@ -37,7 +41,7 @@ export async function PUT(
             return fail("Invalid data", 400, parsed.error.format());
         }
 
-        const updated = await categoryService.update(params.id, parsed.data);
+        const updated = await categoryService.update(id, parsed.data);
 
         if (!updated) {
             return fail("Category not found", 404);
@@ -56,13 +60,15 @@ export async function PUT(
 
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
+
         const auth = await requireAuth(req, "ADMIN");
         if (auth) return auth;
 
-        await categoryService.delete(params.id);
+        await categoryService.delete(id);
         return ok({ message: "Category deleted successfully" });
     } catch (err) {
         if (err instanceof ApiError) {

@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 
 import {
     useAddProductMutation,
-    useGetCategoriesQuery,
+    useGetAdminCategoriesQuery,
 } from "@/store/api/adminApi";
 
 import { PlusCircle, X } from "lucide-react";
@@ -51,7 +51,7 @@ export function AddProductModal() {
     const [tempSize, setTempSize] = useState("");
     const [tempTag, setTempTag] = useState("");
 
-    const { data: categoriesRes } = useGetCategoriesQuery();
+    const { data: categoriesRes } = useGetAdminCategoriesQuery();
     const categories = categoriesRes?.data.categories ?? [];
 
     const [addProduct, { isLoading }] = useAddProductMutation();
