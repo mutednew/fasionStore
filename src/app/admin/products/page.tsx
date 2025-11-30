@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import {
-    useGetProductsQuery,
+    useGetAdminProductsQuery,
     useDeleteProductMutation,
     useGetCategoriesQuery,
 } from "@/store/api/adminApi";
@@ -26,9 +26,9 @@ import { Trash2 } from "lucide-react";
 import { AddProductModal } from "@/app/admin/components/modals/AddProductModal";
 import { EditProductModal } from "@/app/admin/components/modals/EditProductModal";
 import { motion, AnimatePresence } from "framer-motion";
-import {AddCategoryModal} from "@/app/admin/components/modals/AddCategoryModal";
-import {toast} from "sonner";
-import {AdminSkeleton} from "@/app/admin/components/skeletons/AdminSkeleton";
+import { AddCategoryModal } from "@/app/admin/components/modals/AddCategoryModal";
+import { toast } from "sonner";
+import { AdminSkeleton } from "@/app/admin/components/skeletons/AdminSkeleton";
 
 export default function AdminProducts() {
     const [searchTerm, setSearchTerm] = useState("");
@@ -37,7 +37,7 @@ export default function AdminProducts() {
     const [priceRange, setPriceRange] = useState("all");
     const [sortBy, setSortBy] = useState("newest");
 
-    const { data: productsRes, isLoading } = useGetProductsQuery();
+    const { data: productsRes, isLoading } = useGetAdminProductsQuery();
     const { data: categoriesRes } = useGetCategoriesQuery();
     const [deleteProduct] = useDeleteProductMutation();
 
@@ -181,7 +181,7 @@ export default function AdminProducts() {
                         </Select>
 
                         <div className="ml-auto flex gap-6">
-                            <AddCategoryModal/>
+                            <AddCategoryModal />
                             <AddProductModal />
                         </div>
                     </CardContent>
@@ -217,7 +217,6 @@ export default function AdminProducts() {
                                     transition={{ duration: 0.25 }}
                                     className="border-t hover:bg-muted/10 transition"
                                 >
-                                    {/* MAIN IMAGE */}
                                     <td className="px-4 py-3">
                                         {p.imageUrl ? (
                                             <motion.img
@@ -234,28 +233,25 @@ export default function AdminProducts() {
                                         )}
                                     </td>
 
-                                    {/* NAME */}
                                     <td className="px-4 py-3 font-medium">
                                         <div className="flex flex-col">
                                             <span>{p.name}</span>
 
                                             {p.images?.length > 1 && (
                                                 <span className="text-[11px] text-gray-500">
-                                            {p.images.length} images
-                                        </span>
+                                                        {p.images.length} images
+                                                    </span>
                                             )}
                                         </div>
                                     </td>
 
-                                    {/* CATEGORY */}
                                     <td className="px-4 py-3">
                                         {categories.find((c) => c.id === p.categoryId)?.name ?? "—"}
                                     </td>
 
-                                    {/* COLORS */}
                                     <td className="px-4 py-3">
                                         <div className="flex gap-1 flex-wrap">
-                                            {p.colors?.map((c) => (
+                                            {p.colors?.map((c: string) => (
                                                 <div
                                                     key={c}
                                                     className="w-4 h-4 rounded border"
@@ -267,42 +263,38 @@ export default function AdminProducts() {
                                         </div>
                                     </td>
 
-                                    {/* SIZES */}
                                     <td className="px-4 py-3">
                                         <div className="flex gap-1 flex-wrap">
-                                            {p.sizes?.map((s) => (
+                                            {p.sizes?.map((s: string) => (
                                                 <span
                                                     key={s}
                                                     className="px-1.5 py-0.5 bg-neutral-200 rounded text-[11px]"
                                                 >
-                                            {s}
-                                        </span>
+                                                        {s}
+                                                    </span>
                                             ))}
                                             {!p.sizes?.length && <span className="text-xs text-gray-400">—</span>}
                                         </div>
                                     </td>
 
-                                    {/* TAGS */}
                                     <td className="px-4 py-3">
                                         <div className="flex gap-1 flex-wrap">
-                                            {p.tags?.map((t) => (
+                                            {p.tags?.map((t: string) => (
                                                 <span
                                                     key={t}
                                                     className="px-2 py-0.5 bg-neutral-100 border rounded text-[11px]"
                                                 >
-                                            {t}
-                                        </span>
+                                                        {t}
+                                                    </span>
                                             ))}
                                             {!p.tags?.length && <span className="text-xs text-gray-400">—</span>}
                                         </div>
                                     </td>
 
-                                    {/* PRICE */}
                                     <td className="px-4 py-3 font-medium">
-                                        {p.price.toFixed(2)} ₴
+                                        {Number(p.price).toFixed(2)} ₴
                                     </td>
 
-                                    {/* STOCK */}
                                     <td className="px-4 py-3">
                                         {p.stock > 0 ? (
                                             <Badge variant="success">In stock</Badge>
@@ -311,7 +303,6 @@ export default function AdminProducts() {
                                         )}
                                     </td>
 
-                                    {/* ACTIONS */}
                                     <td className="px-4 py-3 text-right">
                                         <div className="flex justify-end gap-2">
                                             <EditProductModal product={p} />

@@ -3,13 +3,12 @@
 import { FormEvent, useState } from "react";
 import { z } from "zod";
 import { LoginSchema } from "@/schemas/auth.schema";
-import api from "@/lib/axios";
-import { AxiosError } from "axios";
 import { useAppDispatch } from "@/store/hooks";
 import { setProfile } from "@/store/slices/userSlice";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useLoginMutation } from "@/store/api/authApi";
 
 interface LoginModalProps {
     onSwitch: () => void;
@@ -18,30 +17,34 @@ interface LoginModalProps {
 
 export default function LoginModal({ onSwitch, onClose }: LoginModalProps) {
     const dispatch = useAppDispatch();
-    const [loading, setLoading] = useState(false);
+
+    const [loginFn, { isLoading }] = useLoginMutation();
+
     const [error, setError] = useState("");
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError("");
-        setLoading(true);
 
         const form = new FormData(e.currentTarget);
         const data = Object.fromEntries(form.entries());
 
         try {
             const parsed = LoginSchema.parse(data);
-            const res = await api.post("/auth/login", parsed, { withCredentials: true });
-            dispatch(setProfile(res.data.data.user));
+
+            const res = await loginFn(parsed).unwrap();
+
+            dispatch(setProfile(res.data.user));
+
             onClose();
-        } catch (err: unknown) {
-            if (err instanceof z.ZodError) setError("Invalid form data");
-            else if (err && typeof err === "object" && "response" in err) {
-                const axiosErr = err as AxiosError<{ message?: string }>;
-                setError(axiosErr.response?.data?.message || "Server error");
-            } else setError("Something went wrong");
-        } finally {
-            setLoading(false);
+        } catch (err: any) {
+            if (err instanceof z.ZodError) {
+                setError("Invalid form data");
+            } else if (err?.data?.message) {
+                setError(err.data.message);
+            } else {
+                setError("Something went wrong");
+            }
         }
     };
 
@@ -75,8 +78,8 @@ export default function LoginModal({ onSwitch, onClose }: LoginModalProps) {
 
                 {error && <p className="text-red-500 text-xs">{error}</p>}
 
-                <Button disabled={loading} className="w-full mt-2">
-                    {loading ? "Loading..." : "Sign In"}
+                <Button disabled={isLoading} className="w-full mt-2">
+                    {isLoading ? "Signing in..." : "Sign In"}
                 </Button>
             </form>
 
@@ -86,8 +89,8 @@ export default function LoginModal({ onSwitch, onClose }: LoginModalProps) {
                     className="text-black font-medium cursor-pointer underline"
                     onClick={onSwitch}
                 >
-          Sign Up
-        </span>
+                    Sign Up
+                </span>
             </p>
         </div>
     );

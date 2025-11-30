@@ -1,31 +1,40 @@
 "use client";
 
 import {
-    useGetProductsQuery,
+    useGetAdminProductsQuery,
     useGetOrdersQuery,
     useGetCategoriesQuery,
 } from "@/store/api/adminApi";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import {AdminSkeleton} from "@/app/admin/components/skeletons/AdminSkeleton";
+import { AdminSkeleton } from "@/app/admin/components/skeletons/AdminSkeleton";
 
 export default function AdminDashboard() {
-    const { data: productsRes, isLoading: loadingProducts } = useGetProductsQuery();
+    const { data: productsRes, isLoading: loadingProducts } = useGetAdminProductsQuery();
     const { data: ordersRes, isLoading: loadingOrders } = useGetOrdersQuery();
     const { data: categoriesRes, isLoading: loadingCategories } = useGetCategoriesQuery();
 
-    // 🌀 Общее состояние загрузки
     if (loadingProducts || loadingOrders || loadingCategories)
         return <AdminSkeleton type="dashboard" />;
 
-    // 🧩 Распаковываем данные из типизированных ApiResponse
     const products = productsRes?.data.products ?? [];
     const orders = ordersRes?.data.orders ?? [];
     const categories = categoriesRes?.data.categories ?? [];
 
-    // 💰 Подсчёт общей суммы продаж
-    const totalSales = orders.reduce((sum, o) => sum + (o.total ?? 0), 0);
+    const totalSales = orders.reduce((acc, order) => {
+        if ("total" in order && typeof order.total === 'number') {
+            return acc + order.total;
+        }
 
-    // ⏳ Подсчёт заказов в статусе Pending
+        if (order.items && Array.isArray(order.items)) {
+            const orderSum = order.items.reduce((sum, item) => {
+                return sum + (Number(item.price) * item.quantity);
+            }, 0);
+            return acc + orderSum;
+        }
+
+        return acc;
+    }, 0);
+
     const pendingOrders = orders.filter((o) => o.status === "PENDING").length;
 
     return (

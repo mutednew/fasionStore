@@ -1,29 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyToken } from "@/lib/jwt";
+import { verifyToken, UserTokenPayload } from "@/lib/jwt";
 import { fail } from "@/lib/response";
 
-export interface User {
-    userId: string;
-    role: "ADMIN" | "CUSTOMER";
+export interface AuthenticatedRequest extends Request {
+    user: UserTokenPayload;
 }
 
 export async function requireAuth(
     req: Request | NextRequest,
     role?: "ADMIN" | "CUSTOMER"
 ): Promise<NextResponse | null> {
-    const cookies =
-        "cookies" in req
-            ? (req as NextRequest).cookies
-            : undefined;
 
-    const cookieToken = cookies?.get("token")?.value;
+    let cookieToken: string | undefined;
+    if ("cookies" in req) {
+        cookieToken = (req as NextRequest).cookies.get("token")?.value;
+    }
 
-    const headers =
-        (req as any).headers?.get
-            ? (req as NextRequest).headers
-            : new Headers((req as any).headers);
+    const authHeader = req.headers.get("authorization");
 
-    const authHeader = headers.get("authorization");
     const bearerToken =
         authHeader && authHeader.startsWith("Bearer ")
             ? authHeader.split(" ")[1]
@@ -43,7 +37,8 @@ export async function requireAuth(
             return fail("Forbidden", 403);
         }
 
-        (req as any).user = { userId: payload.userId, role: payload.role } as User;
+        Object.assign(req, { user: payload });
+
         return null;
     } catch (err) {
         return fail("Invalid or expired token", 401);

@@ -3,25 +3,21 @@
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logout, setProfile, setStatus } from "@/store/slices/userSlice";
-import api from "@/lib/axios";
+import {useGetMeQuery} from "@/store/api/userApi";
 
 export const useAuthInit = () => {
     const dispatch = useAppDispatch();
-    const user = useAppSelector((s) => s.user.profile);
+    const { data: user, isError, isLoading, isSuccess } = useGetMeQuery();
 
     useEffect(() => {
-        if (user) return;
-
-        (async () => {
+        if (isLoading) {
             dispatch(setStatus("loading"));
-            try {
-                const res = await api.get("/me");
-                dispatch(setProfile(res.data.data.user));
-                dispatch(setStatus("idle"));
-            } catch {
-                dispatch(logout());
-                dispatch(setStatus("error"));
-            }
-        })();
-    }, [dispatch, user]);
+        } else if (isSuccess && user) {
+            dispatch(setProfile(user));
+            dispatch(setStatus("idle"));
+        } else if (isError) {
+            dispatch(logout());
+            dispatch(setStatus("error"));
+        }
+    }, [user, isError, isLoading, isSuccess]);
 };

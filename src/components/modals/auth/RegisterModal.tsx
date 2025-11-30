@@ -3,13 +3,12 @@
 import { FormEvent, useState } from "react";
 import { z } from "zod";
 import { RegisterSchema } from "@/schemas/auth.schema";
-import api from "@/lib/axios";
-import { AxiosError } from "axios";
 import { useAppDispatch } from "@/store/hooks";
 import { setProfile } from "@/store/slices/userSlice";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useRegisterMutation } from "@/store/api/authApi";
 
 interface RegisterModalProps {
     onSwitch: () => void;
@@ -18,30 +17,34 @@ interface RegisterModalProps {
 
 export default function RegisterModal({ onSwitch, onClose }: RegisterModalProps) {
     const dispatch = useAppDispatch();
-    const [loading, setLoading] = useState(false);
+
+    const [registerFn, { isLoading }] = useRegisterMutation();
+
     const [error, setError] = useState("");
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setError("");
-        setLoading(true);
 
         const form = new FormData(e.currentTarget);
         const data = Object.fromEntries(form.entries());
 
         try {
             const parsed = RegisterSchema.parse(data);
-            const res = await api.post("/auth/register", parsed, { withCredentials: true });
-            dispatch(setProfile(res.data.data.user));
+
+            const res = await registerFn(parsed).unwrap();
+
+            dispatch(setProfile(res.data.user));
+
             onClose();
-        } catch (err: unknown) {
-            if (err instanceof z.ZodError) setError("Invalid form data");
-            else if (err && typeof err === "object" && "response" in err) {
-                const axiosErr = err as AxiosError<{ message?: string }>;
-                setError(axiosErr.response?.data?.message || "Server error");
-            } else setError("Something went wrong");
-        } finally {
-            setLoading(false);
+        } catch (err: any) {
+            if (err instanceof z.ZodError) {
+                setError("Invalid form data");
+            } else if (err?.data?.message) {
+                setError(err.data.message);
+            } else {
+                setError("Something went wrong");
+            }
         }
     };
 
@@ -85,8 +88,8 @@ export default function RegisterModal({ onSwitch, onClose }: RegisterModalProps)
 
                 {error && <p className="text-red-500 text-xs">{error}</p>}
 
-                <Button disabled={loading} className="w-full mt-2">
-                    {loading ? "Loading..." : "Sign Up"}
+                <Button disabled={isLoading} className="w-full mt-2">
+                    {isLoading ? "Creating account..." : "Sign Up"}
                 </Button>
             </form>
 
@@ -96,8 +99,8 @@ export default function RegisterModal({ onSwitch, onClose }: RegisterModalProps)
                     className="text-black font-medium cursor-pointer underline"
                     onClick={onSwitch}
                 >
-          Sign In
-        </span>
+                    Sign In
+                </span>
             </p>
         </div>
     );

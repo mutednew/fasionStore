@@ -1,7 +1,8 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { mainApi } from "./mainApi"; // Импортируем наш главный API
 import type { Product, Order, Category } from "@/types";
 import { CreateProductDto } from "@/types/product.dto";
 
+// Типы ответов (DTO)
 interface ApiResponse<T> {
     success: boolean;
     message?: string;
@@ -24,54 +25,42 @@ interface OrdersResponse {
     orders: Order[];
 }
 
-export const adminApi = createApi({
-    reducerPath: "adminApi",
-
-    baseQuery: fetchBaseQuery({
-        baseUrl: "/api",
-        credentials: "include",
-    }),
-
-    tagTypes: ["Product", "Category", "Order"],
-
+export const adminApi = mainApi.injectEndpoints({
     endpoints: (builder) => ({
 
         // ===============================
-        // PRODUCTS
+        // PRODUCTS (Админка)
         // ===============================
 
-        getProducts: builder.query<ApiResponse<ProductsResponse>, void>({
+        getAdminProducts: builder.query<ApiResponse<ProductsResponse>, void>({
             query: () => "/products",
-            providesTags: ["Product"],
+            // Используем тег, который обновляется при добавлении/удалении товаров
+            providesTags: ["Products"],
         }),
 
-        getProductById: builder.query<ApiResponse<ProductResponse>, string>({
+        getAdminProductById: builder.query<ApiResponse<ProductResponse>, string>({
             query: (id) => `/products/${id}`,
-            providesTags: ["Product"],
+            providesTags: (_result, _error, id) => [{ type: "Product", id }],
         }),
 
-        addProduct: builder.mutation<
-            ApiResponse<ProductResponse>,
-            CreateProductDto
-        >({
+        addProduct: builder.mutation<ApiResponse<ProductResponse>, CreateProductDto>({
             query: (body) => ({
                 url: "/products",
                 method: "POST",
                 body,
             }),
-            invalidatesTags: ["Product"],
+            // Инвалидируем список продуктов, чтобы он обновился
+            invalidatesTags: ["Products"],
         }),
 
-        updateProduct: builder.mutation<
-            ApiResponse<ProductResponse>,
-            Partial<Product> & { id: string }
-        >({
+        updateProduct: builder.mutation<ApiResponse<ProductResponse>, Partial<Product> & { id: string }>({
             query: ({ id, ...data }) => ({
                 url: `/products/${id}`,
                 method: "PUT",
                 body: data,
             }),
-            invalidatesTags: ["Product"],
+            // Инвалидируем конкретный продукт и общий список
+            invalidatesTags: (_result, _error, arg) => [{ type: "Product", id: arg.id }, "Products"],
         }),
 
         deleteProduct: builder.mutation<ApiResponse<null>, string>({
@@ -79,64 +68,51 @@ export const adminApi = createApi({
                 url: `/products/${id}`,
                 method: "DELETE",
             }),
-            invalidatesTags: ["Product"],
+            invalidatesTags: ["Products"],
         }),
 
         // ===============================
-        // ORDERS
+        // ORDERS (Админка)
         // ===============================
 
         getOrders: builder.query<ApiResponse<OrdersResponse>, void>({
             query: () => "/orders",
-            providesTags: ["Order"],
+            providesTags: ["Orders"],
         }),
 
         getOrderStats: builder.query<
-            ApiResponse<{
-                stats: {
-                    total: number;
-                    pending: number;
-                    delivered: number;
-                    canceled: number;
-                };
-            }>,
+            ApiResponse<{ stats: { total: number; pending: number; delivered: number; canceled: number } }>,
             void
         >({
             query: () => "/orders/stats",
-            providesTags: ["Order"],
+            providesTags: ["Orders"],
         }),
 
-        updateOrderStatus: builder.mutation<
-            ApiResponse<{ order: Order }>,
-            { id: string; status: string }
-        >({
+        updateOrderStatus: builder.mutation<ApiResponse<{ order: Order }>, { id: string; status: string }>({
             query: ({ id, status }) => ({
                 url: `/orders/${id}`,
                 method: "PUT",
                 body: { status },
             }),
-            invalidatesTags: ["Order"],
+            invalidatesTags: ["Orders"], // Обновит список заказов и статистику
         }),
 
         // ===============================
-        // CATEGORIES
+        // CATEGORIES (Админка)
         // ===============================
 
         getCategories: builder.query<ApiResponse<CategoriesResponse>, void>({
             query: () => "/categories",
-            providesTags: ["Category"],
+            providesTags: ["Categories"],
         }),
 
-        addCategory: builder.mutation<
-            ApiResponse<{ category: Category }>,
-            { name: string }
-        >({
+        addCategory: builder.mutation<ApiResponse<{ category: Category }>, { name: string }>({
             query: (body) => ({
                 url: "/categories",
                 method: "POST",
                 body,
             }),
-            invalidatesTags: ["Category"],
+            invalidatesTags: ["Categories"],
         }),
 
         deleteCategory: builder.mutation<ApiResponse<null>, string>({
@@ -144,14 +120,14 @@ export const adminApi = createApi({
                 url: `/categories/${id}`,
                 method: "DELETE",
             }),
-            invalidatesTags: ["Category"],
+            invalidatesTags: ["Categories"],
         }),
     }),
 });
 
 export const {
-    useGetProductsQuery,
-    useGetProductByIdQuery,
+    useGetAdminProductsQuery,
+    useGetAdminProductByIdQuery,
     useAddProductMutation,
     useUpdateProductMutation,
     useDeleteProductMutation,
