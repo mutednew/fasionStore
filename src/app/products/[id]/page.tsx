@@ -302,7 +302,7 @@ export default function ProductPage() {
                                 Shipping & Returns
                             </AccordionTrigger>
                             <AccordionContent className="text-sm text-gray-600 leading-relaxed">
-                                Free standard shipping on orders over $200. Returns accepted within 30 days of purchase.
+                                Free standard shipping on orders over 3000 ₴. Returns accepted within 30 days of purchase.
                             </AccordionContent>
                         </AccordionItem>
                         <AccordionItem value="care" className="border-b-0">

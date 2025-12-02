@@ -1,133 +1,151 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, ChevronDown } from "lucide-react";
+import { Plus, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { useGetCategoriesQuery } from "@/store/api/productsApi";
 import { useGetProductsFilteredQuery } from "@/store/api/productsApi";
 import Image from "next/image";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 
 export default function Collections() {
     const [activeCategory, setActiveCategory] = useState("all");
 
-    const { data: categoriesRes, isLoading: loadingCategories } = useGetCategoriesQuery();
+    // Загружаем категории
+    const { data: categoriesRes } = useGetCategoriesQuery();
     const categories = categoriesRes?.categories ?? [];
 
-    const { data: productsRes, isLoading: loadingProducts } =
-        useGetProductsFilteredQuery({
-            categoryId: activeCategory === "all" ? undefined : activeCategory,
-            limit: 6,
-            sort: "new",
-        });
+    // Загружаем товары для выбранной категории
+    const { data: productsRes, isFetching } = useGetProductsFilteredQuery({
+        categoryId: activeCategory === "all" ? undefined : activeCategory,
+        limit: 3, // Показываем 3 больших карточки
+        // sort: "new",
+    });
 
     const products = productsRes?.products ?? [];
 
     return (
-        <section className="w-full bg-[#f5f5f5] border-t border-neutral-200">
-            <div className="max-w-7xl mx-auto px-6 py-24">
+        <section className="w-full bg-[#111] text-white py-24 md:py-32">
+            <div className="max-w-7xl mx-auto px-6">
 
-                {/* HEADER */}
-                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-14">
-                    <h2 className="font-extrabold uppercase tracking-tight leading-none text-neutral-900 text-5xl">
-                        XIV<br />
-                        <span className="text-neutral-900">Collections</span><br />
-                        <span className="text-3xl font-semibold tracking-tight">23–24</span>
-                    </h2>
+                {/* HEADER & TABS */}
+                <div className="flex flex-col lg:flex-row items-start justify-between mb-16 gap-10">
+                    <div>
+                        <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none mb-4">
+                            Curated <br />
+                            <span className="text-neutral-500">Selections</span>
+                        </h2>
+                        <p className="text-neutral-400 max-w-sm text-sm">
+                            Explore our latest drops organized by category.
+                            Find the perfect piece to complete your look.
+                        </p>
+                    </div>
 
-                    <div className="flex items-center gap-10 mt-6 md:mt-0 text-sm text-neutral-600">
-                        <Button variant="ghost" className="px-0 hover:text-neutral-900">
-                            Filters(+)
-                        </Button>
-
-                        <div className="flex flex-col gap-1 leading-tight">
-                            <Button variant="ghost" className="px-0 hover:text-neutral-900">
-                                Sorts(–)
-                            </Button>
-                        </div>
+                    <div className="flex flex-wrap gap-4">
+                        <button
+                            onClick={() => setActiveCategory("all")}
+                            className={cn(
+                                "px-6 py-2 rounded-full border text-xs font-bold uppercase tracking-widest transition-all",
+                                activeCategory === "all"
+                                    ? "bg-white text-black border-white"
+                                    : "border-neutral-700 text-neutral-400 hover:border-white hover:text-white"
+                            )}
+                        >
+                            All Items
+                        </button>
+                        {categories.map((cat) => (
+                            <button
+                                key={cat.id}
+                                onClick={() => setActiveCategory(cat.id)}
+                                className={cn(
+                                    "px-6 py-2 rounded-full border text-xs font-bold uppercase tracking-widest transition-all",
+                                    activeCategory === cat.id
+                                        ? "bg-white text-black border-white"
+                                        : "border-neutral-700 text-neutral-400 hover:border-white hover:text-white"
+                                )}
+                            >
+                                {cat.name}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
-                {/* TABS */}
-                <Tabs value={activeCategory} onValueChange={setActiveCategory} className="mb-12">
-                    <TabsList className="bg-transparent gap-6 px-0">
-                        <TabsTrigger
-                            value="all"
-                            className="text-sm uppercase tracking-wider data-[state=active]:font-bold"
-                        >
-                            (ALL)
-                        </TabsTrigger>
-
-                        {!loadingCategories &&
-                            categories.map((cat) => (
-                                <TabsTrigger
-                                    key={cat.id}
-                                    value={cat.id}
-                                    className="text-sm uppercase tracking-wider text-neutral-500 data-[state=active]:text-black data-[state=active]:font-bold"
+                {/* GRID */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 min-h-[500px]">
+                    <AnimatePresence mode="wait">
+                        {isFetching ? (
+                            // Skeleton loading state
+                            [1, 2, 3].map((i) => (
+                                <motion.div
+                                    key={`skel-${i}`}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    className="aspect-[3/4] bg-neutral-800 animate-pulse"
+                                />
+                            ))
+                        ) : products.length > 0 ? (
+                            products.map((product, idx) => (
+                                <motion.div
+                                    key={product.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    transition={{ duration: 0.4, delay: idx * 0.1 }}
                                 >
-                                    {cat.name}
-                                </TabsTrigger>
-                            ))}
-                    </TabsList>
-                </Tabs>
+                                    <Link href={`/products/${product.id}`} className="group block h-full relative overflow-hidden">
+                                        <div className="relative aspect-[3/4] w-full bg-neutral-800 overflow-hidden">
+                                            <Image
+                                                src={product.imageUrl || "/placeholder.png"}
+                                                alt={product.name}
+                                                fill
+                                                className="object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100"
+                                            />
 
-                {/* PRODUCTS GRID */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 mb-16">
-                    {loadingProducts && <p className="text-neutral-500">Loading products...</p>}
+                                            {/* Overlay Text */}
+                                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
 
-                    {!loadingProducts &&
-                        products.map((product) => (
-                            <Card
-                                key={product.id}
-                                className="border border-neutral-200 bg-white rounded-none shadow-sm hover:shadow-md transition"
-                            >
-                                <Link href={`/products/${product.id}`}>
-                                    <div className="relative aspect-[4/5] bg-neutral-100 overflow-hidden">
-                                        <Image
-                                            src={product.imageUrl || "/placeholder.png"}
-                                            alt={product.name}
-                                            fill
-                                            className="object-cover"
-                                        />
+                                            <div className="absolute bottom-0 left-0 w-full p-6 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                                <div className="flex justify-between items-end border-b border-white/20 pb-4 mb-4">
+                                                    <div>
+                                                        <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-1">
+                                                            {product.category?.name}
+                                                        </p>
+                                                        <h3 className="text-xl font-bold text-white leading-tight">
+                                                            {product.name}
+                                                        </h3>
+                                                    </div>
+                                                    <span className="text-lg text-nowrap font-medium text-white">
+                                                        {product.price} ₴
+                                                    </span>
+                                                </div>
 
-                                        <Button
-                                            size="icon"
-                                            variant="ghost"
-                                            className="absolute bottom-3 left-1/2 -translate-x-1/2 h-8 w-8 bg-white border border-neutral-300 rounded-full hover:bg-neutral-900 hover:text-white transition"
-                                        >
-                                            <Plus className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                </Link>
-
-                                <CardContent className="p-4 flex flex-col gap-1">
-                                    <p className="text-[11px] text-neutral-500 uppercase tracking-wider">
-                                        {product.category?.name}
-                                    </p>
-
-                                    <h3 className="text-sm font-semibold text-neutral-900">
-                                        {product.name}
-                                    </h3>
-
-                                    <p className="text-sm font-medium mt-1">
-                                        {product.price} ₴
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        ))}
+                                                <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-white opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
+                                                    View Details <ArrowUpRight size={14} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </Link>
+                                </motion.div>
+                            ))
+                        ) : (
+                            <div className="col-span-3 h-64 flex items-center justify-center text-neutral-500">
+                                No products found in this collection.
+                            </div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
-                {/* LOAD MORE */}
-                <div className="flex justify-center">
-                    <Button
-                        variant="ghost"
-                        className="uppercase tracking-wider text-neutral-700 hover:opacity-70 flex items-center gap-1 text-sm"
-                    >
-                        More <ChevronDown className="w-4 h-4" />
-                    </Button>
+                <div className="mt-16 text-center">
+                    <Link href="/products">
+                        <Button variant="outline" className="cursor-pointer h-12 px-8 border-neutral-700 text-black hover:text-black uppercase tracking-widest text-xs font-bold rounded-none">
+                            View All Collections
+                        </Button>
+                    </Link>
                 </div>
             </div>
         </section>
