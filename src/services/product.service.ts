@@ -17,10 +17,13 @@ interface ProductsResponse {
 export const productService = {
     async getAll(filter?: any) {
         try {
-            const { search, categoryId, size, price, tag, limit, sort, page } = filter ?? {};
+            const {
+                search, categoryId, size, tag, limit, sort, page,
+                minPrice, maxPrice
+            } = filter ?? {};
 
             const pageNum = Number(page) || 1;
-            const limitNum = Number(limit) || 100;
+            const limitNum = Number(limit) || 12;
             const skip = (pageNum - 1) * limitNum;
 
             const where: any = {
@@ -35,25 +38,23 @@ export const productService = {
                 ...(tag && { tags: { has: tag } }),
             };
 
-            const priceMap: Record<string, any> = {
-                low:  { lt: 50 },
-                mid:  { gte: 50, lte: 200 },
-                high: { gt: 200 },
-            };
-
-            if (price && priceMap[price]) {
-                where.price = priceMap[price];
+            // --- НОВАЯ ЛОГИКА ЦЕНЫ ---
+            if (minPrice !== undefined || maxPrice !== undefined) {
+                where.price = {};
+                if (minPrice !== undefined) where.price.gte = Number(minPrice);
+                if (maxPrice !== undefined) where.price.lte = Number(maxPrice);
             }
+
+            const orderBy: any =
+                sort === "price-asc" ? { price: "asc" } :
+                    sort === "price-desc" ? { price: "desc" } :
+                        { createdAt: "desc" };
 
             const [products, total] = await prisma.$transaction([
                 prisma.product.findMany({
                     where,
                     include: { category: true },
-                    orderBy:
-                        sort === "new" ? { createdAt: "desc" } :
-                            sort === "price-asc" ? { price: "asc" } :
-                                sort === "price-desc" ? { price: "desc" } :
-                                    undefined,
+                    orderBy,
                     take: limitNum,
                     skip: skip,
                 }),
@@ -64,12 +65,7 @@ export const productService = {
 
             return {
                 products: products.map(toPlainProduct),
-                meta: {
-                    total,
-                    page: pageNum,
-                    limit: limitNum,
-                    totalPages
-                }
+                meta: { total, page: pageNum, limit: limitNum, totalPages }
             };
 
         } catch (err) {

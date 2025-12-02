@@ -51,6 +51,9 @@ export const productsApi = mainApi.injectEndpoints({
                 limit?: number;
                 sort?: string;
                 page?: number;
+
+                minPrice?: number;
+                maxPrice?: number;
             }
         >({
             query: (paramsObj) => {
@@ -65,6 +68,9 @@ export const productsApi = mainApi.injectEndpoints({
                 if (paramsObj.limit) params.append("limit", paramsObj.limit.toString());
                 if (paramsObj.sort) params.append("sort", paramsObj.sort);
                 if (paramsObj.page) params.append("page", paramsObj.page.toString());
+
+                if (paramsObj.minPrice !== undefined) params.append("minPrice", paramsObj.minPrice.toString());
+                if (paramsObj.maxPrice !== undefined) params.append("maxPrice", paramsObj.maxPrice.toString());
 
                 return `/products?${params.toString()}`;
             },

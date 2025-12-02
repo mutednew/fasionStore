@@ -1,17 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import NextImage from "next/image";
 import { motion } from "framer-motion";
-import { ShoppingCart, PackageX, ArrowLeft, ChevronLeft, ChevronRight, Search, SlidersHorizontal, Check } from "lucide-react";
+import { ShoppingCart, Search, SlidersHorizontal, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
-import { useAppSelector } from "@/store/hooks"; // Импорт для проверки профиля
-import {
-    useGetProductsFilteredQuery,
-    useGetCategoriesQuery
-} from "@/store/api/productsApi";
+import { useAppSelector } from "@/store/hooks";
+import { useGetProductsFilteredQuery, useGetCategoriesQuery } from "@/store/api/productsApi";
 import { useAddToCartMutation } from "@/store/api/cartApi";
 
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,9 +23,10 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion";
+import { Slider } from "@/components/ui/slider";
 import { Product } from "@/types";
 import { cn } from "@/lib/utils";
-import AuthModal from "@/components/modals/auth/AuthModal"; // Импорт модалки
+import AuthModal from "@/components/modals/auth/AuthModal";
 
 export default function ProductsPage() {
     const searchParams = useSearchParams();
@@ -49,11 +48,32 @@ export default function ProductsPage() {
 
     const [searchTerm, setSearchTerm] = useState("");
     const [categoryId, setCategoryId] = useState<string>("all");
-    const [priceRange, setPriceRange] = useState<string>("all");
     const [sort, setSort] = useState<string>("new");
     const [size, setSize] = useState<string>("all");
 
+    // PRICE SLIDER STATE
+    const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
+    const [debouncedPrice, setDebouncedPrice] = useState<[number, number]>([0, 50000]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedPrice(priceRange);
+            if (priceRange[0] !== 0 || priceRange[1] !== 50000) {
+                setPage(1);
+            }
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [priceRange]);
+
     const LIMIT = 9;
+
+    // --- HANDLERS ---
+    const updateUrl = (newPage?: number) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("page", (newPage ?? 1).toString());
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+        window.scrollTo({ top: 0, behavior: "auto" });
+    };
 
     const handleFilterChange = (setter: any, value: any) => {
         setter(value);
@@ -64,23 +84,37 @@ export default function ProductsPage() {
     const clearFilters = () => {
         setSearchTerm("");
         setCategoryId("all");
-        setPriceRange("all");
         setSort("new");
         setSize("all");
+        setPriceRange([0, 50000]);
         setPage(1);
         updateUrl(1);
     };
 
-    const updateUrl = (newPage: number) => {
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("page", newPage.toString());
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-        window.scrollTo({ top: 0, behavior: "auto" });
+    // Обработчики инпутов цены
+    const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = Number(e.target.value);
+        if (!isNaN(val) && val >= 0 && val <= 50000) {
+            setPriceRange([val, priceRange[1]]);
+        }
     };
 
-    const hasActiveFilters = searchTerm || categoryId !== "all" || priceRange !== "all" || sort !== "new" || size !== "all";
+    const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = Number(e.target.value);
+        if (!isNaN(val) && val >= 0 && val <= 50000) {
+            setPriceRange([priceRange[0], val]);
+        }
+    };
 
-    // --- ЗАПРОСЫ ---
+    const hasActiveFilters =
+        searchTerm ||
+        categoryId !== "all" ||
+        sort !== "new" ||
+        size !== "all" ||
+        priceRange[0] !== 0 ||
+        priceRange[1] !== 50000;
+
+    // --- API QUERIES ---
     const { data: catData } = useGetCategoriesQuery();
     const categories = catData?.categories ?? [];
 
@@ -93,9 +127,10 @@ export default function ProductsPage() {
         page,
         limit: LIMIT,
         search: searchTerm || undefined,
-        price: priceRange === "all" ? undefined : priceRange,
         sort: sort === "new" ? undefined : sort,
         size: size === "all" ? undefined : size,
+        minPrice: debouncedPrice[0],
+        maxPrice: debouncedPrice[1],
     });
 
     const [addToCart, { isLoading: isAdding }] = useAddToCartMutation();
@@ -103,11 +138,24 @@ export default function ProductsPage() {
     const products = prodData?.products ?? [];
     const meta = prodData?.meta;
 
+    // Создаем уникальный ключ на основе всех фильтров
+    // Как только изменится любой фильтр, ключ изменится, и React пересоздаст сетку с анимацией
+    const productsKey = useMemo(() => {
+        return JSON.stringify({
+            page,
+            categoryId,
+            sort,
+            size,
+            minPrice: debouncedPrice[0],
+            maxPrice: debouncedPrice[1],
+            searchTerm
+        });
+    }, [page, categoryId, sort, size, debouncedPrice, searchTerm]);
+
     const handleAddToCart = async (e: React.MouseEvent, product: Product) => {
         e.preventDefault();
         e.stopPropagation();
 
-        // 1. Проверяем, залогинен ли пользователь
         if (!profile) {
             toast.error("Please login to add items to cart");
             setIsLoginOpen(true);
@@ -118,7 +166,7 @@ export default function ProductsPage() {
             await addToCart({
                 productId: product.id,
                 quantity: 1,
-                size: product.sizes?.[0], // Берем первый доступный размер
+                size: product.sizes?.[0],
                 color: product.colors?.[0],
             }).unwrap();
             toast.success("Added to cart");
@@ -134,12 +182,16 @@ export default function ProductsPage() {
         }
     };
 
-    // --- ЛОГИКА ОТОБРАЖЕНИЯ ---
+    // --- RENDER STATES ---
+    // Показываем полный скелетон только при самой первой загрузке страницы
     if (loadingProd && !products.length) {
         return <ProductsSkeletonFull />;
     }
 
     const showSkeletons = isFetchingProd;
+    // Если есть товары и мы не загружаем новые -> показываем товары
+    // Если есть товары, но мы загружаем новые -> все равно показываем товары (покажутся скелетоны из-за ключа, если хотите)
+    // Но лучше показать скелетоны, если идет феч, чтобы было видно обновление
     const showProducts = !showSkeletons && products.length > 0;
     const showEmpty = !showSkeletons && products.length === 0;
 
@@ -166,6 +218,7 @@ export default function ProductsPage() {
                             <h1 className="text-4xl font-extrabold tracking-tight text-neutral-900">
                                 All Products
                             </h1>
+                            {/* Используем div вместо p, чтобы избежать ошибки гидратации при рендере Skeleton */}
                             <div className="text-neutral-500 mt-2 min-h-[24px]">
                                 {isFetchingProd ? (
                                     <Skeleton className="h-5 w-24" />
@@ -210,21 +263,20 @@ export default function ProductsPage() {
                             />
                         </div>
 
-                        <Accordion type="multiple" defaultValue={["category", "sort", "price"]} className="w-full">
-                            {/* Category Filter */}
+                        <Accordion type="multiple" className="w-full">
+
+                            {/* Category */}
                             <AccordionItem value="category" className="border-gray-200">
                                 <AccordionTrigger className="text-sm font-semibold text-neutral-800 hover:no-underline py-3">
                                     Category
                                 </AccordionTrigger>
                                 <AccordionContent>
-                                    <div className="space-y-1">
+                                    <div className="space-y-1 pt-1">
                                         <button
                                             onClick={() => handleFilterChange(setCategoryId, "all")}
                                             className={cn(
                                                 "flex items-center justify-between w-full px-2 py-1.5 text-sm rounded-md transition-colors",
-                                                categoryId === "all"
-                                                    ? "bg-neutral-100 text-black font-medium"
-                                                    : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
+                                                categoryId === "all" ? "bg-neutral-100 text-black font-medium" : "text-neutral-500 hover:bg-neutral-50"
                                             )}
                                         >
                                             All Categories
@@ -236,9 +288,7 @@ export default function ProductsPage() {
                                                 onClick={() => handleFilterChange(setCategoryId, cat.id)}
                                                 className={cn(
                                                     "flex items-center justify-between w-full px-2 py-1.5 text-sm rounded-md transition-colors capitalize",
-                                                    categoryId === cat.id
-                                                        ? "bg-neutral-100 text-black font-medium"
-                                                        : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
+                                                    categoryId === cat.id ? "bg-neutral-100 text-black font-medium" : "text-neutral-500 hover:bg-neutral-50"
                                                 )}
                                             >
                                                 {cat.name}
@@ -249,13 +299,13 @@ export default function ProductsPage() {
                                 </AccordionContent>
                             </AccordionItem>
 
-                            {/* Sort Filter */}
+                            {/* Sort */}
                             <AccordionItem value="sort" className="border-gray-200">
                                 <AccordionTrigger className="text-sm font-semibold text-neutral-800 hover:no-underline py-3">
                                     Sort By
                                 </AccordionTrigger>
                                 <AccordionContent>
-                                    <div className="space-y-1">
+                                    <div className="space-y-1 pt-1">
                                         {[
                                             { value: "new", label: "Newest Arrivals" },
                                             { value: "price-asc", label: "Price: Low to High" },
@@ -266,9 +316,7 @@ export default function ProductsPage() {
                                                 onClick={() => handleFilterChange(setSort, option.value)}
                                                 className={cn(
                                                     "flex items-center justify-between w-full px-2 py-1.5 text-sm rounded-md transition-colors",
-                                                    sort === option.value
-                                                        ? "bg-neutral-100 text-black font-medium"
-                                                        : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
+                                                    sort === option.value ? "bg-neutral-100 text-black font-medium" : "text-neutral-500 hover:bg-neutral-50"
                                                 )}
                                             >
                                                 {option.label}
@@ -284,28 +332,42 @@ export default function ProductsPage() {
                                 <AccordionTrigger className="text-sm font-semibold text-neutral-800 hover:no-underline py-3">
                                     Price Range
                                 </AccordionTrigger>
-                                <AccordionContent>
-                                    <div className="space-y-1">
-                                        {[
-                                            { value: "all", label: "All Prices" },
-                                            { value: "low", label: "Under 50₴" },
-                                            { value: "mid", label: "50₴ - 200₴" },
-                                            { value: "high", label: "200₴+" },
-                                        ].map((option) => (
-                                            <button
-                                                key={option.value}
-                                                onClick={() => handleFilterChange(setPriceRange, option.value)}
-                                                className={cn(
-                                                    "flex items-center justify-between w-full px-2 py-1.5 text-sm rounded-md transition-colors",
-                                                    priceRange === option.value
-                                                        ? "bg-neutral-100 text-black font-medium"
-                                                        : "text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900"
-                                                )}
-                                            >
-                                                {option.label}
-                                                {priceRange === option.value && <Check size={14} />}
-                                            </button>
-                                        ))}
+                                <AccordionContent className="pt-4 px-2">
+                                    <div className="space-y-4">
+                                        <Slider
+                                            defaultValue={[0, 50000]}
+                                            value={priceRange}
+                                            max={50000}
+                                            step={100}
+                                            min={0}
+                                            onValueChange={(val) => setPriceRange(val as [number, number])}
+                                            className="my-2"
+                                        />
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div className="relative w-full">
+                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400">₴</span>
+                                                <Input
+                                                    type="number"
+                                                    min={0}
+                                                    max={50000}
+                                                    value={priceRange[0]}
+                                                    onChange={handleMinPriceChange}
+                                                    className="h-8 pl-5 text-xs bg-white border-neutral-200 focus-visible:ring-black"
+                                                />
+                                            </div>
+                                            <span className="text-neutral-300">–</span>
+                                            <div className="relative w-full">
+                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400">₴</span>
+                                                <Input
+                                                    type="number"
+                                                    min={0}
+                                                    max={50000}
+                                                    value={priceRange[1]}
+                                                    onChange={handleMaxPriceChange}
+                                                    className="h-8 pl-5 text-xs bg-white border-neutral-200 focus-visible:ring-black"
+                                                />
+                                            </div>
+                                        </div>
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
@@ -316,16 +378,14 @@ export default function ProductsPage() {
                                     Size
                                 </AccordionTrigger>
                                 <AccordionContent>
-                                    <div className="grid grid-cols-4 gap-2 pt-1">
+                                    <div className="grid grid-cols-4 gap-2 pt-2">
                                         {["XS", "S", "M", "L", "XL", "XXL"].map((s) => (
                                             <button
                                                 key={s}
                                                 onClick={() => handleFilterChange(setSize, size === s ? "all" : s)}
                                                 className={cn(
                                                     "h-9 rounded-md border text-sm font-medium transition-all",
-                                                    size === s
-                                                        ? "bg-black text-white border-black"
-                                                        : "bg-white text-neutral-600 border-gray-200 hover:border-neutral-300 hover:text-black"
+                                                    size === s ? "bg-black text-white border-black" : "bg-white text-neutral-600 border-gray-200 hover:border-black"
                                                 )}
                                             >
                                                 {s}
@@ -340,43 +400,39 @@ export default function ProductsPage() {
                     {/* --- PRODUCT GRID --- */}
                     <div className="flex-1 w-full min-h-[500px]">
 
-                        {/* Skeletons */}
                         {showSkeletons && (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
+                            // Добавил key="skeletons", чтобы React понимал, что это другое состояние
+                            <div key="skeletons" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
                                 {[...Array(9)].map((_, i) => (
                                     <ProductCardSkeleton key={i} />
                                 ))}
                             </div>
                         )}
 
-                        {/* Products */}
                         {showProducts && (
                             <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ duration: 0.3 }}
+                                // ВАЖНО: Ключ зависит от фильтров!
+                                // При изменении фильтра этот ключ изменится, компонент перемонтируется, и анимация initial сработает заново.
+                                key={productsKey}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.4, ease: "easeOut" }}
                                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                             >
                                 {products.map((product, index) => (
-                                    <motion.div
+                                    <ProductCard
                                         key={product.id}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        transition={{ delay: index * 0.05 }}
-                                    >
-                                        <ProductCard
-                                            product={product}
-                                            onAdd={(e) => handleAddToCart(e, product)}
-                                            isAdding={isAdding}
-                                        />
-                                    </motion.div>
+                                        product={product}
+                                        onAdd={(e) => handleAddToCart(e, product)}
+                                        isAdding={isAdding}
+                                    />
                                 ))}
                             </motion.div>
                         )}
 
-                        {/* Empty State */}
                         {showEmpty && (
                             <motion.div
+                                key="empty"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 className="py-24 text-center border border-dashed border-gray-200 rounded-xl bg-white"
@@ -429,17 +485,19 @@ export default function ProductsPage() {
     );
 }
 
-// --- PRODUCT CARD ---
+// Sub-components
 function ProductCard({ product, onAdd, isAdding }: { product: Product, onAdd: (e: any) => void, isAdding: boolean }) {
     return (
         <Link href={`/products/${product.id}`} className="block h-full group">
             <Card className="h-full overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 bg-white flex flex-col rounded-xl ring-1 ring-neutral-200/50">
                 <div className="relative aspect-[3/4] bg-neutral-100 overflow-hidden">
                     {product.imageUrl ? (
-                        <img
+                        <NextImage
                             src={product.imageUrl}
                             alt={product.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
+                            fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                            className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                         />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center text-neutral-300 bg-neutral-50">
@@ -508,7 +566,6 @@ function ProductCard({ product, onAdd, isAdding }: { product: Product, onAdd: (e
     );
 }
 
-// --- SKELETONS ---
 function ProductCardSkeleton() {
     return (
         <div className="flex flex-col gap-4 bg-white p-4 rounded-xl border border-gray-100 h-full">

@@ -169,10 +169,6 @@ export default function HeroSection() {
                             01
                         </div>
 
-                        {/* Убрали mode="popLayout", так как он часто вызывает проблемы с позиционированием при выходе элементов в Grid/Flex.
-                           Обычный AnimatePresence с mode="wait" (или параллельный, если настроить absolute) работает стабильнее.
-                           В данном случае мы делаем хитрость: убираем `layout` проп, чтобы Framer не пытался пересчитывать позиции DOM.
-                        */}
                         <AnimatePresence mode="popLayout">
                             {visibleProducts.map((product, idx) => (
                                 <motion.div
@@ -181,7 +177,7 @@ export default function HeroSection() {
                                     initial={{ opacity: 0, y: 30, scale: 0.98 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: -30, scale: 0.98, transition: { duration: 0.4 } }}
-                                    transition={{ duration: 0.5, ease: "easeOut", delay: idx * 0.1 }}
+                                    transition={{ duration: 0.6, ease: "easeOut", delay: idx * 0.1 }}
                                     className={`relative z-10 w-1/2 h-full ${idx === 1 ? 'mt-16 md:mt-24 h-[85%]' : ''}`}
                                 >
                                     <Link href={`/products/${product.id}`} className="block w-full h-full group perspective-1000">

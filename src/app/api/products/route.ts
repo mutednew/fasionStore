@@ -19,6 +19,9 @@ export async function GET(req: Request) {
 
             // ВАЖНО: Добавили page
             page: url.searchParams.get("page") ? Number(url.searchParams.get("page")) : undefined,
+
+            minPrice: url.searchParams.get("minPrice") ?? undefined,
+            maxPrice: url.searchParams.get("maxPrice") ?? undefined,
         };
 
         // Сервис теперь вернет { products, meta }
