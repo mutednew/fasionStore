@@ -5,52 +5,60 @@ export interface User {
     role: "ADMIN" | "CUSTOMER";
 }
 
+export interface Category {
+    id: string;
+    name: string;
+}
+
 export interface Product {
     id: string;
     name: string;
-    price: number;
+    price: number | string;
     stock: number;
-
     description?: string | null;
-
-    imageUrl?: string;
+    imageUrl?: string | null;
     images: string[];
-
     colors: string[];
     sizes: string[];
     tags: string[];
-
     createdAt: string;
-    updatedAt: string;
-
     categoryId?: string;
     category?: Category;
 }
 
-export interface Category {
+export interface CartItem {
     id: string;
-    name: string;
+    productId: string;
+    quantity: number;
+    size?: string;
+    color?: string;
+    product: Product;
 }
 
 export interface Order {
     id: string;
     userId: string;
     status: "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELED";
-    total: number;
+    total: number | string;
     createdAt: string;
-    user?: {
-        id: string;
-        name: string;
-        email?: string;
-    };
-    items?: {
+
+    email?: string;
+    phone?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+    zip?: string;
+
+    items: {
         id: string;
         quantity: number;
-        price: number;
+        price: number | string;
+        size?: string | null;
+        color?: string | null;
         product: {
             id: string;
             name: string;
-            imageUrl?: string;
+            imageUrl?: string | null;
         };
     }[];
 }

@@ -1,129 +1,139 @@
-import { OrderType } from "@/schemas/order.schema";
 import { prisma } from "@/lib/prisma";
-import { CartSchema } from "@/schemas/cart.schema";
-import { toPlainOrder } from "@/lib/transformers";
 import { ApiError } from "@/lib/ApiError";
 
+export interface CheckoutData {
+    email: string;
+    phone: string;
+    firstName: string;
+    lastName: string;
+    address: string;
+    city: string;
+    country: string;
+    zip: string;
+}
+
 export const orderService = {
-    async getAll(): Promise<OrderType[]> {
+    async getAll() {
         try {
-            const orders = await prisma.order.findMany({
+            return await prisma.order.findMany({
                 include: {
-                    items: {
-                        include: { product: true },
-                    },
+                    items: { include: { product: true } },
                     user: true,
                 },
                 orderBy: { createdAt: "desc" },
             });
-
-            return orders.map(toPlainOrder);
         } catch (err) {
             throw new ApiError("Failed to fetch orders", 500);
         }
     },
 
-    async getById(id: string): Promise<OrderType | null> {
+    async getById(id: string) {
         try {
             const order = await prisma.order.findUnique({
                 where: { id },
                 include: {
-                    items: {
-                        include: { product: true },
-                    },
+                    items: { include: { product: true } },
                     user: true,
                 },
             });
 
-            if (!order) {
-                throw new ApiError("Order not found", 404);
-            }
-
-            return toPlainOrder(order);
+            if (!order) throw new ApiError("Order not found", 404);
+            return order;
         } catch (err) {
-            if (err instanceof ApiError) {
-                throw err;
-            }
+            if (err instanceof ApiError) throw err;
             throw new ApiError("Failed to fetch order", 500);
         }
     },
 
-    async getByUser(userId: string): Promise<OrderType[]> {
+    async getByUser(userId: string) {
         try {
-            const orders = await prisma.order.findMany({
+            return await prisma.order.findMany({
                 where: { userId },
                 include: {
                     items: { include: { product: true } },
                 },
                 orderBy: { createdAt: "desc" },
             });
-
-            return orders.map(toPlainOrder);
         } catch (err) {
-            throw new ApiError("Failed to fetch orders for user", 500);
+            throw new ApiError("Failed to fetch user orders", 500);
         }
     },
 
-    async createFromCart(cartData: unknown): Promise<OrderType> {
-        try {
-            const parsed = CartSchema.parse(cartData);
+    async createFromCart(userId: string, data: CheckoutData) {
+        const cart = await prisma.cart.findUnique({
+            where: { userId },
+            include: { items: { include: { product: true } } },
+        });
 
-            if (!parsed.items || parsed.items.length === 0) {
-                throw new ApiError("Cart is empty", 400);
-            }
+        if (!cart || cart.items.length === 0) {
+            throw new ApiError("Cart is empty", 400);
+        }
 
-            const order = await prisma.order.create({
+        const subtotal = cart.items.reduce((acc, item) => {
+            return acc + (Number(item.product.price) * item.quantity);
+        }, 0);
+
+        const shippingCost = subtotal > 200 ? 0 : 15;
+        const total = subtotal + shippingCost;
+
+        return await prisma.$transaction(async (tx) => {
+            const order = await tx.order.create({
                 data: {
-                    userId: parsed.userId,
-                    status: "PENDING",
-                    items: {
-                        create: parsed.items.map((item) => ({
-                            productId: item.productId,
-                            quantity: item.quantity,
-                            price: 0,
-                        })),
-                    },
+                    userId,
+                    status: "PAID",
+                    total: total,
+
+                    email: data.email,
+                    phone: data.phone,
+                    firstName: data.firstName,
+                    lastName: data.lastName,
+                    address: data.address,
+                    city: data.city,
+                    country: data.country,
+                    zip: data.zip,
                 },
-                include: { items: { include: { product: true } } },
             });
 
-            return toPlainOrder(order);
-        } catch (err) {
-            if (err instanceof ApiError) {
-                throw err;
+            const orderItemsData = cart.items.map((item) => ({
+                orderId: order.id,
+                productId: item.productId,
+                quantity: item.quantity,
+                price: item.product.price,
+                size: item.size,
+                color: item.color,
+            }));
+
+            if (orderItemsData.length > 0) {
+                await tx.orderItem.createMany({
+                    data: orderItemsData,
+                });
             }
-            throw new ApiError("Failed to create order from cart", 500);
-        }
+
+            await tx.cartItem.deleteMany({
+                where: { cartId: cart.id },
+            });
+
+            return order;
+        });
     },
 
-    async updateStatus(id: string, status: OrderType["status"]): Promise<OrderType> {
+    async updateStatus(id: string, status: any) {
         try {
-            const updated = await prisma.order.update({
+            return await prisma.order.update({
                 where: { id },
                 data: { status },
                 include: {
                     items: { include: { product: true } },
-                    user: true, // ✅ добавь
+                    user: true,
                 },
             });
-
-            return toPlainOrder(updated);
         } catch (err) {
             throw new ApiError("Failed to update order status", 500);
         }
     },
 
-    async delete(id: string): Promise<void> {
+    async delete(id: string) {
         try {
-            const order = await prisma.order.findUnique({
-                where: { id },
-                include: { items: true },
-            });
-
-            if (!order) {
-                throw new ApiError("Order not found", 404);
-            }
-
             await prisma.orderItem.deleteMany({
                 where: { orderId: id },
             });
@@ -132,9 +142,6 @@ export const orderService = {
                 where: { id },
             });
         } catch (err) {
-            if (err instanceof ApiError) {
-                throw err;
-            }
             throw new ApiError("Failed to delete order", 500);
         }
     },

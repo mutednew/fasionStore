@@ -14,14 +14,12 @@ import { cn } from "@/lib/utils";
 import { useGetCategoriesQuery } from "@/store/api/productsApi";
 
 interface ProductFiltersProps {
-    // Values
     searchTerm: string;
     categoryId: string;
     sort: string;
     size: string;
     priceRange: [number, number];
 
-    // Handlers
     setSearchTerm: (val: string) => void;
     setCategoryId: (val: string) => void;
     setSort: (val: string) => void;
@@ -29,8 +27,7 @@ interface ProductFiltersProps {
     setPriceRange: (val: [number, number]) => void;
     onClear: () => void;
 
-    // Options
-    hideCategory?: boolean; // Скрыть выбор категории
+    hideCategory?: boolean;
 }
 
 export function ProductFilters({
@@ -59,7 +56,6 @@ export function ProductFilters({
         priceRange[0] !== 0 ||
         priceRange[1] !== 50000;
 
-    // Хендлеры для ручного ввода цены
     const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = Number(e.target.value);
         if (!isNaN(val) && val >= 0 && val <= 50000) {
@@ -91,7 +87,6 @@ export function ProductFilters({
                 )}
             </div>
 
-            {/* Search */}
             <div className="relative">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
                 <Input
@@ -102,12 +97,8 @@ export function ProductFilters({
                 />
             </div>
 
-            {/* УБРАЛИ defaultValue. Теперь все секции закрыты по умолчанию.
-               Если нужно открыть какую-то конкретную, передайте defaultValue={["price"]}
-            */}
             <Accordion type="multiple" className="w-full">
 
-                {/* Category Filter (Optional) */}
                 {!hideCategory && (
                     <AccordionItem value="category" className="border-gray-200">
                         <AccordionTrigger className="text-sm font-semibold text-neutral-800 hover:no-underline py-3">
@@ -143,7 +134,6 @@ export function ProductFilters({
                     </AccordionItem>
                 )}
 
-                {/* Sort */}
                 <AccordionItem value="sort" className="border-gray-200">
                     <AccordionTrigger className="text-sm font-semibold text-neutral-800 hover:no-underline py-3">
                         Sort By
@@ -171,7 +161,6 @@ export function ProductFilters({
                     </AccordionContent>
                 </AccordionItem>
 
-                {/* Price Filter */}
                 <AccordionItem value="price" className="border-gray-200">
                     <AccordionTrigger className="text-sm font-semibold text-neutral-800 hover:no-underline py-3">
                         Price Range
@@ -216,7 +205,6 @@ export function ProductFilters({
                     </AccordionContent>
                 </AccordionItem>
 
-                {/* Size */}
                 <AccordionItem value="size" className="border-gray-200">
                     <AccordionTrigger className="text-sm font-semibold text-neutral-800 hover:no-underline py-3">
                         Size

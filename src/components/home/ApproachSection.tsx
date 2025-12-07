@@ -11,7 +11,6 @@ export default function ApproachSection() {
         <section className="w-full bg-[#f9f9f9] py-32 overflow-hidden border-t border-neutral-200">
             <div className="max-w-[1440px] mx-auto px-6 md:px-10">
 
-                {/* HEADER */}
                 <div className="flex flex-col md:flex-row items-end justify-between gap-10 mb-32 border-b border-neutral-300 pb-10">
                     <div className="max-w-2xl">
                         <motion.h2
@@ -39,7 +38,6 @@ export default function ApproachSection() {
                     </motion.div>
                 </div>
 
-                {/* CONTENT BLOCKS */}
                 <div className="space-y-32">
                     <FeatureBlock
                         num="01"
@@ -66,7 +64,6 @@ export default function ApproachSection() {
                     />
                 </div>
 
-                {/* FOOTER CTA */}
                 <motion.div
                     initial={{ opacity: 0, y: 40 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -93,7 +90,6 @@ function FeatureBlock({ num, title, text, img, align }: { num: string, title: st
     return (
         <div className={`flex flex-col ${isLeft ? 'lg:flex-row' : 'lg:flex-row-reverse'} gap-12 lg:gap-24 items-center`}>
 
-            {/* IMAGE */}
             <motion.div
                 className="w-full lg:w-1/2 relative aspect-[3/4] lg:aspect-[4/5] overflow-hidden bg-neutral-200"
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -109,9 +105,7 @@ function FeatureBlock({ num, title, text, img, align }: { num: string, title: st
                 />
             </motion.div>
 
-            {/* TEXT */}
             <div className="w-full lg:w-1/2 relative">
-                {/* Big Background Number */}
                 <motion.span
                     className="absolute -top-16 md:-top-24 -left-6 md:-left-10 text-[120px] md:text-[200px] font-black text-neutral-200/50 leading-none select-none -z-10"
                     initial={{ opacity: 0, x: isLeft ? -50 : 50 }}

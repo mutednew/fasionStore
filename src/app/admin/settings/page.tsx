@@ -1,7 +1,7 @@
-import { SettingsSection } from "../components/SettingsSection";
-import { ProfileForm } from "../components/ProfileForm";
-import { ThemeToggle } from "../components/ThemeToggle";
-import { SecurityForm } from "../components/SecurityForm";
+import { SettingsSection } from "../components/settings/SettingsSection";
+import { ProfileForm } from "../components/settings/ProfileForm";
+import { ThemeToggle } from "../components/settings/ThemeToggle";
+import { SecurityForm } from "../components/settings/SecurityForm";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 

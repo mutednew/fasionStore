@@ -1,9 +1,9 @@
 import { orderService } from "@/services/order.service";
-import { OrderSchema } from "@/schemas/order.schema";
-import { requireAuth } from "@/lib/requireAuth";
+import { requireAuth, AuthenticatedRequest } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
-import {z, ZodError} from "zod";
+import { z } from "zod";
 import { ApiError } from "@/lib/ApiError";
+import { NextResponse } from "next/server";
 
 export async function GET(
     req: Request,
@@ -13,9 +13,9 @@ export async function GET(
         const { id } = await params;
 
         const auth = await requireAuth(req);
-        if (auth) return auth;
+        if (auth instanceof NextResponse) return auth;
 
-        const user = (req as any).user;
+        const user = (req as unknown as AuthenticatedRequest).user;
         const order = await orderService.getById(id);
 
         if (!order) return fail("Order not found", 404);
@@ -38,9 +38,9 @@ export async function PUT(
         const { id } = await params;
 
         const auth = await requireAuth(req);
-        if (auth) return auth;
+        if (auth instanceof NextResponse) return auth;
 
-        const user = (req as any).user;
+        const user = (req as unknown as AuthenticatedRequest).user;
         const body = await req.json();
 
         const UpdateSchema = z.object({
@@ -79,7 +79,7 @@ export async function DELETE(
         const { id } = await params;
 
         const auth = await requireAuth(req, "ADMIN");
-        if (auth) return auth;
+        if (auth instanceof NextResponse) return auth;
 
         await orderService.delete(id);
         return ok({ message: "Order deleted successfully" });

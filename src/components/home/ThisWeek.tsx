@@ -11,16 +11,13 @@ import { Product } from "@/types";
 
 export default function ThisWeek() {
     const { data } = useGetProductsFilteredQuery({
-        limit: 12, // Берем больше товаров для разнообразия
-        // sort: "new",
+        limit: 12,
     });
 
     const products = data?.products ?? [];
 
-    // Стейт для перемешанных товаров
     const [shuffledProducts, setShuffledProducts] = useState<Product[]>([]);
 
-    // Перемешиваем товары при загрузке (только на клиенте)
     useEffect(() => {
         if (products.length > 0) {
             const shuffled = [...products].sort(() => 0.5 - Math.random());
@@ -28,17 +25,13 @@ export default function ThisWeek() {
         }
     }, [products]);
 
-    // Дублируем 3 раза для длинной ленты (бесконечный эффект)
-    // Используем уже перемешанный массив
     const items = shuffledProducts.length > 0
         ? [...shuffledProducts, ...shuffledProducts, ...shuffledProducts]
         : [];
 
-    // Управление анимацией
     const [isHovered, setIsHovered] = useState(false);
 
-    // Вычисляем длительность анимации (чем больше товаров, тем медленнее, чтобы скорость была постоянной)
-    const duration = items.length * 2.5; // 2.5 секунды на 1 товар
+    const duration = items.length * 2.5;
 
     return (
         <section className="w-full bg-white py-24 border-b border-neutral-100 overflow-hidden">
@@ -62,10 +55,8 @@ export default function ThisWeek() {
                 </Link>
             </div>
 
-            {/* ===== INFINITE SLIDER ===== */}
             <div className="relative w-full group">
 
-                {/* Градиенты */}
                 <div className="absolute left-0 top-0 bottom-0 w-12 md:w-32 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
                 <div className="absolute right-0 top-0 bottom-0 w-12 md:w-32 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
 
@@ -91,7 +82,6 @@ export default function ThisWeek() {
                         </div>
                     </div>
                 ) : (
-                    // Skeleton
                     <div className="flex gap-6 px-6 overflow-hidden">
                         {[1, 2, 3, 4, 5].map((i) => (
                             <div key={i} className="min-w-[280px] h-[400px] bg-neutral-100 animate-pulse" />

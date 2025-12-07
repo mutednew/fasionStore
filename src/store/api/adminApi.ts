@@ -24,6 +24,18 @@ interface OrdersResponse {
     orders: Order[];
 }
 
+interface StatsResponse {
+    stats: {
+        total: number;
+        pending: number;
+        paid: number;
+        shipped: number;
+        delivered: number;
+        canceled: number;
+        revenue: number;
+    };
+}
+
 export const adminApi = mainApi.injectEndpoints({
     endpoints: (builder) => ({
 
@@ -68,10 +80,7 @@ export const adminApi = mainApi.injectEndpoints({
             providesTags: ["Orders"],
         }),
 
-        getOrderStats: builder.query<
-            ApiResponse<{ stats: { total: number; pending: number; delivered: number; canceled: number } }>,
-            void
-        >({
+        getOrderStats: builder.query<ApiResponse<StatsResponse>, void>({
             query: () => "/orders/stats",
             providesTags: ["Orders"],
         }),

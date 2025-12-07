@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FooterLogo } from "@/components/icons/FooterLogo"; // Твой логотип
+import { FooterLogo } from "@/components/icons/FooterLogo";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Facebook, Instagram, Twitter, Youtube, ArrowRight, CreditCard } from "lucide-react";
@@ -8,16 +8,13 @@ export default function Footer() {
     return (
         <footer className="relative w-full bg-neutral-950 text-neutral-300 overflow-hidden">
 
-            {/* === BACKGROUND IMAGE & OVERLAY === */}
             <div className="absolute inset-0 z-0">
-                {/* Если картинки нет, будет просто черный фон. Если есть - она будет едва видна через оверлей */}
                 <div className="absolute inset-0 bg-[url('/footerBg.png')] bg-cover bg-center opacity-30 grayscale mix-blend-overlay" />
                 <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/90 to-neutral-950/80" />
             </div>
 
             <div className="relative z-10 max-w-7xl mx-auto px-6 pt-20 pb-10">
 
-                {/* === TOP SECTION: NEWSLETTER & BRAND === */}
                 <div className="flex flex-col lg:flex-row justify-between items-start gap-12 mb-16">
                     <div className="max-w-md">
                         <div className="mb-6 text-white scale-110 origin-left">
@@ -28,7 +25,6 @@ export default function Footer() {
                             Join our community and be the first to know about new drops.
                         </p>
 
-                        {/* SOCIALS */}
                         <div className="flex gap-4">
                             {[Instagram, Facebook, Twitter, Youtube].map((Icon, i) => (
                                 <Link
@@ -42,7 +38,6 @@ export default function Footer() {
                         </div>
                     </div>
 
-                    {/* NEWSLETTER FORM */}
                     <div className="w-full lg:w-auto min-w-[300px]">
                         <h3 className="text-white font-semibold tracking-wide mb-4">SUBSCRIBE TO OUR NEWSLETTER</h3>
                         <p className="text-xs text-neutral-500 mb-4">Get 10% off your first order when you sign up.</p>
@@ -60,10 +55,8 @@ export default function Footer() {
 
                 <div className="h-px w-full bg-neutral-900 mb-16" />
 
-                {/* === MIDDLE SECTION: LINKS GRID === */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-20">
 
-                    {/* Column 1 */}
                     <div className="flex flex-col gap-4">
                         <h4 className="text-white font-bold text-sm tracking-wider mb-2">SHOP</h4>
                         <Link href="/products" className="text-sm hover:text-white transition-colors">New Arrivals</Link>
@@ -72,7 +65,6 @@ export default function Footer() {
                         <Link href="/products?price=low" className="text-sm hover:text-white transition-colors">Sale</Link>
                     </div>
 
-                    {/* Column 2 */}
                     <div className="flex flex-col gap-4">
                         <h4 className="text-white font-bold text-sm tracking-wider mb-2">COMPANY</h4>
                         <Link href="#" className="text-sm hover:text-white transition-colors">About Us</Link>
@@ -81,7 +73,6 @@ export default function Footer() {
                         <Link href="#" className="text-sm hover:text-white transition-colors">Press</Link>
                     </div>
 
-                    {/* Column 3 */}
                     <div className="flex flex-col gap-4">
                         <h4 className="text-white font-bold text-sm tracking-wider mb-2">SUPPORT</h4>
                         <Link href="#" className="text-sm hover:text-white transition-colors">Help Center</Link>
@@ -90,7 +81,6 @@ export default function Footer() {
                         <Link href="#" className="text-sm hover:text-white transition-colors">Contact Us</Link>
                     </div>
 
-                    {/* Column 4 */}
                     <div className="flex flex-col gap-4">
                         <h4 className="text-white font-bold text-sm tracking-wider mb-2">LEGAL</h4>
                         <Link href="#" className="text-sm hover:text-white transition-colors">Privacy Policy</Link>
@@ -99,7 +89,6 @@ export default function Footer() {
                     </div>
                 </div>
 
-                {/* === BOTTOM SECTION: COPYRIGHT & PAYMENTS === */}
                 <div className="flex flex-col md:flex-row justify-between items-center gap-6 pt-8 border-t border-neutral-900">
                     <p className="text-xs text-neutral-600">
                         © 2025 Fashion Store. All rights reserved.

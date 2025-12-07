@@ -1,13 +1,13 @@
 "use client";
 
-import { StatCard } from "../components/StatCard";
-import { OrderChart } from "../components/OrderChart";
-import { OrderActivity } from "../components/OrderActivity";
-import { OrderFilters } from "../components/OrderFilters";
-import { OrderTable } from "../components/OrderTable";
+import { StatCard } from "../components/order/StatCard";
+import { OrderChart } from "../components/order/OrderChart";
+import { OrderActivity } from "../components/order/OrderActivity";
+import { OrderFilters } from "../components/order/OrderFilters";
+import { OrderTable } from "../components/order/OrderTable";
 import { useGetOrderStatsQuery } from "@/store/api/adminApi";
 import { useState } from "react";
-import {AdminSkeleton} from "@/app/admin/components/skeletons/AdminSkeleton";
+import { AdminSkeleton } from "@/app/admin/components/skeletons/AdminSkeleton";
 
 export default function AdminOrders() {
     const { data, isLoading } = useGetOrderStatsQuery();

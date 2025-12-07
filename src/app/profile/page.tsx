@@ -5,24 +5,27 @@ import { useRouter } from "next/navigation";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logout } from "@/store/slices/userSlice";
 import { useLogoutMutation } from "@/store/api/authApi";
-import { useGetMeQuery } from "@/store/api/userApi";
+import { useGetMeQuery, useGetMyOrdersQuery } from "@/store/api/userApi";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { Mail, Shield, LogOut, Package, User as UserIcon, Settings, CreditCard } from "lucide-react";
 import { motion } from "framer-motion";
+import {OrdersList} from "@/components/profile/OrderList";
 
 export default function ProfilePage() {
     const dispatch = useAppDispatch();
     const router = useRouter();
 
     const { profile: reduxProfile } = useAppSelector((state) => state.user);
-
     const { data: serverProfile, isLoading: isProfileLoading } = useGetMeQuery();
+
+    const { data: orders, isLoading: isOrdersLoading } = useGetMyOrdersQuery();
 
     const [logoutServer, { isLoading: isLogoutLoading }] = useLogoutMutation();
 
@@ -30,7 +33,7 @@ export default function ProfilePage() {
 
     useEffect(() => {
         if (!user && !isProfileLoading) {
-            router.push("/login");
+            router.push("/");
         }
     }, [user, isProfileLoading, router]);
 
@@ -38,11 +41,11 @@ export default function ProfilePage() {
         try {
             await logoutServer().unwrap();
             dispatch(logout());
-            router.push("/login");
+            router.push("/");
         } catch (err) {
             console.warn("Logout failed:", err);
             dispatch(logout());
-            router.push("/login");
+            router.push("/");
         }
     };
 
@@ -64,6 +67,7 @@ export default function ProfilePage() {
     return (
         <main className="min-h-screen w-full bg-neutral-50 py-10 px-4 md:px-8">
             <div className="max-w-5xl mx-auto space-y-8">
+
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -71,7 +75,7 @@ export default function ProfilePage() {
                 >
                     <div className="flex items-center gap-4">
                         <Avatar className="h-20 w-20 border-2 border-white shadow-md">
-                            <AvatarImage src="" alt={displayName} /> {}
+                            <AvatarImage src="" alt={displayName} />
                             <AvatarFallback className="bg-neutral-900 text-white text-xl">
                                 {initials}
                             </AvatarFallback>
@@ -141,7 +145,7 @@ export default function ProfilePage() {
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-neutral-500 text-xs">Member Since</span>
-                                        <span className="font-medium">November 2023</span> {}
+                                        <span className="font-medium">2024</span>
                                     </div>
                                 </div>
                             </CardContent>
@@ -165,29 +169,33 @@ export default function ProfilePage() {
                         transition={{ delay: 0.2 }}
                         className="md:col-span-2"
                     >
-                        <Card className="h-full">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Package size={20} />
-                                    Order History
-                                </CardTitle>
-                                <CardDescription>View your recent purchases and their status.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="flex flex-col items-center justify-center py-12 text-center text-neutral-500 border-2 border-dashed rounded-xl bg-neutral-50/50">
-                                    <div className="bg-white p-4 rounded-full shadow-sm mb-4">
-                                        <Package size={32} className="text-neutral-300" />
+                        <div className="space-y-6">
+                            <h2 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
+                                <Package className="text-neutral-500" /> Order History
+                            </h2>
+
+                            {isOrdersLoading ? (
+                                <div className="space-y-4">
+                                    <Skeleton className="h-32 w-full rounded-lg" />
+                                    <Skeleton className="h-32 w-full rounded-lg" />
+                                </div>
+                            ) : orders && orders.length > 0 ? (
+                                <OrdersList orders={orders} />
+                            ) : (
+                                <Card className="h-64 flex flex-col items-center justify-center text-center border-dashed">
+                                    <div className="bg-neutral-100 p-4 rounded-full mb-4">
+                                        <Package size={32} className="text-neutral-400" />
                                     </div>
                                     <h3 className="font-medium text-neutral-900">No orders yet</h3>
-                                    <p className="text-sm max-w-xs mt-1 mb-6">
+                                    <p className="text-sm text-neutral-500 mt-1 mb-6 max-w-xs mx-auto">
                                         Looks like you haven't bought anything yet. Go ahead and explore our collection!
                                     </p>
                                     <Button onClick={() => router.push("/products")}>
                                         Start Shopping
                                     </Button>
-                                </div>
-                            </CardContent>
-                        </Card>
+                                </Card>
+                            )}
+                        </div>
                     </motion.div>
                 </div>
             </div>

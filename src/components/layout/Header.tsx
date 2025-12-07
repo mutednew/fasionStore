@@ -135,7 +135,6 @@ export default function Header() {
                             <span className="text-sm font-medium hidden md:inline">Cart</span>
                             <ShoppingCart size={18} strokeWidth={1.8} />
 
-                            {}
                             {displayCount > 0 && (
                                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center border-2 border-white shadow-sm animate-in zoom-in duration-300">
                                     {displayCount}

@@ -15,15 +15,12 @@ import { cn } from "@/lib/utils";
 export default function Collections() {
     const [activeCategory, setActiveCategory] = useState("all");
 
-    // Загружаем категории
     const { data: categoriesRes } = useGetCategoriesQuery();
     const categories = categoriesRes?.categories ?? [];
 
-    // Загружаем товары для выбранной категории
     const { data: productsRes, isFetching } = useGetProductsFilteredQuery({
         categoryId: activeCategory === "all" ? undefined : activeCategory,
-        limit: 3, // Показываем 3 больших карточки
-        // sort: "new",
+        limit: 3,
     });
 
     const products = productsRes?.products ?? [];
@@ -32,7 +29,6 @@ export default function Collections() {
         <section className="w-full bg-[#111] text-white py-24 md:py-32">
             <div className="max-w-7xl mx-auto px-6">
 
-                {/* HEADER & TABS */}
                 <div className="flex flex-col lg:flex-row items-start justify-between mb-16 gap-10">
                     <div>
                         <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter leading-none mb-4">
@@ -74,11 +70,9 @@ export default function Collections() {
                     </div>
                 </div>
 
-                {/* GRID */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8 min-h-[500px]">
                     <AnimatePresence mode="wait">
                         {isFetching ? (
-                            // Skeleton loading state
                             [1, 2, 3].map((i) => (
                                 <motion.div
                                     key={`skel-${i}`}
@@ -106,7 +100,6 @@ export default function Collections() {
                                                 className="object-cover transition-transform duration-700 group-hover:scale-110 opacity-80 group-hover:opacity-100"
                                             />
 
-                                            {/* Overlay Text */}
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
 
                                             <div className="absolute bottom-0 left-0 w-full p-6 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">

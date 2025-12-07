@@ -1,6 +1,6 @@
 import { ReactNode } from "react";
 import { cookies } from "next/headers";
-import Sidebar from "./components/Sidebar";
+import Sidebar from "./components/layout/Sidebar";
 import { redirect } from "next/navigation";
 import { verifyToken } from "@/lib/jwt";
 

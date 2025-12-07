@@ -1,7 +1,8 @@
-import {requireAuth} from "@/lib/requireAuth";
-import {orderService} from "@/services/order.service";
-import {ok, fail} from "@/lib/response";
-import {ApiError} from "@/lib/ApiError";
+import { requireAuth, AuthenticatedRequest } from "@/lib/requireAuth";
+import { orderService } from "@/services/order.service";
+import { ok, fail } from "@/lib/response";
+import { ApiError } from "@/lib/ApiError";
+import { NextResponse } from "next/server";
 
 export async function GET(
     req: Request,
@@ -11,7 +12,7 @@ export async function GET(
         const { userId } = await params;
 
         const auth = await requireAuth(req, "ADMIN");
-        if (auth) return auth;
+        if (auth instanceof NextResponse) return auth;
 
         const orders = await orderService.getByUser(userId);
 

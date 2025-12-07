@@ -48,7 +48,6 @@ export default function CollectionPage() {
         <main className="w-full min-h-screen bg-[#f5f5f5] text-gray-900 font-[Poppins]">
             <div className="max-w-7xl mx-auto px-8 py-20">
 
-                {/* ===== TITLE ===== */}
                 <div className="mb-16">
                     <h1 className="text-5xl font-extrabold uppercase tracking-tight leading-none">
                         XIV
@@ -63,9 +62,7 @@ export default function CollectionPage() {
                     </p>
                 </div>
 
-                {/* ===== FILTERS ===== */}
                 <div className="flex items-center justify-between mb-14">
-                    {/* categories */}
                     <div className="flex gap-8 text-sm tracking-wide">
                         {filters.map((f) => (
                             <button
@@ -82,20 +79,17 @@ export default function CollectionPage() {
                         ))}
                     </div>
 
-                    {/* sort */}
                     <button className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 transition">
                         Sort <ChevronDown className="w-4 h-4" />
                     </button>
                 </div>
 
-                {/* ===== GRID ===== */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-10 mb-16">
                     {mockProducts.map((p) => (
                         <div
                             key={p.id}
                             className="group cursor-pointer border border-gray-200 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)] hover:shadow-md transition"
                         >
-                            {/* IMAGE */}
                             <div className="relative aspect-[4/5] overflow-hidden bg-[#f7f7f7]">
                                 <Image
                                     src={p.image}
@@ -105,7 +99,6 @@ export default function CollectionPage() {
                                 />
                             </div>
 
-                            {/* TEXT */}
                             <div className="p-4">
                                 <p className="text-[11px] text-gray-400 uppercase tracking-wider">
                                     {p.category}
@@ -117,7 +110,6 @@ export default function CollectionPage() {
                     ))}
                 </div>
 
-                {/* ===== LOAD MORE ===== */}
                 <div className="flex justify-center pb-10">
                     <button className="flex items-center gap-2 text-sm uppercase tracking-wider text-gray-700 hover:opacity-70 transition">
                         More <ChevronDown className="w-4 h-4" />

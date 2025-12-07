@@ -3,7 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from "lucide-react"; // Import ArrowRight
+import { Trash2, Minus, Plus, ShoppingBag, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -20,18 +20,14 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 
 export default function CartPage() {
-    // 1. Данные корзины
     const { data: cartData, isLoading } = useGetCartQuery();
     const items = cartData?.items ?? [];
 
-    // 2. Мутации
     const [updateQuantity, { isLoading: isUpdating }] = useUpdateCartQuantityMutation();
     const [removeItem] = useRemoveFromCartMutation();
 
-    // Локальный стейт для "Оптимистичного удаления"
     const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
 
-    // Очистка removingIds при обновлении данных с сервера
     useEffect(() => {
         if (removingIds.size > 0 && items.length > 0) {
             setRemovingIds(prev => {
@@ -49,16 +45,13 @@ export default function CartPage() {
         }
     }, [items, removingIds.size]);
 
-    // Фильтруем товары
     const visibleItems = items.filter(item => !removingIds.has(item.id));
 
-    // --- ЛОГИКА ПУСТОГО ЭКРАНА С ЗАДЕРЖКОЙ ---
     const [showEmptyScreenDelay, setShowEmptyScreenDelay] = useState(false);
 
     useEffect(() => {
         let timer: NodeJS.Timeout;
         if (visibleItems.length === 0 && !isLoading) {
-            // Если товаров нет визуально, ждем окончания анимации
             timer = setTimeout(() => setShowEmptyScreenDelay(true), 300);
         } else {
             setShowEmptyScreenDelay(false);
@@ -67,7 +60,6 @@ export default function CartPage() {
     }, [visibleItems.length, isLoading]);
 
 
-    // 3. Подсчет суммы
     const subtotal = useMemo(() => {
         return visibleItems.reduce((acc, item) => {
             const price = Number(item.product.price);
@@ -77,8 +69,6 @@ export default function CartPage() {
 
     const shipping = subtotal > 3000 ? 0 : 150;
     const total = subtotal + shipping;
-
-    // --- HANDLERS ---
 
     const handleQuantityChange = async (itemId: string, currentQty: number, delta: number) => {
         const newQty = currentQty + delta;
@@ -111,17 +101,12 @@ export default function CartPage() {
         }
     };
 
-    // --- RENDER STATES ---
-
     if (isLoading) return <CartSkeleton />;
 
-    // ИСПРАВЛЕНИЕ: Если данных с сервера нет (items.length === 0), показываем пустой экран СРАЗУ.
-    // Это убирает задержку при первом открытии корзины.
     if (items.length === 0) {
         return <EmptyCartView />;
     }
 
-    // Если мы удалили товары "оптимистично" и таймер анимации истек -> показываем пустой экран
     if (showEmptyScreenDelay) {
         return <EmptyCartView />;
     }
@@ -137,7 +122,6 @@ export default function CartPage() {
 
             <div className="flex flex-col lg:flex-row gap-12 items-start">
 
-                {/* ==== LEFT: СПИСОК ТОВАРОВ ==== */}
                 <div className="flex-1 w-full space-y-6">
                     <AnimatePresence initial={false} mode="popLayout">
                         {visibleItems.map((item) => (
@@ -243,7 +227,6 @@ export default function CartPage() {
                     </AnimatePresence>
                 </div>
 
-                {/* ==== RIGHT: ORDER SUMMARY ==== */}
                 <div className="w-full lg:w-[380px] shrink-0 lg:sticky lg:top-28">
                     <motion.div
                         layout
@@ -303,7 +286,6 @@ export default function CartPage() {
     );
 }
 
-// --- ОТДЕЛЬНЫЙ КОМПОНЕНТ ДЛЯ ПУСТОЙ КОРЗИНЫ ---
 function EmptyCartView() {
     return (
         <main className="min-h-screen flex flex-col items-center justify-center bg-[#f9f9f9] text-center px-4 font-sans">

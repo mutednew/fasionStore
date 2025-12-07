@@ -12,10 +12,9 @@ import { useGetProductsFilteredQuery } from "@/store/api/productsApi";
 import { Product } from "@/types";
 
 export default function HeroSection() {
-    // 1. Увеличили лимит и убрали жесткую сортировку "new", чтобы получить больше разнообразия
     const { data } = useGetProductsFilteredQuery({
         limit: 24,
-        sort: "new", // Можно убрать или оставить, если хотите именно новинки
+        sort: "new",
     });
 
     const allProducts = useMemo(() => data?.products ?? [], [data]);
@@ -23,7 +22,6 @@ export default function HeroSection() {
     const [visibleProducts, setVisibleProducts] = useState<Product[]>([]);
     const [cycle, setCycle] = useState(0);
 
-    // Улучшенная функция перемешивания (Fisher-Yates Shuffle)
     const pickRandomProducts = useCallback((products: Product[]) => {
         if (products.length === 0) return [];
 
@@ -36,14 +34,12 @@ export default function HeroSection() {
         return shuffled.slice(0, 2);
     }, []);
 
-    // Инициализация
     useEffect(() => {
         if (allProducts.length > 0 && visibleProducts.length === 0) {
             setVisibleProducts(pickRandomProducts(allProducts));
         }
     }, [allProducts, pickRandomProducts, visibleProducts.length]);
 
-    // Таймер ротации
     useEffect(() => {
         if (allProducts.length === 0) return;
 
@@ -60,7 +56,6 @@ export default function HeroSection() {
     return (
         <section className="w-full bg-[#EAEAEA] relative overflow-hidden">
 
-            {/* Декоративный фон */}
             <div className="absolute inset-0 z-0 opacity-40 pointer-events-none select-none">
                 <div className="absolute right-0 top-0 w-2/3 h-full bg-gradient-to-l from-white/60 to-transparent" />
                 <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-blue-100/30 rounded-full blur-3xl mix-blend-multiply" />
@@ -69,7 +64,6 @@ export default function HeroSection() {
 
             <div className="max-w-[1440px] mx-auto px-6 md:px-10 pt-8 pb-20 relative z-10">
 
-                {/* TOP BAR */}
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-16 md:mb-24">
                     <nav className="flex gap-8">
                         {["Men", "Women", "Sale"].map((item) => (
@@ -93,10 +87,8 @@ export default function HeroSection() {
                     </div>
                 </div>
 
-                {/* MAIN GRID */}
                 <div className="grid grid-cols-12 gap-y-12 md:gap-x-12 items-end">
 
-                    {/* --- LEFT: TEXT CONTENT --- */}
                     <div className="col-span-12 lg:col-span-5 space-y-10 lg:mb-12">
 
                         <motion.div
@@ -145,7 +137,6 @@ export default function HeroSection() {
                                 </Link>
                             </Button>
 
-                            {/* --- OPTIMIZED TIMER --- */}
                             <div className="flex items-center gap-3">
                                 <p className="text-[10px] font-bold uppercase tracking-wider text-neutral-400">Next Drop</p>
                                 <div className="w-24 h-[2px] bg-neutral-200 rounded-full overflow-hidden">
@@ -161,10 +152,8 @@ export default function HeroSection() {
                         </motion.div>
                     </div>
 
-                    {/* --- RIGHT: DYNAMIC CARDS --- */}
                     <div className="col-span-12 lg:col-span-7 relative h-[500px] md:h-[600px] flex gap-4 md:gap-8">
 
-                        {/* Static text */}
                         <div className="absolute -top-20 -right-20 text-[200px] font-black text-white/40 select-none z-0 leading-none overflow-hidden pointer-events-none hidden xl:block">
                             01
                         </div>
@@ -173,7 +162,6 @@ export default function HeroSection() {
                             {visibleProducts.map((product, idx) => (
                                 <motion.div
                                     key={`${product.id}-${cycle}`}
-                                    // Убрал prop 'layout', так как он вызывал дерганье при смене контента
                                     initial={{ opacity: 0, y: 30, scale: 0.98 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: -30, scale: 0.98, transition: { duration: 0.4 } }}
@@ -183,7 +171,6 @@ export default function HeroSection() {
                                     <Link href={`/products/${product.id}`} className="block w-full h-full group perspective-1000">
                                         <div className="w-full h-full relative overflow-hidden bg-white shadow-2xl transition-all duration-500 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
 
-                                            {/* Image */}
                                             <div className="absolute inset-0 bg-neutral-200">
                                                 <Image
                                                     src={product.imageUrl || "/placeholder.png"}
@@ -195,10 +182,8 @@ export default function HeroSection() {
                                                 />
                                             </div>
 
-                                            {/* Overlay Gradient */}
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
 
-                                            {/* Content */}
                                             <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
                                                 <div className="flex items-end justify-between border-b border-white/30 pb-4 mb-4">
                                                     <div>
@@ -219,7 +204,6 @@ export default function HeroSection() {
                                                 </div>
                                             </div>
 
-                                            {/* Top Label */}
                                             {idx === 0 && (
                                                 <div className="absolute top-0 right-0 bg-white text-black text-[10px] font-bold uppercase py-2 px-4 tracking-widest z-20">
                                                     Trending
@@ -231,7 +215,6 @@ export default function HeroSection() {
                             ))}
                         </AnimatePresence>
 
-                        {/* Skeleton Loading State */}
                         {visibleProducts.length === 0 && (
                             <>
                                 <div className="w-1/2 h-full bg-neutral-200 animate-pulse" />

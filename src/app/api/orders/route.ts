@@ -1,15 +1,16 @@
 import { orderService } from "@/services/order.service";
-import { requireAuth } from "@/lib/requireAuth";
+import { requireAuth, AuthenticatedRequest } from "@/lib/requireAuth";
 import { ok, fail } from "@/lib/response";
 import { ApiError } from "@/lib/ApiError";
 import { OrderSchema } from "@/schemas/order.schema";
+import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
     try {
         const auth = await requireAuth(req);
-        if (auth) return auth;
+        if (auth instanceof NextResponse) return auth;
 
-        const user = (req as any).user;
+        const user = (req as unknown as AuthenticatedRequest).user;
 
         const orders =
             user.role === "ADMIN"
@@ -27,9 +28,9 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const auth = await requireAuth(req);
-        if (auth) return auth;
+        if (auth instanceof NextResponse) return auth;
 
-        const user = (req as any).user;
+        const user = (req as unknown as AuthenticatedRequest).user;
         const body = await req.json();
 
         const parsed = OrderSchema.safeParse(body);
@@ -37,7 +38,7 @@ export async function POST(req: Request) {
             return fail("Invalid order data", 400, parsed.error.format());
         }
 
-        const order = await orderService.createFromCart(user.userId);
+        const order = await orderService.createFromCart(user.userId, body as any);
         return ok({ order }, 201);
     } catch (err) {
         if (err instanceof ApiError) return fail(err.message, err.status, err.details);

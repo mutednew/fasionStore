@@ -27,15 +27,12 @@ export default function ProductPage() {
     const params = useParams();
     const id = params?.id as string;
 
-    // --- ЗАПРОСЫ ---
     const { data: productRes, isLoading } = useGetProductByIdQuery(id);
     const [addToCart, { isLoading: isAdding }] = useAddToCartMutation();
 
-    // Auth check
     const { profile } = useAppSelector((state) => state.user);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
 
-    // --- ЛОКАЛЬНЫЙ СТЕЙТ ---
     const product = productRes?.data?.product;
 
     const [selectedImageIndex, setSelectedImageIndex] = useState(0);
@@ -43,7 +40,6 @@ export default function ProductPage() {
     const [size, setSize] = useState<string | null>(null);
     const [quantity, setQuantity] = useState(1);
 
-    // Сброс стейта при смене продукта
     useEffect(() => {
         if (product) {
             setSelectedImageIndex(0);
@@ -56,8 +52,6 @@ export default function ProductPage() {
     const images = product?.images?.length ? product.images : product?.imageUrl ? [product.imageUrl] : [];
     const hasColors = product?.colors && product.colors.length > 0;
     const hasSizes = product?.sizes && product.sizes.length > 0;
-
-    // --- HANDLERS ---
 
     const handleQuantity = (type: "inc" | "dec") => {
         setQuantity((prev) => (type === "inc" ? prev + 1 : Math.max(1, prev - 1)));
@@ -87,10 +81,8 @@ export default function ProductPage() {
         }
     };
 
-    // --- LOADING STATE ---
     if (isLoading) return <ProductSkeleton />;
 
-    // --- NOT FOUND ---
     if (!product) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -103,14 +95,10 @@ export default function ProductPage() {
         <main className="min-h-screen bg-white py-12 px-4 md:px-10 lg:px-20 font-sans">
             <AuthModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
 
-            {/* ВАЖНО: items-start выравнивает колонки по верху, чтобы они не растягивались */}
             <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mb-24">
 
-                {/* ==== LEFT: GALLERY ==== */}
-                {/* ВАЖНО: h-fit и self-start гарантируют, что высота блока не будет зависеть от соседа */}
                 <div className="lg:col-span-7 flex flex-col-reverse lg:flex-row gap-6 lg:sticky lg:top-24 h-fit self-start">
 
-                    {/* THUMBNAILS */}
                     {images.length > 1 && (
                         <div className="flex lg:flex-col gap-4 overflow-x-auto lg:overflow-visible no-scrollbar">
                             {images.map((img, idx) => (
@@ -135,7 +123,6 @@ export default function ProductPage() {
                         </div>
                     )}
 
-                    {/* MAIN IMAGE */}
                     <div className="flex-1 relative aspect-[3/4] bg-gray-50 rounded-lg overflow-hidden group">
                         <AnimatePresence mode="wait">
                             <motion.div
@@ -168,10 +155,8 @@ export default function ProductPage() {
                     </div>
                 </div>
 
-                {/* ==== RIGHT: DETAILS ==== */}
                 <div className="lg:col-span-5 flex flex-col gap-8 pt-4">
 
-                    {/* HEADER */}
                     <div>
                         <div className="flex items-center justify-between mb-2">
                             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
@@ -193,20 +178,18 @@ export default function ProductPage() {
 
                     <Separator />
 
-                    {/* SELECTORS */}
                     <div className="space-y-6">
 
-                        {/* COLOR */}
                         {hasColors && (
                             <div className="space-y-3">
-                                <span className="text-sm font-semibold text-gray-900">Color</span>
+                                <span className="text-sm font-semiboldtext-gray-900">Color</span>
                                 <div className="flex flex-wrap gap-3">
                                     {product.colors.map((c) => (
                                         <button
                                             key={c}
                                             onClick={() => setColor(c)}
                                             className={cn(
-                                                "w-8 h-8 rounded-full border border-gray-200 shadow-sm transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black relative",
+                                                "w-8 h-8 rounded-full border mt-2 border-gray-200 shadow-sm transition-transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black relative",
                                                 color === c && "ring-1 ring-offset-2 ring-black scale-110"
                                             )}
                                             style={{ backgroundColor: c }}
@@ -217,7 +200,6 @@ export default function ProductPage() {
                             </div>
                         )}
 
-                        {/* SIZE */}
                         {hasSizes && (
                             <div className="space-y-3">
                                 <div className="flex justify-between items-center">
@@ -245,7 +227,6 @@ export default function ProductPage() {
                             </div>
                         )}
 
-                        {/* QUANTITY */}
                         <div className="space-y-3">
                             <span className="text-sm font-semibold text-gray-900">Quantity</span>
                             <div className="flex items-center w-32 border border-gray-300 rounded-md">
@@ -287,7 +268,6 @@ export default function ProductPage() {
                         </div>
                     </div>
 
-                    {/* ACCORDION INFO (Без отзывов) */}
                     <Accordion type="single" collapsible className="w-full border-t pt-4">
                         <AccordionItem value="desc" className="border-b-0">
                             <AccordionTrigger className="text-sm font-semibold hover:no-underline py-3">
@@ -318,7 +298,6 @@ export default function ProductPage() {
                 </div>
             </div>
 
-            {/* --- REVIEWS SECTION (FULL WIDTH) --- */}
             <div className="max-w-7xl mx-auto pt-16 border-t border-gray-200">
                 <div className="flex items-center justify-between mb-8">
                     <h2 className="text-2xl font-bold tracking-tight text-gray-900">Customer Reviews</h2>
@@ -327,7 +306,6 @@ export default function ProductPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
 
-                    {/* Summary Rating */}
                     <div className="col-span-1 bg-gray-50 p-6 rounded-lg h-fit">
                         <div className="flex items-end gap-2 mb-2">
                             <span className="text-5xl font-bold text-gray-900">4.8</span>
@@ -356,9 +334,7 @@ export default function ProductPage() {
                         </div>
                     </div>
 
-                    {/* Review List Placeholder */}
                     <div className="col-span-1 md:col-span-2 space-y-8">
-                        {/* Mock Review 1 */}
                         <div className="border-b border-gray-100 pb-8">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
@@ -379,7 +355,6 @@ export default function ProductPage() {
                             </p>
                         </div>
 
-                        {/* Mock Review 2 */}
                         <div className="border-b border-gray-100 pb-8">
                             <div className="flex items-center justify-between mb-2">
                                 <div className="flex items-center gap-2">
@@ -410,7 +385,6 @@ export default function ProductPage() {
     );
 }
 
-// --- SKELETON ---
 function ProductSkeleton() {
     return (
         <main className="min-h-screen bg-white py-12 px-4 md:px-20 font-sans">

@@ -33,11 +33,9 @@ export default function ProductsPage() {
     const router = useRouter();
     const pathname = usePathname();
 
-    // --- AUTH ---
     const { profile } = useAppSelector((state) => state.user);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
 
-    // --- STATE FILTERS ---
     const pageParam = searchParams.get("page");
     const [page, setPage] = useState(pageParam ? Number(pageParam) : 1);
 
@@ -51,7 +49,6 @@ export default function ProductsPage() {
     const [sort, setSort] = useState<string>("new");
     const [size, setSize] = useState<string>("all");
 
-    // PRICE SLIDER STATE
     const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
     const [debouncedPrice, setDebouncedPrice] = useState<[number, number]>([0, 50000]);
 
@@ -67,7 +64,6 @@ export default function ProductsPage() {
 
     const LIMIT = 9;
 
-    // --- HANDLERS ---
     const updateUrl = (newPage?: number) => {
         const params = new URLSearchParams(searchParams.toString());
         params.set("page", (newPage ?? 1).toString());
@@ -91,7 +87,6 @@ export default function ProductsPage() {
         updateUrl(1);
     };
 
-    // Обработчики инпутов цены
     const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = Number(e.target.value);
         if (!isNaN(val) && val >= 0 && val <= 50000) {
@@ -114,7 +109,6 @@ export default function ProductsPage() {
         priceRange[0] !== 0 ||
         priceRange[1] !== 50000;
 
-    // --- API QUERIES ---
     const { data: catData } = useGetCategoriesQuery();
     const categories = catData?.categories ?? [];
 
@@ -138,8 +132,6 @@ export default function ProductsPage() {
     const products = prodData?.products ?? [];
     const meta = prodData?.meta;
 
-    // Создаем уникальный ключ на основе всех фильтров
-    // Как только изменится любой фильтр, ключ изменится, и React пересоздаст сетку с анимацией
     const productsKey = useMemo(() => {
         return JSON.stringify({
             page,
@@ -182,16 +174,11 @@ export default function ProductsPage() {
         }
     };
 
-    // --- RENDER STATES ---
-    // Показываем полный скелетон только при самой первой загрузке страницы
     if (loadingProd && !products.length) {
         return <ProductsSkeletonFull />;
     }
 
     const showSkeletons = isFetchingProd;
-    // Если есть товары и мы не загружаем новые -> показываем товары
-    // Если есть товары, но мы загружаем новые -> все равно показываем товары (покажутся скелетоны из-за ключа, если хотите)
-    // Но лучше показать скелетоны, если идет феч, чтобы было видно обновление
     const showProducts = !showSkeletons && products.length > 0;
     const showEmpty = !showSkeletons && products.length === 0;
 
@@ -201,7 +188,6 @@ export default function ProductsPage() {
 
             <div className="max-w-[1400px] mx-auto space-y-8">
 
-                {/* HEADER */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -218,7 +204,6 @@ export default function ProductsPage() {
                             <h1 className="text-4xl font-extrabold tracking-tight text-neutral-900">
                                 All Products
                             </h1>
-                            {/* Используем div вместо p, чтобы избежать ошибки гидратации при рендере Skeleton */}
                             <div className="text-neutral-500 mt-2 min-h-[24px]">
                                 {isFetchingProd ? (
                                     <Skeleton className="h-5 w-24" />
@@ -232,10 +217,8 @@ export default function ProductsPage() {
                     </div>
                 </motion.div>
 
-                {/* LAYOUT */}
                 <div className="flex flex-col lg:flex-row gap-10 items-start">
 
-                    {/* --- FILTERS SIDEBAR --- */}
                     <aside className="w-full lg:w-64 shrink-0 space-y-6 lg:sticky lg:top-28">
                         <div className="flex items-center justify-between pb-2">
                             <div className="flex items-center gap-2 text-neutral-900 font-semibold">
@@ -252,7 +235,6 @@ export default function ProductsPage() {
                             )}
                         </div>
 
-                        {/* Search */}
                         <div className="relative">
                             <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
                             <Input
@@ -265,7 +247,6 @@ export default function ProductsPage() {
 
                         <Accordion type="multiple" className="w-full">
 
-                            {/* Category */}
                             <AccordionItem value="category" className="border-gray-200">
                                 <AccordionTrigger className="text-sm font-semibold text-neutral-800 hover:no-underline py-3">
                                     Category
@@ -299,7 +280,6 @@ export default function ProductsPage() {
                                 </AccordionContent>
                             </AccordionItem>
 
-                            {/* Sort */}
                             <AccordionItem value="sort" className="border-gray-200">
                                 <AccordionTrigger className="text-sm font-semibold text-neutral-800 hover:no-underline py-3">
                                     Sort By
@@ -327,7 +307,6 @@ export default function ProductsPage() {
                                 </AccordionContent>
                             </AccordionItem>
 
-                            {/* Price Filter */}
                             <AccordionItem value="price" className="border-gray-200">
                                 <AccordionTrigger className="text-sm font-semibold text-neutral-800 hover:no-underline py-3">
                                     Price Range
@@ -372,7 +351,6 @@ export default function ProductsPage() {
                                 </AccordionContent>
                             </AccordionItem>
 
-                            {/* Size Filter */}
                             <AccordionItem value="size" className="border-gray-200">
                                 <AccordionTrigger className="text-sm font-semibold text-neutral-800 hover:no-underline py-3">
                                     Size
@@ -397,11 +375,9 @@ export default function ProductsPage() {
                         </Accordion>
                     </aside>
 
-                    {/* --- PRODUCT GRID --- */}
                     <div className="flex-1 w-full min-h-[500px]">
 
                         {showSkeletons && (
-                            // Добавил key="skeletons", чтобы React понимал, что это другое состояние
                             <div key="skeletons" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
                                 {[...Array(9)].map((_, i) => (
                                     <ProductCardSkeleton key={i} />
@@ -411,8 +387,6 @@ export default function ProductsPage() {
 
                         {showProducts && (
                             <motion.div
-                                // ВАЖНО: Ключ зависит от фильтров!
-                                // При изменении фильтра этот ключ изменится, компонент перемонтируется, и анимация initial сработает заново.
                                 key={productsKey}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -450,7 +424,6 @@ export default function ProductsPage() {
                             </motion.div>
                         )}
 
-                        {/* Pagination */}
                         {!showSkeletons && meta && meta.totalPages > 1 && (
                             <div className="flex justify-center items-center gap-4 pt-10 mt-8 border-t border-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <Button
@@ -485,7 +458,6 @@ export default function ProductsPage() {
     );
 }
 
-// Sub-components
 function ProductCard({ product, onAdd, isAdding }: { product: Product, onAdd: (e: any) => void, isAdding: boolean }) {
     return (
         <Link href={`/products/${product.id}`} className="block h-full group">

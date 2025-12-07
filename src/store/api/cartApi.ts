@@ -22,6 +22,18 @@ export interface CartResponse {
     items: CartItem[];
 }
 
+// Интерфейс данных, которые мы отправляем при чекауте
+export interface CheckoutRequest {
+    email: string;
+    phone: string;
+    firstName: string;
+    lastName: string;
+    address: string;
+    city: string;
+    country: string;
+    zip: string;
+}
+
 export const cartApi = mainApi.injectEndpoints({
     endpoints: (builder) => ({
 
@@ -60,10 +72,14 @@ export const cartApi = mainApi.injectEndpoints({
             invalidatesTags: ["Cart"],
         }),
 
-        checkout: builder.mutation<any, void>({
-            query: () => ({
+        // 👇 ИСПРАВЛЕНИЕ ЗДЕСЬ:
+        // Раньше было builder.mutation<any, void>
+        // Теперь builder.mutation<any, CheckoutRequest>
+        checkout: builder.mutation<any, CheckoutRequest>({
+            query: (shippingData) => ({
                 url: "/cart/checkout",
                 method: "POST",
+                body: shippingData,
             }),
             invalidatesTags: ["Cart", "Orders"],
         }),

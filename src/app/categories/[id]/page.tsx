@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react"; // <--- Добавлен useMemo
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useSearchParams, useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import NextImage from "next/image";
 import { motion } from "framer-motion";
-import { ShoppingCart, PackageX, ArrowLeft, ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ShoppingCart, ChevronLeft, ChevronRight, Search } from "lucide-react";
 import { toast } from "sonner";
 
 import { useAppSelector } from "@/store/hooks";
@@ -28,11 +28,9 @@ export default function CategoryPage() {
     const router = useRouter();
     const pathname = usePathname();
 
-    // --- AUTH ---
     const { profile } = useAppSelector((state) => state.user);
     const [isLoginOpen, setIsLoginOpen] = useState(false);
 
-    // --- STATE FILTERS ---
     const pageParam = searchParams.get("page");
     const [page, setPage] = useState(pageParam ? Number(pageParam) : 1);
 
@@ -45,11 +43,9 @@ export default function CategoryPage() {
     const [sort, setSort] = useState<string>("new");
     const [size, setSize] = useState<string>("all");
 
-    // PRICE SLIDER STATE
     const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
     const [debouncedPrice, setDebouncedPrice] = useState<[number, number]>([0, 50000]);
 
-    // Debounce для цены
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedPrice(priceRange);
@@ -62,7 +58,6 @@ export default function CategoryPage() {
 
     const LIMIT = 9;
 
-    // --- HANDLERS ---
     const updateUrl = () => {
         const params = new URLSearchParams(searchParams.toString());
         params.set("page", "1");
@@ -85,7 +80,6 @@ export default function CategoryPage() {
         updateUrl();
     };
 
-    // --- ЗАПРОСЫ ---
     const { data: catData, isLoading: loadingCat } = useGetCategoryByIdQuery(categoryId);
     const category = catData?.category;
 
@@ -109,13 +103,10 @@ export default function CategoryPage() {
     const products = prodData?.products ?? [];
     const meta = prodData?.meta;
 
-    // --- КЛЮЧ ДЛЯ АНИМАЦИИ ---
-    // Создаем уникальный ключ, зависящий от всех параметров фильтрации.
-    // При изменении ключа React перемонтирует компонент сетки, запуская анимацию заново.
     const productsKey = useMemo(() => {
         return JSON.stringify({
             page,
-            categoryId, // В данном случае фиксирован, но пусть будет для единообразия
+            categoryId,
             sort,
             size,
             minPrice: debouncedPrice[0],
@@ -157,7 +148,6 @@ export default function CategoryPage() {
         }
     };
 
-    // --- RENDER STATES ---
     if (loadingCat) return <CategorySkeletonFull />;
 
     if (!category && !loadingCat) {
@@ -179,7 +169,6 @@ export default function CategoryPage() {
 
             <div className="max-w-[1400px] mx-auto space-y-8">
 
-                {/* HEADER */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -211,10 +200,8 @@ export default function CategoryPage() {
                     </div>
                 </motion.div>
 
-                {/* LAYOUT */}
                 <div className="flex flex-col lg:flex-row gap-10 items-start">
 
-                    {/* --- FILTERS SIDEBAR --- */}
                     <ProductFilters
                         searchTerm={searchTerm}
                         setSearchTerm={(v) => handleFilterChange(setSearchTerm, v)}
@@ -230,7 +217,6 @@ export default function CategoryPage() {
                         onClear={clearFilters}
                     />
 
-                    {/* --- GRID --- */}
                     <div className="flex-1 w-full min-h-[500px]">
                         {showSkeletons && (
                             <div key="skeletons" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
@@ -242,7 +228,7 @@ export default function CategoryPage() {
 
                         {showProducts && (
                             <motion.div
-                                key={productsKey} // <--- ИСПОЛЬЗУЕМ КЛЮЧ ДЛЯ ПЕРЕЗАПУСКА АНИМАЦИИ
+                                key={productsKey}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.4, ease: "easeOut" }}
@@ -279,7 +265,7 @@ export default function CategoryPage() {
                             </motion.div>
                         )}
 
-                        {/* Pagination */}
+                        {}
                         {!showSkeletons && meta && meta.totalPages > 1 && (
                             <div className="flex justify-center items-center gap-4 pt-10 mt-8 border-t border-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <Button
@@ -314,7 +300,6 @@ export default function CategoryPage() {
     );
 }
 
-// --- SUB-COMPONENTS ---
 function ProductCard({ product, onAdd, isAdding }: { product: Product, onAdd: (e: any) => void, isAdding: boolean }) {
     return (
         <Link href={`/products/${product.id}`} className="block h-full group">

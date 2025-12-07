@@ -14,14 +14,11 @@ interface AuthModalProps {
 export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     const [mode, setMode] = useState<"login" | "register">("login");
 
-    // dynamic height
     const [ref, bounds] = useMeasure();
 
-    // toggle Login/Register
     const toggleMode = () =>
         setMode((prev) => (prev === "login" ? "register" : "login"));
 
-    // lock scroll
     useEffect(() => {
         document.body.style.overflow = isOpen ? "hidden" : "";
         return () => {
@@ -29,7 +26,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         };
     }, [isOpen]);
 
-    // close on backdrop click
     const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
         if (e.target === e.currentTarget) onClose();
     };
@@ -45,13 +41,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     exit={{ opacity: 0 }}
                     onClick={handleBackdropClick}
                 >
-                    {/* Background Blur Orbs */}
                     <div className="absolute inset-0 overflow-hidden pointer-events-none">
                         <div className="absolute -top-32 -left-20 w-[380px] h-[380px] bg-pink-300/40 blur-[120px]" />
                         <div className="absolute bottom-0 right-0 w-[380px] h-[380px] bg-blue-300/30 blur-[120px]" />
                     </div>
 
-                    {/* Modal container with dynamic height */}
                     <motion.div
                         key="auth-content"
                         animate={{ height: bounds.height }}
@@ -68,7 +62,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             "
                         onClick={(e) => e.stopPropagation()}
                     >
-                        {/* Close button */}
                         <button
                             onClick={onClose}
                             className="absolute top-3 right-4 text-gray-500 hover:text-black text-xl transition"
@@ -76,7 +69,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                             ×
                         </button>
 
-                        {/* Animated content wrapper */}
                         <div ref={ref} className="px-8 pt-10 pb-8">
                             <AnimatePresence mode="wait">
                                 {mode === "login" ? (
