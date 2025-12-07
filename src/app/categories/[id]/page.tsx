@@ -43,13 +43,13 @@ export default function CategoryPage() {
     const [sort, setSort] = useState<string>("new");
     const [size, setSize] = useState<string>("all");
 
-    const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
-    const [debouncedPrice, setDebouncedPrice] = useState<[number, number]>([0, 50000]);
+    const [priceRange, setPriceRange] = useState<[number, number]>([0, 3430]);
+    const [debouncedPrice, setDebouncedPrice] = useState<[number, number]>([0, 3430]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedPrice(priceRange);
-            if (priceRange[0] !== 0 || priceRange[1] !== 50000) {
+            if (priceRange[0] !== 0 || priceRange[1] !== 3430) {
                 setPage(1);
             }
         }, 500);
@@ -75,7 +75,7 @@ export default function CategoryPage() {
         setSearchTerm("");
         setSort("new");
         setSize("all");
-        setPriceRange([0, 50000]);
+        setPriceRange([0, 3430]);
         setPage(1);
         updateUrl();
     };
@@ -354,7 +354,7 @@ function ProductCard({ product, onAdd, isAdding }: { product: Product, onAdd: (e
 
                     <div className="mt-auto flex items-center justify-between pt-2">
                         <span className="text-xl font-bold text-neutral-900">
-                            {Number(product.price).toFixed(2)} ₴
+                            ${Number(product.price).toFixed(2)}
                         </span>
 
                         {product.colors && product.colors.length > 0 && (

@@ -17,7 +17,6 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 
 export default function CartPage() {
     const { data: cartData, isLoading } = useGetCartQuery();
@@ -67,7 +66,7 @@ export default function CartPage() {
         }, 0);
     }, [visibleItems]);
 
-    const shipping = subtotal > 3000 ? 0 : 150;
+    const shipping = subtotal > 200 ? 0 : 15;
     const total = subtotal + shipping;
 
     const handleQuantityChange = async (itemId: string, currentQty: number, delta: number) => {
@@ -212,7 +211,7 @@ export default function CartPage() {
 
                                         <div className="text-right">
                                             <p className="text-lg font-bold text-neutral-900">
-                                                {(Number(item.product.price) * item.quantity).toFixed(2)} ₴
+                                                ${(Number(item.product.price) * item.quantity).toFixed(2)}
                                             </p>
                                             {item.quantity > 1 && (
                                                 <p className="text-xs text-gray-400 font-medium">
@@ -239,14 +238,14 @@ export default function CartPage() {
                         <div className="space-y-4 text-sm text-gray-600">
                             <div className="flex justify-between">
                                 <span>Subtotal</span>
-                                <span className="font-medium text-black">{subtotal.toFixed(2)} ₴</span>
+                                <span className="font-medium text-black">${subtotal.toFixed(2)}</span>
                             </div>
                             <div className="flex justify-between">
                                 <span>Shipping</span>
                                 {shipping === 0 ? (
                                     <span className="text-green-600 font-medium">Free</span>
                                 ) : (
-                                    <span className="font-medium text-black">{shipping.toFixed(2)} ₴</span>
+                                    <span className="font-medium text-black">${shipping.toFixed(2)}</span>
                                 )}
                             </div>
 
@@ -264,7 +263,7 @@ export default function CartPage() {
                         <div className="flex justify-between items-center mb-8">
                             <span className="font-bold text-lg text-neutral-900">Total</span>
                             <div className="text-right">
-                                <span className="font-extrabold text-2xl block leading-none text-neutral-900">{total.toFixed(2)} ₴</span>
+                                <span className="font-extrabold text-2xl block leading-none text-neutral-900">${total.toFixed(2)}</span>
                                 <span className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mt-1 block">Including VAT</span>
                             </div>
                         </div>

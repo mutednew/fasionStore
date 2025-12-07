@@ -51,15 +51,15 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                         animate={{ height: bounds.height }}
                         transition={{ type: "spring", stiffness: 150, damping: 23 }}
                         className="
-              relative
-              w-[400px]
-              bg-white/70
-              backdrop-blur-2xl
-              rounded-2xl
-              border border-white/40
-              shadow-[0_8px_40px_-10px_rgba(0,0,0,0.25)]
-              overflow-hidden
-            "
+                          relative
+                          w-[400px]
+                          bg-white/70
+                          backdrop-blur-2xl
+                          rounded-2xl
+                          border border-white/40
+                          shadow-[0_8px_40px_-10px_rgba(0,0,0,0.25)]
+                          overflow-hidden
+                        "
                         onClick={(e) => e.stopPropagation()}
                     >
                         <button

@@ -165,7 +165,7 @@ export default function ProductPage() {
                         </div>
                         <div className="flex items-center gap-4 mb-6">
                             <span className="text-2xl font-medium text-gray-900">
-                                {Number(product.price).toFixed(2)} ₴
+                                ${Number(product.price).toFixed(2)}
                             </span>
                             <div className="flex items-center gap-1 text-sm text-gray-500">
                                 <div className="flex text-yellow-400">
@@ -260,7 +260,7 @@ export default function ProductPage() {
                     <div className="grid grid-cols-2 gap-4 text-xs text-gray-500 mt-2">
                         <div className="flex items-center gap-2">
                             <Truck size={16} />
-                            <span>Free shipping over 200 ₴</span>
+                            <span>Free shipping over $200</span>
                         </div>
                         <div className="flex items-center gap-2">
                             <ShieldCheck size={16} />
@@ -282,7 +282,7 @@ export default function ProductPage() {
                                 Shipping & Returns
                             </AccordionTrigger>
                             <AccordionContent className="text-sm text-gray-600 leading-relaxed">
-                                Free standard shipping on orders over 3000 ₴. Returns accepted within 30 days of purchase.
+                                Free standard shipping on orders over $200. Returns accepted within 30 days of purchase.
                             </AccordionContent>
                         </AccordionItem>
                         <AccordionItem value="care" className="border-b-0">

@@ -54,18 +54,18 @@ export function ProductFilters({
         sort !== "new" ||
         size !== "all" ||
         priceRange[0] !== 0 ||
-        priceRange[1] !== 50000;
+        priceRange[1] !== 3430;
 
     const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = Number(e.target.value);
-        if (!isNaN(val) && val >= 0 && val <= 50000) {
+        if (!isNaN(val) && val >= 0 && val <= 3430) {
             setPriceRange([val, priceRange[1]]);
         }
     };
 
     const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = Number(e.target.value);
-        if (!isNaN(val) && val >= 0 && val <= 50000) {
+        if (!isNaN(val) && val >= 0 && val <= 3430) {
             setPriceRange([priceRange[0], val]);
         }
     };
@@ -168,9 +168,9 @@ export function ProductFilters({
                     <AccordionContent className="pt-4 px-2">
                         <div className="space-y-4">
                             <Slider
-                                defaultValue={[0, 50000]}
+                                defaultValue={[0, 3430]}
                                 value={priceRange}
-                                max={50000}
+                                max={3430}
                                 step={100}
                                 min={0}
                                 onValueChange={(val) => setPriceRange(val as [number, number])}
@@ -182,7 +182,7 @@ export function ProductFilters({
                                     <Input
                                         type="number"
                                         min={0}
-                                        max={50000}
+                                        max={3430}
                                         value={priceRange[0]}
                                         onChange={handleMinPriceChange}
                                         className="h-8 pl-5 text-xs bg-white border-neutral-200 focus-visible:ring-black"
@@ -194,7 +194,7 @@ export function ProductFilters({
                                     <Input
                                         type="number"
                                         min={0}
-                                        max={50000}
+                                        max={3430}
                                         value={priceRange[1]}
                                         onChange={handleMaxPriceChange}
                                         className="h-8 pl-5 text-xs bg-white border-neutral-200 focus-visible:ring-black"

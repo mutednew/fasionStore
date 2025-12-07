@@ -113,7 +113,7 @@ export default function Collections() {
                                                         </h3>
                                                     </div>
                                                     <span className="text-lg text-nowrap font-medium text-white">
-                                                        {product.price} ₴
+                                                        ${product.price}
                                                     </span>
                                                 </div>
 

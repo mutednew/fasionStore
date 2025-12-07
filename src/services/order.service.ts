@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/ApiError";
+import { emailService } from "./email.service"; // Импортируем наш новый сервис
 
+// Интерфейс данных доставки
 export interface CheckoutData {
     email: string;
     phone: string;
@@ -13,6 +15,7 @@ export interface CheckoutData {
 }
 
 export const orderService = {
+    // 1. Получить все заказы (для Админа)
     async getAll() {
         try {
             return await prisma.order.findMany({
@@ -27,6 +30,7 @@ export const orderService = {
         }
     },
 
+    // 2. Получить один заказ по ID
     async getById(id: string) {
         try {
             const order = await prisma.order.findUnique({
@@ -45,6 +49,7 @@ export const orderService = {
         }
     },
 
+    // 3. Получить заказы конкретного пользователя
     async getByUser(userId: string) {
         try {
             return await prisma.order.findMany({
@@ -59,6 +64,7 @@ export const orderService = {
         }
     },
 
+    // 4. Создать заказ из корзины (CHECKOUT)
     async createFromCart(userId: string, data: CheckoutData) {
         const cart = await prisma.cart.findUnique({
             where: { userId },
@@ -76,8 +82,10 @@ export const orderService = {
         const shippingCost = subtotal > 200 ? 0 : 15;
         const total = subtotal + shippingCost;
 
-        return await prisma.$transaction(async (tx) => {
-            const order = await tx.order.create({
+        // Создаем заказ в транзакции
+        const order = await prisma.$transaction(async (tx) => {
+            // Создаем заказ
+            const newOrder = await tx.order.create({
                 data: {
                     userId,
                     status: "PAID",
@@ -94,8 +102,9 @@ export const orderService = {
                 },
             });
 
+            // Переносим товары
             const orderItemsData = cart.items.map((item) => ({
-                orderId: order.id,
+                orderId: newOrder.id,
                 productId: item.productId,
                 quantity: item.quantity,
                 price: item.product.price,
@@ -109,14 +118,32 @@ export const orderService = {
                 });
             }
 
+            // Чистим корзину
             await tx.cartItem.deleteMany({
                 where: { cartId: cart.id },
             });
 
-            return order;
+            return newOrder;
         });
+
+        // 🚀 ОТПРАВЛЯЕМ ПИСЬМО (уже после успешной транзакции)
+        // Нам нужно загрузить order.items.product для красивого письма,
+        // так как order выше содержит только сырые данные
+        const fullOrder = await prisma.order.findUnique({
+            where: { id: order.id },
+            include: { items: { include: { product: true } } }
+        });
+
+        if (fullOrder) {
+            // as any нужен, так как Prisma возвращает Decimal, а наш тип ждет number/string
+            // в реальном проекте лучше сделать маппер
+            await emailService.sendReceipt(fullOrder as any);
+        }
+
+        return order;
     },
 
+    // 5. Обновить статус заказа
     async updateStatus(id: string, status: any) {
         try {
             return await prisma.order.update({
@@ -132,6 +159,7 @@ export const orderService = {
         }
     },
 
+    // 6. Удалить заказ
     async delete(id: string) {
         try {
             await prisma.orderItem.deleteMany({

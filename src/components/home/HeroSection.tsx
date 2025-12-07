@@ -195,7 +195,7 @@ export default function HeroSection() {
                                                         </h3>
                                                     </div>
                                                     <div className="text-white text-lg font-medium whitespace-nowrap ml-2">
-                                                        {product.price} ₴
+                                                        ${product.price}
                                                     </div>
                                                 </div>
 

@@ -49,13 +49,13 @@ export default function ProductsPage() {
     const [sort, setSort] = useState<string>("new");
     const [size, setSize] = useState<string>("all");
 
-    const [priceRange, setPriceRange] = useState<[number, number]>([0, 50000]);
-    const [debouncedPrice, setDebouncedPrice] = useState<[number, number]>([0, 50000]);
+    const [priceRange, setPriceRange] = useState<[number, number]>([0, 3430]);
+    const [debouncedPrice, setDebouncedPrice] = useState<[number, number]>([0, 3430]);
 
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedPrice(priceRange);
-            if (priceRange[0] !== 0 || priceRange[1] !== 50000) {
+            if (priceRange[0] !== 0 || priceRange[1] !== 3430) {
                 setPage(1);
             }
         }, 500);
@@ -82,21 +82,21 @@ export default function ProductsPage() {
         setCategoryId("all");
         setSort("new");
         setSize("all");
-        setPriceRange([0, 50000]);
+        setPriceRange([0, 3430]);
         setPage(1);
         updateUrl(1);
     };
 
     const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = Number(e.target.value);
-        if (!isNaN(val) && val >= 0 && val <= 50000) {
+        if (!isNaN(val) && val >= 0 && val <= 3430) {
             setPriceRange([val, priceRange[1]]);
         }
     };
 
     const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = Number(e.target.value);
-        if (!isNaN(val) && val >= 0 && val <= 50000) {
+        if (!isNaN(val) && val >= 0 && val <= 3430) {
             setPriceRange([priceRange[0], val]);
         }
     };
@@ -107,7 +107,7 @@ export default function ProductsPage() {
         sort !== "new" ||
         size !== "all" ||
         priceRange[0] !== 0 ||
-        priceRange[1] !== 50000;
+        priceRange[1] !== 3430;
 
     const { data: catData } = useGetCategoriesQuery();
     const categories = catData?.categories ?? [];
@@ -314,9 +314,9 @@ export default function ProductsPage() {
                                 <AccordionContent className="pt-4 px-2">
                                     <div className="space-y-4">
                                         <Slider
-                                            defaultValue={[0, 50000]}
+                                            defaultValue={[0, 3430]}
                                             value={priceRange}
-                                            max={50000}
+                                            max={3430}
                                             step={100}
                                             min={0}
                                             onValueChange={(val) => setPriceRange(val as [number, number])}
@@ -324,11 +324,11 @@ export default function ProductsPage() {
                                         />
                                         <div className="flex items-center justify-between gap-3">
                                             <div className="relative w-full">
-                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400">₴</span>
+                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400">$</span>
                                                 <Input
                                                     type="number"
                                                     min={0}
-                                                    max={50000}
+                                                    max={3430}
                                                     value={priceRange[0]}
                                                     onChange={handleMinPriceChange}
                                                     className="h-8 pl-5 text-xs bg-white border-neutral-200 focus-visible:ring-black"
@@ -336,11 +336,11 @@ export default function ProductsPage() {
                                             </div>
                                             <span className="text-neutral-300">–</span>
                                             <div className="relative w-full">
-                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400">₴</span>
+                                                <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400">$</span>
                                                 <Input
                                                     type="number"
                                                     min={0}
-                                                    max={50000}
+                                                    max={3430}
                                                     value={priceRange[1]}
                                                     onChange={handleMaxPriceChange}
                                                     className="h-8 pl-5 text-xs bg-white border-neutral-200 focus-visible:ring-black"
@@ -512,7 +512,7 @@ function ProductCard({ product, onAdd, isAdding }: { product: Product, onAdd: (e
 
                     <div className="mt-auto flex items-center justify-between pt-2">
                         <span className="text-xl font-bold text-neutral-900">
-                            {Number(product.price).toFixed(2)} ₴
+                            ${Number(product.price).toFixed(2)}
                         </span>
 
                         {product.colors && product.colors.length > 0 && (

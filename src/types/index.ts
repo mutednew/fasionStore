@@ -41,13 +41,21 @@ export interface Order {
     status: "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELED";
     total: number | string;
     createdAt: string;
+    updatedAt?: string;
 
-    email?: string;
-    phone?: string;
-    address?: string;
-    city?: string;
-    country?: string;
-    zip?: string;
+    // --- ОБНОВЛЕННЫЕ ПОЛЯ ---
+    email?: string | null;
+    phone?: string | null;
+
+    firstName?: string | null; // <--- Добавили
+    lastName?: string | null;  // <--- Добавили
+
+    address?: string | null;
+    city?: string | null;
+    country?: string | null;
+    zip?: string | null;
+
+    user?: User;
 
     items: {
         id: string;

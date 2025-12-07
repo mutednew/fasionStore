@@ -137,7 +137,7 @@ function ProductCard({ product }: { product: Product }) {
                         {product.name}
                     </h3>
                     <p className="text-white font-medium">
-                        {product.price} ₴
+                        ${product.price}
                     </p>
                 </div>
             </div>

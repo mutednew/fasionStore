@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Order } from "@/types";
 
 // Расширяем тип Order локально или глобально, чтобы TS знал про user
-interface OrderWithUser extends Order {
+interface OrderWithUser extends Omit<Order, "user"> {
     user?: {
         name: string;
         email: string;
