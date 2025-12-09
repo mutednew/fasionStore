@@ -3,6 +3,9 @@ export interface User {
     email: string;
     name: string;
     role: "ADMIN" | "CUSTOMER";
+
+    avatarUrl?: string | null;
+    createdAt?: string;
 }
 
 export interface Category {
@@ -43,12 +46,11 @@ export interface Order {
     createdAt: string;
     updatedAt?: string;
 
-    // --- ОБНОВЛЕННЫЕ ПОЛЯ ---
     email?: string | null;
     phone?: string | null;
 
-    firstName?: string | null; // <--- Добавили
-    lastName?: string | null;  // <--- Добавили
+    firstName?: string | null;
+    lastName?: string | null;
 
     address?: string | null;
     city?: string | null;

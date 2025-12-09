@@ -1,94 +1,56 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useParams, useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useMemo } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
-import NextImage from "next/image";
 import { motion } from "framer-motion";
-import { ShoppingCart, ChevronLeft, ChevronRight, Search } from "lucide-react";
-import { toast } from "sonner";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 
-import { useAppSelector } from "@/store/hooks";
 import { useGetCategoryByIdQuery, useGetProductsFilteredQuery } from "@/store/api/productsApi";
-import { useAddToCartMutation } from "@/store/api/cartApi";
 
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Product } from "@/types";
-import AuthModal from "@/components/modals/auth/AuthModal";
 import { ProductFilters } from "@/components/product/ProductFilters";
+import { useProductFilters } from "@/hooks/useProductFilter";
+import {ProductCard, ProductCardSkeleton} from "@/components/product/ProductCart";
 
 export default function CategoryPage() {
     const params = useParams();
     const categoryId = params?.id as string;
 
-    const searchParams = useSearchParams();
-    const router = useRouter();
-    const pathname = usePathname();
-
-    const { profile } = useAppSelector((state) => state.user);
-    const [isLoginOpen, setIsLoginOpen] = useState(false);
-
-    const pageParam = searchParams.get("page");
-    const [page, setPage] = useState(pageParam ? Number(pageParam) : 1);
-
-    useEffect(() => {
-        const p = searchParams.get("page");
-        setPage(p ? Number(p) : 1);
-    }, [searchParams]);
-
-    const [searchTerm, setSearchTerm] = useState("");
-    const [sort, setSort] = useState<string>("new");
-    const [size, setSize] = useState<string>("all");
-
-    const [priceRange, setPriceRange] = useState<[number, number]>([0, 3430]);
-    const [debouncedPrice, setDebouncedPrice] = useState<[number, number]>([0, 3430]);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedPrice(priceRange);
-            if (priceRange[0] !== 0 || priceRange[1] !== 3430) {
-                setPage(1);
-            }
-        }, 500);
-        return () => clearTimeout(timer);
-    }, [priceRange]);
+    // 1. Используем наш универсальный хук
+    const {
+        page,
+        setPage,
+        searchTerm,
+        setSearchTerm,
+        // categoryId здесь нам не нужен из хука, так как он жестко задан URL-ом
+        setCategoryId, // это тоже заглушка
+        sort,
+        setSort,
+        size,
+        setSize,
+        priceRange,
+        setPriceRange,
+        debouncedPrice,
+        handleFilterChange,
+        clearFilters,
+        updateUrl,
+    } = useProductFilters();
 
     const LIMIT = 9;
 
-    const updateUrl = () => {
-        const params = new URLSearchParams(searchParams.toString());
-        params.set("page", "1");
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-        window.scrollTo({ top: 0, behavior: "auto" });
-    };
-
-    const handleFilterChange = (setter: any, value: any) => {
-        setter(value);
-        setPage(1);
-        updateUrl();
-    };
-
-    const clearFilters = () => {
-        setSearchTerm("");
-        setSort("new");
-        setSize("all");
-        setPriceRange([0, 3430]);
-        setPage(1);
-        updateUrl();
-    };
-
+    // 2. Получаем инфо о категории
     const { data: catData, isLoading: loadingCat } = useGetCategoryByIdQuery(categoryId);
     const category = catData?.category;
 
+    // 3. Получаем товары с фильтрами
     const {
         data: prodData,
         isLoading: loadingProd,
         isFetching: isFetchingProd
     } = useGetProductsFilteredQuery({
-        categoryId,
+        categoryId, // <-- Важно: передаем ID из URL, а не из фильтра
         page,
         limit: LIMIT,
         search: searchTerm || undefined,
@@ -98,53 +60,17 @@ export default function CategoryPage() {
         maxPrice: debouncedPrice[1],
     });
 
-    const [addToCart, { isLoading: isAdding }] = useAddToCartMutation();
-
     const products = prodData?.products ?? [];
     const meta = prodData?.meta;
 
     const productsKey = useMemo(() => {
-        return JSON.stringify({
-            page,
-            categoryId,
-            sort,
-            size,
-            minPrice: debouncedPrice[0],
-            maxPrice: debouncedPrice[1],
-            searchTerm
-        });
+        return JSON.stringify({ page, categoryId, sort, size, minPrice: debouncedPrice[0], maxPrice: debouncedPrice[1], searchTerm });
     }, [page, categoryId, sort, size, debouncedPrice, searchTerm]);
-
-    const handleAddToCart = async (e: React.MouseEvent, product: Product) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (!profile) {
-            toast.error("Please login to add items to cart");
-            setIsLoginOpen(true);
-            return;
-        }
-
-        try {
-            await addToCart({
-                productId: product.id,
-                quantity: 1,
-                size: product.sizes?.[0],
-                color: product.colors?.[0],
-            }).unwrap();
-            toast.success("Added to cart");
-        } catch (err) {
-            toast.error("Failed to add to cart");
-        }
-    };
 
     const handlePageChange = (newPage: number) => {
         if (newPage >= 1 && (!meta || newPage <= meta.totalPages)) {
             setPage(newPage);
-            const params = new URLSearchParams(searchParams.toString());
-            params.set("page", newPage.toString());
-            router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-            window.scrollTo({ top: 0, behavior: "auto" });
+            updateUrl(newPage);
         }
     };
 
@@ -165,10 +91,9 @@ export default function CategoryPage() {
 
     return (
         <main className="min-h-screen bg-[#fafafa] py-12 px-4 md:px-8">
-            <AuthModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
-
             <div className="max-w-[1400px] mx-auto space-y-8">
 
+                {/* Хлебные крошки и заголовок */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -202,12 +127,13 @@ export default function CategoryPage() {
 
                 <div className="flex flex-col lg:flex-row gap-10 items-start">
 
+                    {/* Фильтры (скрываем выбор категории, т.к. мы уже в ней) */}
                     <ProductFilters
                         searchTerm={searchTerm}
                         setSearchTerm={(v) => handleFilterChange(setSearchTerm, v)}
                         categoryId={categoryId}
-                        setCategoryId={() => {}}
-                        hideCategory={true}
+                        setCategoryId={() => {}} // Заглушка, здесь нельзя сменить категорию
+                        hideCategory={true}      // <-- Скрываем аккордеон категорий
                         sort={sort}
                         setSort={(v) => handleFilterChange(setSort, v)}
                         size={size}
@@ -218,6 +144,7 @@ export default function CategoryPage() {
                     />
 
                     <div className="flex-1 w-full min-h-[500px]">
+
                         {showSkeletons && (
                             <div key="skeletons" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in duration-300">
                                 {[...Array(9)].map((_, i) => (
@@ -234,13 +161,8 @@ export default function CategoryPage() {
                                 transition={{ duration: 0.4, ease: "easeOut" }}
                                 className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
                             >
-                                {products.map((product, index) => (
-                                    <ProductCard
-                                        key={product.id}
-                                        product={product}
-                                        onAdd={(e) => handleAddToCart(e, product)}
-                                        isAdding={isAdding}
-                                    />
+                                {products.map((product) => (
+                                    <ProductCard key={product.id} product={product} />
                                 ))}
                             </motion.div>
                         )}
@@ -265,7 +187,7 @@ export default function CategoryPage() {
                             </motion.div>
                         )}
 
-                        {}
+                        {/* Пагинация */}
                         {!showSkeletons && meta && meta.totalPages > 1 && (
                             <div className="flex justify-center items-center gap-4 pt-10 mt-8 border-t border-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <Button
@@ -297,102 +219,6 @@ export default function CategoryPage() {
                 </div>
             </div>
         </main>
-    );
-}
-
-function ProductCard({ product, onAdd, isAdding }: { product: Product, onAdd: (e: any) => void, isAdding: boolean }) {
-    return (
-        <Link href={`/products/${product.id}`} className="block h-full group">
-            <Card className="h-full overflow-hidden border-none shadow-sm hover:shadow-xl transition-all duration-300 bg-white flex flex-col rounded-xl ring-1 ring-neutral-200/50">
-                <div className="relative aspect-[3/4] bg-neutral-100 overflow-hidden">
-                    {product.imageUrl ? (
-                        <NextImage
-                            src={product.imageUrl}
-                            alt={product.name}
-                            fill
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                        />
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center text-neutral-300 bg-neutral-50">
-                            No Image
-                        </div>
-                    )}
-
-                    {product.stock > 0 && (
-                        <div className="absolute inset-x-4 bottom-4 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300 z-10">
-                            <Button
-                                className="w-full shadow-lg font-semibold bg-white text-black hover:bg-neutral-100"
-                                onClick={onAdd}
-                                disabled={isAdding}
-                            >
-                                <ShoppingCart className="w-4 h-4 mr-2" />
-                                Quick Add
-                            </Button>
-                        </div>
-                    )}
-
-                    <div className="absolute top-3 left-3 flex flex-col gap-2 z-10">
-                        {product.stock <= 0 && (
-                            <Badge variant="destructive" className="shadow-sm">Out of Stock</Badge>
-                        )}
-                        {(new Date(product.createdAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000) && (
-                            <Badge className="bg-blue-600 hover:bg-blue-700 shadow-sm">New</Badge>
-                        )}
-                    </div>
-                </div>
-
-                <CardContent className="p-5 flex flex-col flex-grow">
-                    <div className="mb-2">
-                        <h3 className="font-semibold text-neutral-900 text-lg leading-tight truncate group-hover:text-blue-600 transition-colors">
-                            {product.name}
-                        </h3>
-                        <p className="text-sm text-neutral-500 mt-1 line-clamp-1">
-                            {product.description || "Fashion Item"}
-                        </p>
-                    </div>
-
-                    <div className="mt-auto flex items-center justify-between pt-2">
-                        <span className="text-xl font-bold text-neutral-900">
-                            ${Number(product.price).toFixed(2)}
-                        </span>
-
-                        {product.colors && product.colors.length > 0 && (
-                            <div className="flex -space-x-1.5">
-                                {product.colors.slice(0, 3).map((c, idx) => (
-                                    <div
-                                        key={idx}
-                                        className="w-5 h-5 rounded-full border-2 border-white shadow-sm ring-1 ring-neutral-100"
-                                        style={{ backgroundColor: c }}
-                                    />
-                                ))}
-                                {product.colors.length > 3 && (
-                                    <div className="w-5 h-5 rounded-full border-2 border-white bg-neutral-100 flex items-center justify-center text-[9px] font-bold text-neutral-500 ring-1 ring-neutral-100">
-                                        +{product.colors.length - 3}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-        </Link>
-    );
-}
-
-function ProductCardSkeleton() {
-    return (
-        <div className="flex flex-col gap-4 bg-white p-4 rounded-xl border border-gray-100 h-full">
-            <Skeleton className="h-[320px] w-full rounded-lg" />
-            <div className="space-y-3 px-1 flex-grow">
-                <Skeleton className="h-6 w-3/4" />
-                <Skeleton className="h-4 w-full" />
-                <div className="flex justify-between pt-4 mt-auto">
-                    <Skeleton className="h-6 w-16" />
-                    <Skeleton className="h-6 w-16 rounded-full" />
-                </div>
-            </div>
-        </div>
     );
 }
 

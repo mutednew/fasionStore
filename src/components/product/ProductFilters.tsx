@@ -1,8 +1,7 @@
 "use client";
 
-import { Search, SlidersHorizontal, Check } from "lucide-react";
+import { Check, Search, SlidersHorizontal } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import {
     Accordion,
@@ -10,43 +9,55 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion";
-import { cn } from "@/lib/utils";
 import { useGetCategoriesQuery } from "@/store/api/productsApi";
+import { cn } from "@/lib/utils";
+import {ChangeEvent} from "react";
 
 interface ProductFiltersProps {
     searchTerm: string;
+    setSearchTerm: (value: string) => void;
     categoryId: string;
+    setCategoryId: (value: string) => void;
     sort: string;
+    setSort: (value: string) => void;
     size: string;
+    setSize: (value: string) => void;
     priceRange: [number, number];
-
-    setSearchTerm: (val: string) => void;
-    setCategoryId: (val: string) => void;
-    setSort: (val: string) => void;
-    setSize: (val: string) => void;
-    setPriceRange: (val: [number, number]) => void;
+    setPriceRange: (value: [number, number]) => void;
     onClear: () => void;
-
     hideCategory?: boolean;
 }
 
 export function ProductFilters({
    searchTerm,
-   categoryId,
-   sort,
-   size,
-   priceRange,
    setSearchTerm,
+   categoryId,
    setCategoryId,
+   sort,
    setSort,
+   size,
    setSize,
+   priceRange,
    setPriceRange,
    onClear,
    hideCategory = false,
 }: ProductFiltersProps) {
-
     const { data: catData } = useGetCategoriesQuery();
     const categories = catData?.categories ?? [];
+
+    const handleMinPriceChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const val = Number(e.target.value);
+        if (!isNaN(val) && val >= 0 && val <= 3430) {
+            setPriceRange([val, priceRange[1]]);
+        }
+    };
+
+    const handleMaxPriceChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const val = Number(e.target.value);
+        if (!isNaN(val) && val >= 0 && val <= 3430) {
+            setPriceRange([priceRange[0], val]);
+        }
+    };
 
     const hasActiveFilters =
         searchTerm ||
@@ -55,20 +66,6 @@ export function ProductFilters({
         size !== "all" ||
         priceRange[0] !== 0 ||
         priceRange[1] !== 3430;
-
-    const handleMinPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = Number(e.target.value);
-        if (!isNaN(val) && val >= 0 && val <= 3430) {
-            setPriceRange([val, priceRange[1]]);
-        }
-    };
-
-    const handleMaxPriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = Number(e.target.value);
-        if (!isNaN(val) && val >= 0 && val <= 3430) {
-            setPriceRange([priceRange[0], val]);
-        }
-    };
 
     return (
         <aside className="w-full lg:w-64 shrink-0 space-y-6 lg:sticky lg:top-28">
@@ -97,7 +94,7 @@ export function ProductFilters({
                 />
             </div>
 
-            <Accordion type="multiple" className="w-full">
+            <Accordion type="multiple" defaultValue={hideCategory ? ["sort", "price", "size"] : ["category", "sort", "price"]} className="w-full">
 
                 {!hideCategory && (
                     <AccordionItem value="category" className="border-gray-200">
@@ -110,7 +107,9 @@ export function ProductFilters({
                                     onClick={() => setCategoryId("all")}
                                     className={cn(
                                         "flex items-center justify-between w-full px-2 py-1.5 text-sm rounded-md transition-colors",
-                                        categoryId === "all" ? "bg-neutral-100 text-black font-medium" : "text-neutral-500 hover:bg-neutral-50"
+                                        categoryId === "all"
+                                            ? "bg-neutral-100 text-black font-medium"
+                                            : "text-neutral-500 hover:bg-neutral-50"
                                     )}
                                 >
                                     All Categories
@@ -122,7 +121,9 @@ export function ProductFilters({
                                         onClick={() => setCategoryId(cat.id)}
                                         className={cn(
                                             "flex items-center justify-between w-full px-2 py-1.5 text-sm rounded-md transition-colors capitalize",
-                                            categoryId === cat.id ? "bg-neutral-100 text-black font-medium" : "text-neutral-500 hover:bg-neutral-50"
+                                            categoryId === cat.id
+                                                ? "bg-neutral-100 text-black font-medium"
+                                                : "text-neutral-500 hover:bg-neutral-50"
                                         )}
                                     >
                                         {cat.name}
@@ -150,7 +151,9 @@ export function ProductFilters({
                                     onClick={() => setSort(option.value)}
                                     className={cn(
                                         "flex items-center justify-between w-full px-2 py-1.5 text-sm rounded-md transition-colors",
-                                        sort === option.value ? "bg-neutral-100 text-black font-medium" : "text-neutral-500 hover:bg-neutral-50"
+                                        sort === option.value
+                                            ? "bg-neutral-100 text-black font-medium"
+                                            : "text-neutral-500 hover:bg-neutral-50"
                                     )}
                                 >
                                     {option.label}
@@ -178,7 +181,9 @@ export function ProductFilters({
                             />
                             <div className="flex items-center justify-between gap-3">
                                 <div className="relative w-full">
-                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400">₴</span>
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400">
+                                        $
+                                    </span>
                                     <Input
                                         type="number"
                                         min={0}
@@ -190,7 +195,9 @@ export function ProductFilters({
                                 </div>
                                 <span className="text-neutral-300">–</span>
                                 <div className="relative w-full">
-                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400">₴</span>
+                                    <span className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-neutral-400">
+                                        $
+                                    </span>
                                     <Input
                                         type="number"
                                         min={0}
@@ -217,7 +224,9 @@ export function ProductFilters({
                                     onClick={() => setSize(size === s ? "all" : s)}
                                     className={cn(
                                         "h-9 rounded-md border text-sm font-medium transition-all",
-                                        size === s ? "bg-black text-white border-black" : "bg-white text-neutral-600 border-gray-200 hover:border-black"
+                                        size === s
+                                            ? "bg-black text-white border-black"
+                                            : "bg-white text-neutral-600 border-gray-200 hover:border-black"
                                     )}
                                 >
                                     {s}

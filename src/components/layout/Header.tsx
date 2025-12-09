@@ -165,7 +165,7 @@ export default function Header() {
                         ) : (
                             <button
                                 onClick={() => setIsLoginOpen(true)}
-                                className="p-2 md:p-3 rounded-full bg-black text-white hover:opacity-80 transition flex items-center gap-2 shadow-sm"
+                                className="p-2 md:p-3 rounded-full bg-black text-white hover:opacity-80 transition flex items-center gap-2 shadow-sm cursor-pointer"
                             >
                                 <LogIn size={18} strokeWidth={1.8} />
                                 <span className="text-sm font-semibold hidden md:inline">Login</span>

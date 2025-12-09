@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { logout, setProfile, setStatus } from "@/store/slices/userSlice";
-import {useGetMeQuery} from "@/store/api/userApi";
+import { useGetMeQuery } from "@/store/api/userApi";
 
 export const useAuthInit = () => {
     const dispatch = useAppDispatch();
