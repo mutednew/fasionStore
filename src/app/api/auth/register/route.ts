@@ -2,7 +2,6 @@ import { RegisterSchema } from "@/schemas/auth.schema";
 import { registerUser } from "@/services/user.service";
 import { ApiError } from "@/lib/ApiError";
 import { ok, fail } from "@/lib/response";
-import {setAuthCookie} from "@/lib/cookies";
 
 export async function POST(req: Request) {
     try {
@@ -13,10 +12,12 @@ export async function POST(req: Request) {
             return fail("Invalid data", 400, parsed.error.format());
         }
 
-        const { user, token } = await registerUser(parsed.data);
+        const { user } = await registerUser(parsed.data);
 
-        const res = ok({ user }, 201);
-        setAuthCookie(res, token);
+        const res = ok({
+            user,
+            message: "Success! Please check your email."
+        }, 201);
 
         return res;
     } catch (err) {

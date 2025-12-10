@@ -1,6 +1,6 @@
 import { LoginSchema, RegisterSchema } from "@/schemas/auth.schema";
 import { z } from "zod";
-import {mainApi} from "@/store/api/mainApi";
+import { mainApi } from "@/store/api/mainApi";
 
 type LoginRequest = z.infer<typeof LoginSchema>
 type RegisterRequest = z.infer<typeof RegisterSchema>
@@ -12,6 +12,7 @@ interface AuthResponse {
             email: string;
             name: string;
             role: "ADMIN" | "CUSTOMER";
+            emailVerified: string | null;
         };
         token: string;
     };

@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { Order } from '@/types'; // Убедись, что в типах product есть поле images или image
+import { Order } from '@/types';
 
 const transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -9,7 +9,7 @@ const transporter = nodemailer.createTransport({
     },
 });
 
-// Форматер цены для красоты
+// Форматер цены
 const formatPrice = (price: number | string) => {
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -17,21 +17,11 @@ const formatPrice = (price: number | string) => {
     }).format(Number(price));
 };
 
+// Генерация HTML для чека (Receipt)
 function generateReceiptHtml(order: Order): string {
-    const orderDate = new Date().toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-    });
-
     // Генерируем строки товаров
     const itemsHtml = order.items.map(item => {
-        // Пытаемся достать картинку. Если у тебя в базе массив images, берем первую.
-        // Если поле называется иначе (например imageUrl), поправь это свойство.
         const productImage = (item.product as any).images?.[0] || (item.product as any).imageUrl || 'https://via.placeholder.com/80?text=No+Image';
-
-        const itemTotal = Number(item.price) * item.quantity;
-
         return `
         <tr>
             <td style="padding: 20px 0; border-bottom: 1px solid #f0f0f0; vertical-align: top; width: 80px;">
@@ -54,7 +44,7 @@ function generateReceiptHtml(order: Order): string {
 
     const subtotal = order.items.reduce((acc, item) => acc + (Number(item.price) * item.quantity), 0);
     const total = Number(order.total);
-    const shipping = total - subtotal; // Вычисляем доставку, если она не хранится отдельно
+    const shipping = total - subtotal;
 
     return `
 <!DOCTYPE html>
@@ -64,13 +54,10 @@ function generateReceiptHtml(order: Order): string {
     <title>Order Confirmation</title>
 </head>
 <body style="margin: 0; padding: 0; background-color: #f7f7f7; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
-    
     <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #f7f7f7; padding: 40px 0;">
         <tr>
             <td align="center">
-                
                 <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05);">
-                    
                     <tr>
                         <td style="background-color: #111111; padding: 40px; text-align: center;">
                             <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 300; letter-spacing: 1px; text-transform: uppercase;">
@@ -78,7 +65,6 @@ function generateReceiptHtml(order: Order): string {
                             </h1>
                         </td>
                     </tr>
-
                     <tr>
                         <td style="padding: 40px 40px 20px 40px; text-align: center;">
                             <h2 style="margin: 0 0 10px; color: #111; font-size: 20px; font-weight: 600;">
@@ -92,7 +78,6 @@ function generateReceiptHtml(order: Order): string {
                             </div>
                         </td>
                     </tr>
-
                     <tr>
                         <td style="padding: 0 40px;">
                             <table width="100%" border="0" cellspacing="0" cellpadding="0">
@@ -100,7 +85,6 @@ function generateReceiptHtml(order: Order): string {
                             </table>
                         </td>
                     </tr>
-
                     <tr>
                         <td style="padding: 30px 40px;">
                             <table width="100%" border="0" cellspacing="0" cellpadding="0">
@@ -123,7 +107,6 @@ function generateReceiptHtml(order: Order): string {
                             </table>
                         </td>
                     </tr>
-
                     <tr>
                         <td style="padding: 0 40px 40px 40px;">
                             <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px;">
@@ -137,20 +120,18 @@ function generateReceiptHtml(order: Order): string {
                             </div>
                         </td>
                     </tr>
-
                     <tr>
                         <td style="background-color: #111; padding: 30px; text-align: center;">
                             <p style="margin: 0; color: #666; font-size: 12px;">
-                                &copy; ${new Date().getFullYear()} Fashion Store. All rights reserved.
+                                &copy; ${new Date().getFullYear()} LookLab. All rights reserved.
                             </p>
                             <p style="margin: 10px 0 0; color: #666; font-size: 12px;">
                                 Questions? Just reply to this email.
                             </p>
                         </td>
                     </tr>
-
                 </table>
-                </td>
+            </td>
         </tr>
     </table>
 </body>
@@ -159,6 +140,7 @@ function generateReceiptHtml(order: Order): string {
 }
 
 export const emailService = {
+    // 1. Отправка чека
     async sendReceipt(order: Order) {
         if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
             console.error("Email credentials missing");
@@ -169,30 +151,79 @@ export const emailService = {
             const htmlContent = generateReceiptHtml(order);
 
             const mailOptions = {
-                from: `"Fashion Store" <${process.env.EMAIL_USER}>`,
-
-                // ФИКС ЗДЕСЬ:
-                // Если order.email === null, мы передаем undefined (это Nodemailer разрешает),
-                // либо пустую строку. Лучше всего так:
+                from: `"LookLab" <${process.env.EMAIL_USER}>`,
                 to: order.email || undefined,
-
                 bcc: process.env.EMAIL_USER,
                 subject: `Order Confirmation #${order.id.slice(0, 8).toUpperCase()}`,
                 html: htmlContent,
             };
 
-            // Дополнительная проверка: если email вообще нет, не пытаемся отправлять "в никуда"
             if (!mailOptions.to) {
                 console.warn(`Order ${order.id} has no email, sending only to Admin (BCC).`);
-                // Nodemailer может выдать ошибку, если 'to' пустой, поэтому можно переставить админа в 'to'
                 mailOptions.to = process.env.EMAIL_USER;
                 mailOptions.bcc = '';
             }
 
-            await transporter.sendMail(mailOptions as any); // as any иногда нужен, если типы библиотек конфликтуют
+            await transporter.sendMail(mailOptions as any);
             console.log(`✅ Email sent for order ${order.id}`);
         } catch (error) {
             console.error("❌ Email error:", error);
         }
     },
+
+    // 2. Отправка подтверждения почты
+    async sendVerificationEmail(email: string, token: string) {
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) return;
+
+        // ФИКС: Добавлен запасной вариант, если .env не прочитался
+        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
+        // Ссылка ведет на API для авто-логина
+        const confirmLink = `${baseUrl}/api/auth/verify?token=${token}`;
+
+        const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: Arial, sans-serif;">
+            <table width="100%" border="0" cellspacing="0" cellpadding="0" style="padding: 40px 0;">
+                <tr>
+                    <td align="center">
+                        <table width="600" border="0" cellspacing="0" cellpadding="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
+                            <tr>
+                                <td style="background-color: #111; padding: 30px; text-align: center;">
+                                    <h1 style="color: #fff; margin: 0; font-size: 24px; letter-spacing: 1px;">LookLab</h1>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 40px; text-align: center;">
+                                    <h2 style="margin: 0 0 20px; color: #111; font-size: 24px;">Verify your email address</h2>
+                                    <p style="color: #666; font-size: 16px; line-height: 1.6; margin-bottom: 30px;">
+                                        Please confirm your email address to activate your account.
+                                    </p>
+                                    
+                                    <a href="${confirmLink}" style="background-color: #000; color: #fff; padding: 14px 28px; text-decoration: none; border-radius: 4px; font-weight: bold; display: inline-block;">
+                                        Confirm Email
+                                    </a>
+
+                                    <p style="margin-top: 30px; font-size: 12px; color: #999;">
+                                        Or copy link:<br>
+                                        <a href="${confirmLink}" style="color: #666;">${confirmLink}</a>
+                                    </p>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </table>
+        </body>
+        </html>
+        `;
+
+        await transporter.sendMail({
+            from: `"LookLab" <${process.env.EMAIL_USER}>`,
+            to: email,
+            subject: "Verify your email address",
+            html: htmlContent,
+        });
+    }
 };
