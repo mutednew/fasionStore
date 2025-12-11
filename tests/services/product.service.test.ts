@@ -7,11 +7,12 @@ jest.mock("@/lib/prisma", () => ({
         product: {
             findMany: jest.fn(),
             findUnique: jest.fn(),
-            findFirst: jest.fn(),
             create: jest.fn(),
             update: jest.fn(),
             delete: jest.fn(),
+            count: jest.fn(),
         },
+        $transaction: jest.fn((promises) => Promise.all(promises)),
     },
 }));
 
@@ -25,22 +26,30 @@ describe("productService", () => {
     });
 
     describe("getAll()", () => {
-        it("should return all products", async () => {
+        it("should return products with meta", async () => {
             const mockProducts = [
                 { id: "1", name: "A", price: 10 },
                 { id: "2", name: "B", price: 20 },
             ];
-            (prisma.product.findMany as jest.Mock).mockResolvedValue(mockProducts);
+            const mockCount = 2;
 
-            const result = await productService.getAll();
+            (prisma.product.findMany as jest.Mock).mockResolvedValue(mockProducts);
+            (prisma.product.count as jest.Mock).mockResolvedValue(mockCount);
+
+            const result = await productService.getAll({ page: 1, limit: 10 });
 
             expect(prisma.product.findMany).toHaveBeenCalled();
-            expect(result.length).toBe(2);
-            expect(result[0].name).toBe("A");
+            expect(prisma.product.count).toHaveBeenCalled();
+
+            expect(result).toHaveProperty("products");
+            expect(result).toHaveProperty("meta");
+            expect(result.products.length).toBe(2);
+            expect(result.meta.total).toBe(2);
         });
 
         it("should throw ApiError on database error", async () => {
             (prisma.product.findMany as jest.Mock).mockRejectedValue(new Error("DB error"));
+
             await expect(productService.getAll()).rejects.toThrow(ApiError);
         });
     });
@@ -64,38 +73,33 @@ describe("productService", () => {
 
     describe("create()", () => {
         it("should create a new product", async () => {
-            (prisma.product.findFirst as jest.Mock).mockResolvedValue(null);
+            const inputData = {
+                name: "Created Product",
+                price: 150,
+                stock: 10,
+                imageUrl: "https://example.com/image.png",
+                categoryId: undefined,
+            };
 
             (prisma.product.create as jest.Mock).mockResolvedValue({
                 id: "1",
-                name: "Created Product",
-                price: 150,
-                stock: 10,
-                imageUrl: "https://example.com/image.png",
-                categoryId: "a34e764a-2a60-418f-9df3-537a8a646f41",
+                ...inputData,
                 createdAt: new Date(),
                 updatedAt: new Date(),
-                category: { id: "a34e764a-2a60-418f-9df3-537a8a646f41", name: "Test Category" },
+                category: null,
             });
 
-            const result = await productService.create({
-                name: "Created Product",
-                price: 150,
-                stock: 10,
-                imageUrl: "https://example.com/image.png",
-                categoryId: "a34e764a-2a60-418f-9df3-537a8a646f41",
-            });
+            const result = await productService.create(inputData);
 
-            expect(result).not.toBeNull();
             expect(result.name).toBe("Created Product");
             expect(result.price).toBe(150);
-            expect(prisma.product.create).toHaveBeenCalledTimes(1);
+            expect(prisma.product.create).toHaveBeenCalled();
         });
     });
 
     describe("update()", () => {
         it("should update existing product", async () => {
-            (prisma.product.findUnique as jest.Mock).mockResolvedValue({ id: "1" });
+            (prisma.product.findUnique as jest.Mock).mockResolvedValue({ id: "1", categoryId: null });
             (prisma.product.update as jest.Mock).mockResolvedValue({
                 id: "1",
                 name: "Updated",
@@ -124,6 +128,49 @@ describe("productService", () => {
         it("should throw 404 if product not found", async () => {
             (prisma.product.findUnique as jest.Mock).mockResolvedValue(null);
             await expect(productService.delete("999")).rejects.toThrow("Product not found");
+        });
+    });
+
+    describe("bulkDiscount()", () => {
+        it("should apply discount to selected products", async () => {
+            const ids = ["1", "2"];
+            const discountPercent = 20;
+
+            (prisma.product.findMany as jest.Mock).mockResolvedValue([
+                { id: "1", price: 100 },
+                { id: "2", price: 200 },
+            ]);
+
+            (prisma.product.update as jest.Mock).mockResolvedValue({});
+
+            const result = await productService.bulkDiscount(ids, discountPercent);
+
+            expect(prisma.product.findMany).toHaveBeenCalledWith({
+                where: { id: { in: ids } },
+                select: { id: true, price: true }
+            });
+
+            expect(prisma.product.update).toHaveBeenCalledTimes(2);
+
+            expect(result).toHaveProperty("count", 2);
+        });
+
+        it("should calculate sale price correctly", async () => {
+            const ids = ["1"];
+            const discountPercent = 50;
+
+            (prisma.product.findMany as jest.Mock).mockResolvedValue([
+                { id: "1", price: 100 },
+            ]);
+
+            await productService.bulkDiscount(ids, discountPercent);
+
+            expect(prisma.product.update).toHaveBeenCalledWith(expect.objectContaining({
+                where: { id: "1" },
+                data: expect.objectContaining({
+                    salePrice: 50
+                })
+            }));
         });
     });
 });

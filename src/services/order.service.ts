@@ -16,7 +16,6 @@ export interface CheckoutData {
 }
 
 export const orderService = {
-    // ... getAll, getById, getByUser оставляем без изменений ...
     async getAll() {
         return await prisma.order.findMany({
             include: { items: { include: { product: true } }, user: true },
@@ -41,7 +40,6 @@ export const orderService = {
         });
     },
 
-    // 4. Создать заказ
     async createFromCart(userId: string, data: CheckoutData) {
         const cart = await prisma.cart.findUnique({
             where: { userId },
@@ -52,7 +50,6 @@ export const orderService = {
             throw new ApiError("Cart is empty", 400);
         }
 
-        // 1. Считаем базовую сумму
         let subtotal = cart.items.reduce((acc, item) => {
             const price = Number(item.product.salePrice ?? item.product.price);
             return acc + (price * item.quantity);
@@ -60,10 +57,7 @@ export const orderService = {
 
         let shippingCost = subtotal > 200 ? 0 : 15;
 
-        // 2. Применяем ПРОМОКОД
         if (data.promoCode) {
-            // Убрали try/catch, чтобы ошибка валидации (если код неверный) прерывала создание заказа
-            // Это безопаснее: если юзер ожидает скидку, а она не сработала, лучше выдать ошибку.
             const promo = await promoService.validatePromo(data.promoCode, userId);
 
             console.log(`Applying promo code ${data.promoCode} to order for user ${userId}`);
@@ -77,19 +71,16 @@ export const orderService = {
                 subtotal -= promo.value;
             }
 
-            // Если нужно, чтобы промокод был одноразовым, раскомментируй:
-            // await prisma.promoCode.update({ where: { id: promo.id }, data: { isActive: false } });
         }
 
         const total = Math.max(0, subtotal + shippingCost);
 
-        // 3. Создаем заказ в транзакции
         const order = await prisma.$transaction(async (tx) => {
             const newOrder = await tx.order.create({
                 data: {
                     userId,
                     status: "PAID",
-                    total: total, // <-- Здесь должна быть сумма со скидкой
+                    total: total,
 
                     email: data.email,
                     phone: data.phone,
@@ -127,7 +118,6 @@ export const orderService = {
             return newOrder;
         });
 
-        // 4. Отправляем чек
         const fullOrder = await prisma.order.findUnique({
             where: { id: order.id },
             include: { items: { include: { product: true } } }
@@ -140,7 +130,6 @@ export const orderService = {
         return order;
     },
 
-    // ... методы updateStatus и delete оставляем без изменений ...
     async updateStatus(id: string, status: any) {
         return await prisma.order.update({
             where: { id },

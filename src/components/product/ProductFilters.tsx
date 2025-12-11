@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/accordion";
 import { useGetCategoriesQuery } from "@/store/api/productsApi";
 import { cn } from "@/lib/utils";
-import {ChangeEvent} from "react";
+import { ChangeEvent } from "react";
 
 interface ProductFiltersProps {
     searchTerm: string;
@@ -29,19 +29,19 @@ interface ProductFiltersProps {
 }
 
 export function ProductFilters({
-   searchTerm,
-   setSearchTerm,
-   categoryId,
-   setCategoryId,
-   sort,
-   setSort,
-   size,
-   setSize,
-   priceRange,
-   setPriceRange,
-   onClear,
-   hideCategory = false,
-}: ProductFiltersProps) {
+                                   searchTerm,
+                                   setSearchTerm,
+                                   categoryId,
+                                   setCategoryId,
+                                   sort,
+                                   setSort,
+                                   size,
+                                   setSize,
+                                   priceRange,
+                                   setPriceRange,
+                                   onClear,
+                                   hideCategory = false,
+                               }: ProductFiltersProps) {
     const { data: catData } = useGetCategoriesQuery();
     const categories = catData?.categories ?? [];
 
@@ -94,8 +94,8 @@ export function ProductFilters({
                 />
             </div>
 
-            <Accordion type="multiple" defaultValue={hideCategory ? ["sort", "price", "size"] : ["category", "sort", "price"]} className="w-full">
-
+            {/* defaultValue={[]} делает все вкладки закрытыми по умолчанию */}
+            <Accordion type="multiple" defaultValue={[]} className="w-full">
                 {!hideCategory && (
                     <AccordionItem value="category" className="border-gray-200">
                         <AccordionTrigger className="text-sm font-semibold text-neutral-800 hover:no-underline py-3">
