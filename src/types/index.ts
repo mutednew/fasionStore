@@ -74,3 +74,10 @@ export interface Order {
         };
     }[];
 }
+
+export interface PromoCode {
+    id: string;
+    code: string;
+    type: "PERCENT" | "FIXED" | "FREE_SHIPPING";
+    value: number;
+}

@@ -15,9 +15,14 @@ export default function CartPage() {
         subtotal,
         shipping,
         total,
+        discountAmount,
         isUpdating,
         handleQuantityChange,
-        handleRemove
+        handleRemove,
+        appliedPromo,
+        isPromoLoading,
+        applyPromo,
+        removePromo
     } = useCartPage();
 
     if (isLoading) return <CartSkeleton />;
@@ -34,6 +39,7 @@ export default function CartPage() {
             </h1>
 
             <div className="flex flex-col lg:flex-row gap-12 items-start">
+
                 <div className="flex-1 w-full space-y-6">
                     <AnimatePresence initial={false} mode="popLayout">
                         {visibleItems.map((item) => (
@@ -43,6 +49,7 @@ export default function CartPage() {
                                 isUpdating={isUpdating}
                                 onUpdateQuantity={handleQuantityChange}
                                 onRemove={handleRemove}
+                                promo={appliedPromo}
                             />
                         ))}
                     </AnimatePresence>
@@ -53,8 +60,15 @@ export default function CartPage() {
                         subtotal={subtotal}
                         shipping={shipping}
                         total={total}
+                        discountAmount={discountAmount}
+
+                        appliedPromo={appliedPromo}
+                        isPromoLoading={isPromoLoading}
+                        onApply={applyPromo}
+                        onRemove={removePromo}
                     />
                 </div>
+
             </div>
         </main>
     );

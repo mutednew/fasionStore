@@ -4,14 +4,15 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { Minus, Plus, Trash2, Loader2 } from "lucide-react";
-import { CartItem as ICartItem } from "@/types";
+import { Minus, Plus, Trash2, Loader2, Tag } from "lucide-react";
+import { CartItem as ICartItem, PromoCode } from "@/types";
 
 interface CartItemProps {
     item: ICartItem;
     isUpdating: boolean;
     onUpdateQuantity: (id: string, currentQty: number, delta: number) => void;
     onRemove: (id: string) => void;
+    promo?: PromoCode | null;
 }
 
 const counterVariants = {
@@ -19,10 +20,9 @@ const counterVariants = {
     animate: { y: 0, opacity: 1 },
     exit: (direction: number) => ({ y: direction > 0 ? -20 : 20, opacity: 0 }),
 };
-
 const springTransition = { type: "spring" as const, stiffness: 400, damping: 25, mass: 0.5 };
 
-export function CartItem({ item, isUpdating, onUpdateQuantity, onRemove }: CartItemProps) {
+export function CartItem({ item, isUpdating, onUpdateQuantity, onRemove, promo }: CartItemProps) {
     const [localQty, setLocalQty] = useState(item.quantity);
     const [direction, setDirection] = useState(0);
 
@@ -40,8 +40,15 @@ export function CartItem({ item, isUpdating, onUpdateQuantity, onRemove }: CartI
     const handleIncrement = () => { setDirection(1); setLocalQty((prev) => prev + 1); };
     const handleDecrement = () => { setDirection(-1); setLocalQty((prev) => Math.max(1, prev - 1)); };
 
-    // Определяем актуальную цену
-    const currentPrice = item.product.salePrice ? Number(item.product.salePrice) : Number(item.product.price);
+    const basePrice = item.product.salePrice ? Number(item.product.salePrice) : Number(item.product.price);
+
+    let finalPrice = basePrice;
+    const isPromoApplied = promo && promo.type === "PERCENT";
+
+    if (isPromoApplied) {
+        finalPrice = basePrice * (1 - promo.value / 100);
+    }
+
     const isOnSale = item.product.salePrice && Number(item.product.salePrice) < Number(item.product.price);
 
     return (
@@ -110,39 +117,41 @@ export function CartItem({ item, isUpdating, onUpdateQuantity, onRemove }: CartI
                         <div className="relative h-7 overflow-hidden min-w-[80px] flex justify-end">
                             <AnimatePresence mode="popLayout" initial={false} custom={direction}>
                                 <motion.p
-                                    key={localQty}
+                                    key={`${localQty}-${finalPrice}`}
                                     custom={direction}
                                     variants={counterVariants}
                                     initial="initial"
                                     animate="animate"
                                     exit="exit"
                                     transition={springTransition}
-                                    className={isOnSale ? "text-lg font-bold text-red-600 absolute right-0" : "text-lg font-bold text-neutral-900 absolute right-0"}
+                                    className={`text-lg font-bold absolute right-0 ${isPromoApplied ? "text-purple-600" : isOnSale ? "text-red-600" : "text-neutral-900"}`}
                                 >
-                                    ${(currentPrice * localQty).toFixed(2)}
+                                    ${(finalPrice * localQty).toFixed(2)}
                                 </motion.p>
                             </AnimatePresence>
                         </div>
 
-                        {localQty > 1 && (
-                            <div className="flex flex-col items-end">
-                                <p className={isOnSale ? "text-xs text-red-500 font-medium" : "text-xs text-gray-400 font-medium"}>
-                                    ${currentPrice.toFixed(2)} each
-                                </p>
-                                {isOnSale && (
-                                    <p className="text-[10px] text-gray-400 line-through decoration-gray-400">
-                                        Was ${Number(item.product.price).toFixed(2)}
-                                    </p>
-                                )}
-                            </div>
-                        )}
+                        <div className="flex flex-col items-end">
+                            {isPromoApplied && (
+                                <div className="flex items-center gap-1 text-[10px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded mb-0.5">
+                                    <Tag size={10} />
+                                    -{promo!.value}% Promo
+                                </div>
+                            )}
 
-                        {/* Если кол-во 1, но есть скидка, покажем старую цену */}
-                        {localQty === 1 && isOnSale && (
-                            <p className="text-xs text-gray-400 line-through decoration-gray-400">
-                                ${Number(item.product.price).toFixed(2)}
-                            </p>
-                        )}
+                            {(localQty > 1 || isPromoApplied) && (
+                                <div className="flex items-baseline gap-1">
+                                    {isPromoApplied && (
+                                        <span className="text-[10px] text-gray-400 line-through">
+                                            ${basePrice.toFixed(2)}
+                                        </span>
+                                    )}
+                                    <p className="text-xs text-gray-400 font-medium">
+                                        ${finalPrice.toFixed(2)} each
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

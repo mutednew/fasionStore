@@ -1,5 +1,5 @@
 import { mainApi } from "@/store/api/mainApi";
-import { Product } from "@/types";
+import {Order, Product} from "@/types";
 
 interface ApiResponse<T> {
     success: boolean;
@@ -32,6 +32,7 @@ export interface CheckoutRequest {
     city: string;
     country: string;
     zip: string;
+    promoCode?: string;
 }
 
 export const cartApi = mainApi.injectEndpoints({
@@ -75,7 +76,7 @@ export const cartApi = mainApi.injectEndpoints({
         // 👇 ИСПРАВЛЕНИЕ ЗДЕСЬ:
         // Раньше было builder.mutation<any, void>
         // Теперь builder.mutation<any, CheckoutRequest>
-        checkout: builder.mutation<any, CheckoutRequest>({
+        checkout: builder.mutation<{ order: Order }, CheckoutRequest>({
             query: (shippingData) => ({
                 url: "/cart/checkout",
                 method: "POST",

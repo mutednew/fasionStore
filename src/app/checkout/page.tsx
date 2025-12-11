@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react"; // Добавил useEffect
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { ArrowLeft, Ticket } from "lucide-react";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { useForm } from "react-hook-form";
@@ -20,14 +20,23 @@ import { InfoStep } from "@/components/checkout/steps/InfoStep";
 import { ShippingStep } from "@/components/checkout/steps/ShippingStep";
 import { PaymentStep } from "@/components/checkout/steps/PaymentStep";
 import { checkoutSchema, CheckoutFormValues } from "@/schemas/checkout.schema";
+import { PromoCode } from "@/types"; // Импортируем тип
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
 export default function CheckoutPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
+
+    // Получаем код из URL
+    const promoCode = searchParams.get("promo");
+
     const [activeTab, setActiveTab] = useState("information");
     const [clientSecret, setClientSecret] = useState("");
     const [isInitializingPayment, setIsInitializingPayment] = useState(false);
+
+    // Стейт для данных промокода (чтобы отобразить скидку визуально в чекауте)
+    const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
 
     const { data: cartData, isLoading: loadingCart } = useGetCartQuery();
     const items = cartData?.items ?? [];
@@ -47,11 +56,48 @@ export default function CheckoutPage() {
 
     const formData = watch();
 
+    // 1. Проверяем промокод при загрузке страницы, чтобы красиво отобразить скидку
+    useEffect(() => {
+        if (promoCode) {
+            fetch("/api/cart/apply-promo", {
+                method: "POST",
+                body: JSON.stringify({ code: promoCode }),
+                headers: { "Content-Type": "application/json" }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        setAppliedPromo(data.data.promo);
+                    }
+                })
+                .catch(err => console.error("Promo validation error:", err));
+        }
+    }, [promoCode]);
+
     const subtotal = useMemo(() => {
-        return items.reduce((acc, item) => acc + Number(item.product.price) * item.quantity, 0);
+        return items.reduce((acc, item) => {
+            const price = item.product.salePrice
+                ? Number(item.product.salePrice)
+                : Number(item.product.price);
+            return acc + price * item.quantity;
+        }, 0);
     }, [items]);
-    const shipping = subtotal > 200 ? 0 : 15;
-    const total = subtotal + shipping;
+
+    // Логика расчета скидки для отображения
+    let discountAmount = 0;
+    let shipping = subtotal > 200 ? 0 : 15;
+
+    if (appliedPromo) {
+        if (appliedPromo.type === "FREE_SHIPPING") {
+            shipping = 0;
+        } else if (appliedPromo.type === "PERCENT") {
+            discountAmount = subtotal * (appliedPromo.value / 100);
+        } else if (appliedPromo.type === "FIXED") {
+            discountAmount = appliedPromo.value;
+        }
+    }
+
+    const total = Math.max(0, subtotal - discountAmount + shipping);
 
     const onNextStep = async (nextTab: string) => {
         let valid = false;
@@ -82,8 +128,14 @@ export default function CheckoutPage() {
     const createPaymentIntent = async () => {
         setIsInitializingPayment(true);
         try {
-            const res = await fetch("/api/payment/intent", { method: "POST" });
+            const res = await fetch("/api/payment/intent", {
+                method: "POST",
+                body: JSON.stringify({ promoCode }),
+                headers: { "Content-Type": "application/json" }
+            });
+
             const json = await res.json();
+
             if (json?.data?.clientSecret) {
                 setClientSecret(json.data.clientSecret);
             } else {
@@ -100,6 +152,9 @@ export default function CheckoutPage() {
     const handlePaymentSuccess = async () => {
         try {
             const data = getValues();
+
+            // ВАЖНО: Мы добавляем promoCode в объект, который отправляем на сервер
+            // Типы CheckoutData в cartApi должны поддерживать это поле (мы добавили его в order.service и route)
             await checkout({
                 email: data.email,
                 phone: data.phone,
@@ -109,13 +164,17 @@ export default function CheckoutPage() {
                 city: data.city,
                 country: data.country,
                 zip: data.zip,
+
+                // --- ВОТ ЗДЕСЬ БЫЛА ОШИБКА ---
+                // Мы не передавали код, поэтому заказ создавался без скидки
+                promoCode: promoCode || undefined,
             }).unwrap();
 
             toast.success("Order placed successfully!");
             router.push("/profile");
         } catch (error: any) {
             console.error(error);
-            toast.error("Order creation failed. Contact support.");
+            toast.error("Order creation failed. Please contact support.");
         }
     };
 
@@ -154,60 +213,21 @@ export default function CheckoutPage() {
 
                     <form className="min-h-[400px]">
                         <AnimatePresence mode="wait">
-
                             {activeTab === "information" && (
-                                <motion.div
-                                    key="info"
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    transition={{ duration: 0.2 }}
-                                >
-                                    <InfoStep
-                                        register={register}
-                                        errors={errors}
-                                        onNext={() => onNextStep("shipping")}
-                                        onAutoFill={fillTestInfo}
-                                    />
+                                <motion.div key="info" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+                                    <InfoStep register={register} errors={errors} onNext={() => onNextStep("shipping")} onAutoFill={fillTestInfo} />
                                 </motion.div>
                             )}
-
                             {activeTab === "shipping" && (
-                                <motion.div
-                                    key="ship"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -20 }}
-                                    transition={{ duration: 0.2 }}
-                                >
-                                    <ShippingStep
-                                        formData={formData}
-                                        shippingCost={shipping}
-                                        onBack={() => setActiveTab("information")}
-                                        onNext={() => onNextStep("payment")}
-                                    />
+                                <motion.div key="ship" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
+                                    <ShippingStep formData={formData} shippingCost={shipping} onBack={() => setActiveTab("information")} onNext={() => onNextStep("payment")} />
                                 </motion.div>
                             )}
-
                             {activeTab === "payment" && (
-                                <motion.div
-                                    key="pay"
-                                    initial={{ opacity: 0, x: 20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 20 }}
-                                    transition={{ duration: 0.2 }}
-                                >
-                                    <PaymentStep
-                                        clientSecret={clientSecret}
-                                        stripePromise={stripePromise}
-                                        totalAmount={total}
-                                        isInitializing={isInitializingPayment}
-                                        onSuccess={handlePaymentSuccess}
-                                        onBack={() => setActiveTab("shipping")}
-                                    />
+                                <motion.div key="pay" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.2 }}>
+                                    <PaymentStep clientSecret={clientSecret} stripePromise={stripePromise} totalAmount={total} isInitializing={isInitializingPayment} onSuccess={handlePaymentSuccess} onBack={() => setActiveTab("shipping")} />
                                 </motion.div>
                             )}
-
                         </AnimatePresence>
                     </form>
                 </div>
@@ -218,7 +238,26 @@ export default function CheckoutPage() {
                         subtotal={subtotal}
                         shipping={shipping}
                         total={total}
+                        // Передаем данные о скидке для визуализации
+                        discountAmount={discountAmount}
+                        appliedPromo={appliedPromo}
                     />
+
+                    {promoCode && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3"
+                        >
+                            <Ticket size={20} className="text-green-600 mt-0.5 shrink-0" />
+                            <div>
+                                <p className="text-sm font-bold text-green-700">Promo Applied!</p>
+                                <p className="text-xs text-green-600 mt-1">
+                                    Code <b>{promoCode}</b> will be applied to your final order.
+                                </p>
+                            </div>
+                        </motion.div>
+                    )}
                 </div>
 
             </div>

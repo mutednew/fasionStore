@@ -12,7 +12,6 @@ import { DollarSign, Package, ShoppingBag, Clock } from "lucide-react";
 import { DashboardChart } from "@/app/admin/components/dashboard/DashboardChart";
 import { OrderActivity } from "@/app/admin/components/order/OrderActivity";
 
-
 export default function AdminDashboard() {
     const { data: productsRes, isLoading: loadingProducts } = useGetAdminProductsQuery();
     const { data: ordersRes, isLoading: loadingOrders } = useGetOrdersQuery();
@@ -35,19 +34,17 @@ export default function AdminDashboard() {
         total: 0
     };
 
+    // --- ИСПРАВЛЕННЫЙ РАСЧЕТ ---
     const totalSales = orders.reduce((acc, order) => {
-        if ("total" in order && typeof order.total === 'number') {
-            return acc + order.total;
-        }
+        // Не учитываем отмененные заказы в выручке (по желанию)
+        if (order.status === "CANCELED") return acc;
 
-        if (order.items && Array.isArray(order.items)) {
-            const orderSum = order.items.reduce((sum, item) => {
-                return sum + (Number(item.price) * item.quantity);
-            }, 0);
-            return acc + orderSum;
-        }
+        // Главное исправление:
+        // 1. Приводим к числу (так как может быть string)
+        // 2. Доверяем order.total, так как он включает промокоды и доставку
+        const finalTotal = Number(order.total);
 
-        return acc;
+        return acc + (isNaN(finalTotal) ? 0 : finalTotal);
     }, 0);
 
     const pendingOrders = orders.filter((o) => o.status === "PENDING").length;
@@ -58,7 +55,6 @@ export default function AdminDashboard() {
                 <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
             </div>
 
-            {}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -103,11 +99,9 @@ export default function AdminDashboard() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
-
                 <div className="lg:col-span-4">
                     <DashboardChart stats={stats} />
                 </div>
-
                 <div className="lg:col-span-3">
                     <OrderActivity />
                 </div>

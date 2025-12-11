@@ -5,6 +5,7 @@ import {
     useUpdateCartQuantityMutation,
     useRemoveFromCartMutation
 } from "@/store/api/cartApi";
+import { PromoCode } from "@/types";
 
 export const useCartPage = () => {
     const { data: cartData, isLoading } = useGetCartQuery();
@@ -15,6 +16,35 @@ export const useCartPage = () => {
 
     const [removingIds, setRemovingIds] = useState<Set<string>>(new Set());
     const [showEmptyScreenDelay, setShowEmptyScreenDelay] = useState(false);
+
+    const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
+    const [isPromoLoading, setIsPromoLoading] = useState(false);
+
+    const applyPromo = async (code: string) => {
+        setIsPromoLoading(true);
+        try {
+            const res = await fetch("/api/cart/apply-promo", {
+                method: "POST",
+                body: JSON.stringify({ code }),
+            });
+            const json = await res.json();
+
+            if (!res.ok || !json.success) throw new Error(json.message || "Invalid code");
+
+            setAppliedPromo(json.data.promo);
+            toast.success("Promo applied!");
+        } catch (err: any) {
+            toast.error(err.message);
+            setAppliedPromo(null);
+        } finally {
+            setIsPromoLoading(false);
+        }
+    };
+
+    const removePromo = () => {
+        setAppliedPromo(null);
+        toast.info("Promo removed");
+    };
 
     useEffect(() => {
         if (removingIds.size > 0 && items.length > 0) {
@@ -47,20 +77,27 @@ export const useCartPage = () => {
         return () => clearTimeout(timer);
     }, [visibleItems.length, isLoading]);
 
-    // ОБНОВЛЕННАЯ КАЛЬКУЛЯЦИЯ С УЧЕТОМ СКИДОК
     const subtotal = useMemo(() => {
         return visibleItems.reduce((acc, item) => {
-            // Если есть salePrice, берем его. Иначе обычную цену.
-            const effectivePrice = item.product.salePrice
-                ? Number(item.product.salePrice)
-                : Number(item.product.price);
-
-            return acc + effectivePrice * item.quantity;
+            const price = item.product.salePrice ? Number(item.product.salePrice) : Number(item.product.price);
+            return acc + price * item.quantity;
         }, 0);
     }, [visibleItems]);
 
-    const shipping = subtotal > 200 ? 0 : 15;
-    const total = subtotal + shipping;
+    let discountAmount = 0;
+    let shipping = subtotal > 200 ? 0 : 15;
+
+    if (appliedPromo) {
+        if (appliedPromo.type === "FREE_SHIPPING") {
+            shipping = 0;
+        } else if (appliedPromo.type === "PERCENT") {
+            discountAmount = subtotal * (appliedPromo.value / 100);
+        } else if (appliedPromo.type === "FIXED") {
+            discountAmount = appliedPromo.value;
+        }
+    }
+
+    const total = Math.max(0, subtotal - discountAmount + shipping);
 
     const handleQuantityChange = async (itemId: string, currentQty: number, delta: number) => {
         const newQty = currentQty + delta;
@@ -99,8 +136,15 @@ export const useCartPage = () => {
         subtotal,
         shipping,
         total,
+        discountAmount,
+
         isUpdating,
         handleQuantityChange,
-        handleRemove
+        handleRemove,
+
+        appliedPromo,
+        isPromoLoading,
+        applyPromo,
+        removePromo
     };
 };
