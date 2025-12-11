@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import AuthModal from "@/components/modals/auth/AuthModal";
 import { useState } from "react";
+import { ProductPrice } from "./ProductPrice"; // <-- Импорт
 
 interface ProductCardProps {
     product: Product;
@@ -24,7 +25,7 @@ export function ProductCard({ product }: ProductCardProps) {
     const [isLoginOpen, setIsLoginOpen] = useState(false);
 
     const handleQuickAdd = async (e: React.MouseEvent) => {
-        e.preventDefault(); // Чтобы не переходить по ссылке
+        e.preventDefault();
         e.stopPropagation();
 
         if (!profile) {
@@ -36,7 +37,7 @@ export function ProductCard({ product }: ProductCardProps) {
             await addToCart({
                 productId: product.id,
                 quantity: 1,
-                size: product.sizes?.[0], // Берем первый доступный размер для Quick Add
+                size: product.sizes?.[0],
                 color: product.colors?.[0],
             }).unwrap();
             toast.success("Added to cart");
@@ -44,6 +45,9 @@ export function ProductCard({ product }: ProductCardProps) {
             toast.error("Failed to add to cart");
         }
     };
+
+    const isNew = (new Date(product.createdAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const isOnSale = product.salePrice && Number(product.salePrice) < Number(product.price);
 
     return (
         <>
@@ -72,7 +76,7 @@ export function ProductCard({ product }: ProductCardProps) {
                                     className="w-full shadow-lg font-semibold bg-white text-black hover:bg-neutral-100"
                                     onClick={handleQuickAdd}
                                     disabled={isAdding}
-                                    isLoading={isAdding} // Используем твою новую умную кнопку
+                                    isLoading={isAdding}
                                 >
                                     {!isAdding && <ShoppingCart className="w-4 h-4 mr-2" />}
                                     Quick Add
@@ -84,7 +88,10 @@ export function ProductCard({ product }: ProductCardProps) {
                             {product.stock <= 0 && (
                                 <Badge variant="destructive" className="shadow-sm">Out of Stock</Badge>
                             )}
-                            {(new Date(product.createdAt).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000) && (
+                            {isOnSale && (
+                                <Badge className="bg-red-600 hover:bg-red-700 shadow-sm">Sale</Badge>
+                            )}
+                            {isNew && !isOnSale && (
                                 <Badge className="bg-blue-600 hover:bg-blue-700 shadow-sm">New</Badge>
                             )}
                         </div>
@@ -100,13 +107,12 @@ export function ProductCard({ product }: ProductCardProps) {
                             </p>
                         </div>
 
-                        <div className="mt-auto flex items-center justify-between pt-2">
-                            <span className="text-xl font-bold text-neutral-900">
-                                ${Number(product.price).toFixed(2)}
-                            </span>
+                        <div className="mt-auto flex items-end justify-between pt-2">
+                            {/* Используем наш новый компонент цены */}
+                            <ProductPrice price={product.price} salePrice={product.salePrice} />
 
                             {product.colors && product.colors.length > 0 && (
-                                <div className="flex -space-x-1.5">
+                                <div className="flex -space-x-1.5 mb-1">
                                     {product.colors.slice(0, 3).map((c, idx) => (
                                         <div
                                             key={idx}
@@ -137,7 +143,7 @@ export function ProductCardSkeleton() {
                 <Skeleton className="h-6 w-3/4" />
                 <Skeleton className="h-4 w-full" />
                 <div className="flex justify-between pt-4 mt-auto">
-                    <Skeleton className="h-6 w-16" />
+                    <Skeleton className="h-10 w-24" />
                     <Skeleton className="h-6 w-16 rounded-full" />
                 </div>
             </div>

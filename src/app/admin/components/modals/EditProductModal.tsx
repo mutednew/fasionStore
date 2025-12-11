@@ -27,7 +27,7 @@ import {
 
 import { useUpdateProductMutation, useGetAdminCategoriesQuery } from "@/store/api/adminApi";
 
-import { Pencil, X } from "lucide-react";
+import { Pencil, X, Percent } from "lucide-react"; // Добавил иконку процента
 import { toast } from "sonner";
 
 import type { Product } from "@/types";
@@ -40,10 +40,77 @@ export function EditProductModal({ product }: EditProductModalProps) {
     const [open, setOpen] = useState(false);
 
     const [name, setName] = useState(product.name);
-    const [price, setPrice] = useState(String(product.price));
-    const [stock, setStock] = useState(String(product.stock ?? 0));
     const [categoryId, setCategoryId] = useState(product.categoryId ?? "");
     const [description, setDescription] = useState(product.description ?? "");
+    const [stock, setStock] = useState(String(product.stock ?? 0));
+
+    // --- ЛОГИКА ЦЕН И СКИДОК ---
+    const [price, setPrice] = useState(String(product.price));
+    const [salePrice, setSalePrice] = useState(product.salePrice ? String(product.salePrice) : "");
+
+    // Вычисляем начальный процент, если скидка уже есть
+    const initialDiscount = product.salePrice && product.price
+        ? Math.round(((Number(product.price) - Number(product.salePrice)) / Number(product.price)) * 100).toString()
+        : "";
+    const [discount, setDiscount] = useState(initialDiscount);
+
+    // Хендлер изменения Базовой Цены
+    const handlePriceChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setPrice(val);
+
+        // Если есть процент скидки, обновляем Sale Price
+        if (discount && val) {
+            const p = parseFloat(val);
+            const d = parseFloat(discount);
+            if (!isNaN(p) && !isNaN(d)) {
+                const newSale = p - (p * d) / 100;
+                setSalePrice(newSale.toFixed(2));
+            }
+        }
+    };
+
+    // Хендлер изменения Процента
+    const handleDiscountChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setDiscount(val);
+
+        if (!val) {
+            setSalePrice(""); // Если стерли процент — убираем скидочную цену
+            return;
+        }
+
+        const p = parseFloat(price);
+        const d = parseFloat(val);
+
+        if (!isNaN(p) && !isNaN(d)) {
+            const newSale = p - (p * d) / 100;
+            // Не даем цене уйти в минус
+            setSalePrice(newSale > 0 ? newSale.toFixed(2) : "0");
+        }
+    };
+
+    // Хендлер изменения Sale Price (обратный пересчет процента)
+    const handleSalePriceChange = (e: ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setSalePrice(val);
+
+        if (!val) {
+            setDiscount("");
+            return;
+        }
+
+        const p = parseFloat(price);
+        const s = parseFloat(val);
+
+        if (!isNaN(p) && !isNaN(s) && p > 0) {
+            // Считаем процент: (Old - New) / Old * 100
+            const newDiscount = ((p - s) / p) * 100;
+            // Округляем до целого для красоты
+            setDiscount(Math.round(newDiscount).toString());
+        }
+    };
+    // ---------------------------
 
     // EXISTING IMAGES
     const [gallery, setGallery] = useState<string[]>(product.images ?? []);
@@ -69,82 +136,47 @@ export function EditProductModal({ product }: EditProductModalProps) {
 
     const [updateProduct, { isLoading }] = useUpdateProductMutation();
 
-    // ======================================================
-    // =============== IMAGE HANDLERS =======================
-    // ======================================================
-
     const handleImagesChange = (e: ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
-
         if (files.length === 0) return;
-
         const previews = files.map((f) => URL.createObjectURL(f));
-
         setNewFiles((prev) => [...prev, ...files]);
         setNewPreviews((prev) => [...prev, ...previews]);
     };
 
     const removeImage = (src: string) => {
-        // remove from existing
         if (gallery.includes(src)) {
             const idx = gallery.indexOf(src);
             setGallery(gallery.filter((x) => x !== src));
-
             if (idx === mainImageIndex) setMainImageIndex(0);
             if (idx < mainImageIndex) setMainImageIndex((i) => i - 1);
         }
-
-        // remove from new previews
         if (newPreviews.includes(src)) {
             const idx = newPreviews.indexOf(src);
             setNewPreviews(newPreviews.filter((x) => x !== src));
             setNewFiles(newFiles.filter((_, i) => i !== idx));
-
             if (gallery.length === 0 && idx === mainImageIndex) setMainImageIndex(0);
         }
     };
-
-    // ======================================================
-    // ==================== SUBMIT ==========================
-    // ======================================================
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
 
         try {
-            // upload new files
             const uploadedUrls: string[] = [];
-
             for (const img of newFiles) {
                 const formData = new FormData();
                 formData.append("file", img);
-
-                const uploadRes = await fetch("/api/upload", {
-                    method: "POST",
-                    body: formData,
-                });
-
+                const uploadRes = await fetch("/api/upload", { method: "POST", body: formData });
                 const json = await uploadRes.json();
-                if (uploadRes.ok && json?.data?.url) {
-                    uploadedUrls.push(json.data.url);
-                }
+                if (uploadRes.ok && json?.data?.url) uploadedUrls.push(json.data.url);
             }
 
-            // combine existing urls + newly uploaded urls
             const finalImages = [...gallery, ...uploadedUrls];
+            const fullPreviewList = [...gallery, ...newPreviews];
 
-            // combine previews for sorting by mainImageIndex
-            const fullPreviewList = [
-                ...gallery,
-                ...newPreviews,
-            ];
-
-            // determine main by index
             let finalMain: string | null = null;
-
             const selected = fullPreviewList[mainImageIndex];
-
-            // if selected is an uploaded preview → map it to uploaded url
             if (newPreviews.includes(selected)) {
                 const idx = newPreviews.indexOf(selected);
                 finalMain = uploadedUrls[idx] ?? null;
@@ -152,7 +184,6 @@ export function EditProductModal({ product }: EditProductModalProps) {
                 finalMain = selected;
             }
 
-            // sort: move main image to index 0
             const orderedImages = [...finalImages];
             if (finalMain) {
                 const idx = orderedImages.indexOf(finalMain);
@@ -166,13 +197,13 @@ export function EditProductModal({ product }: EditProductModalProps) {
                 id: product.id,
                 name,
                 price: Number(price),
+                // Отправляем salePrice (если пустой или <= 0, отправится null)
+                salePrice: salePrice && Number(salePrice) > 0 ? Number(salePrice) : null,
                 stock: Number(stock),
                 categoryId,
                 description,
-
                 imageUrl: orderedImages[0],
                 images: orderedImages,
-
                 colors,
                 sizes,
                 tags,
@@ -180,18 +211,12 @@ export function EditProductModal({ product }: EditProductModalProps) {
 
             toast.success("Product updated!");
             setOpen(false);
-
         } catch (err) {
             toast.error("Failed to update product");
         }
     };
 
-    // ======================================================
-    // ====================== UI ============================
-    // ======================================================
-
     const previews = [...gallery, ...newPreviews];
-
     const mainImage = previews[mainImageIndex];
 
     return (
@@ -216,46 +241,79 @@ export function EditProductModal({ product }: EditProductModalProps) {
 
                             {/* LEFT */}
                             <div className="space-y-5">
-
-                                {/* NAME */}
                                 <div className="space-y-1.5">
                                     <Label>Name</Label>
                                     <Input value={name} onChange={(e) => setName(e.target.value)} />
                                 </div>
 
-                                {/* DESCRIPTION */}
                                 <div className="space-y-1.5">
                                     <Label>Description</Label>
                                     <Textarea
-                                        className="min-h-[160px] resize-y text-sm leading-relaxed"
+                                        className="min-h-[120px] resize-y text-sm leading-relaxed"
                                         placeholder="Product description..."
                                         value={description}
                                         onChange={(e) => setDescription(e.target.value)}
                                     />
                                 </div>
 
-                                {/* PRICE + STOCK */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {/* БЛОК ЦЕНЫ И СКИДКИ */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-neutral-50 p-4 rounded-lg border border-neutral-100">
+                                    {/* 1. Основная цена */}
                                     <div className="space-y-1.5">
-                                        <Label>Price</Label>
+                                        <Label>Base Price ($)</Label>
                                         <Input
                                             type="number"
                                             value={price}
-                                            onChange={(e) => setPrice(e.target.value)}
+                                            onChange={handlePriceChange}
+                                            className="bg-white"
                                         />
                                     </div>
 
+                                    {/* 2. Сток */}
                                     <div className="space-y-1.5">
                                         <Label>Stock</Label>
                                         <Input
                                             type="number"
                                             value={stock}
                                             onChange={(e) => setStock(e.target.value)}
+                                            className="bg-white"
                                         />
+                                    </div>
+
+                                    {/* 3. Скидка в процентах */}
+                                    <div className="space-y-1.5">
+                                        <Label className="text-blue-600 flex items-center gap-1">
+                                            Discount <Percent size={12} />
+                                        </Label>
+                                        <div className="relative">
+                                            <Input
+                                                type="number"
+                                                placeholder="0"
+                                                value={discount}
+                                                onChange={handleDiscountChange}
+                                                className="bg-white border-blue-100 focus-visible:ring-blue-500 pr-8"
+                                            />
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-bold">%</span>
+                                        </div>
+                                    </div>
+
+                                    {/* 4. Итоговая цена (Sale Price) */}
+                                    <div className="space-y-1.5">
+                                        <Label className="text-red-600">Final Sale Price ($)</Label>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="Optional"
+                                            value={salePrice}
+                                            onChange={handleSalePriceChange}
+                                            className="bg-white border-red-100 focus-visible:ring-red-500"
+                                        />
+                                        <p className="text-[10px] text-muted-foreground mt-1">
+                                            Leave empty to remove sale
+                                        </p>
                                     </div>
                                 </div>
 
-                                {/* CATEGORY */}
                                 <div className="space-y-1.5">
                                     <Label>Category</Label>
                                     <Select value={categoryId} onValueChange={setCategoryId}>
@@ -271,56 +329,24 @@ export function EditProductModal({ product }: EditProductModalProps) {
                                         </SelectContent>
                                     </Select>
                                 </div>
-
                             </div>
 
-                            {/* RIGHT */}
+                            {/* RIGHT (Images & Attributes - без изменений) */}
                             <div className="space-y-6">
-
-                                {/* IMAGES */}
                                 <div className="space-y-2">
                                     <Label>Images</Label>
-
-                                    <Input
-                                        type="file"
-                                        multiple
-                                        accept="image/*"
-                                        onChange={handleImagesChange}
-                                    />
-
-                                    {/* MAIN PREVIEW */}
+                                    <Input type="file" multiple accept="image/*" onChange={handleImagesChange} />
                                     {mainImage && (
                                         <div className="relative w-full aspect-[4/5] border rounded-md overflow-hidden bg-neutral-100">
-                                            <Image
-                                                src={mainImage}
-                                                alt="Main"
-                                                fill
-                                                className="object-cover"
-                                            />
+                                            <Image src={mainImage} alt="Main" fill className="object-cover" />
                                         </div>
                                     )}
-
-                                    {/* THUMBNAILS */}
                                     {previews.length > 1 && (
                                         <div className="grid grid-cols-4 gap-2">
                                             {previews.map((src, i) => (
-                                                <div
-                                                    key={src}
-                                                    onClick={() => setMainImageIndex(i)}
-                                                    className={`relative border rounded-md overflow-hidden cursor-pointer aspect-square
-                                                        ${i === mainImageIndex ? "ring-2 ring-black" : ""}
-                                                    `}
-                                                >
+                                                <div key={src} onClick={() => setMainImageIndex(i)} className={`relative border rounded-md overflow-hidden cursor-pointer aspect-square ${i === mainImageIndex ? "ring-2 ring-black" : ""}`}>
                                                     <Image src={src} alt="" fill className="object-cover" />
-
-                                                    <button
-                                                        type="button"
-                                                        className="absolute top-1 right-1 bg-black/60 p-1 rounded"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            removeImage(src);
-                                                        }}
-                                                    >
+                                                    <button type="button" className="absolute top-1 right-1 bg-black/60 p-1 rounded" onClick={(e) => { e.stopPropagation(); removeImage(src); }}>
                                                         <X className="w-3 h-3 text-white" />
                                                     </button>
                                                 </div>
@@ -332,137 +358,45 @@ export function EditProductModal({ product }: EditProductModalProps) {
                                 {/* COLORS */}
                                 <div className="space-y-2">
                                     <Label>Colors</Label>
-
                                     <div className="flex gap-2">
-                                        <Input
-                                            placeholder="#000000 or Black"
-                                            value={tempColor}
-                                            onChange={(e) => setTempColor(e.target.value)}
-                                        />
-                                        <Button
-                                            type="button"
-                                            onClick={() => {
-                                                if (tempColor.trim()) {
-                                                    setColors((prev) => [...prev, tempColor.trim()]);
-                                                    setTempColor("");
-                                                }
-                                            }}
-                                        >
-                                            Add
-                                        </Button>
+                                        <Input placeholder="#000000 or Black" value={tempColor} onChange={(e) => setTempColor(e.target.value)} />
+                                        <Button type="button" onClick={() => { if (tempColor.trim()) { setColors((prev) => [...prev, tempColor.trim()]); setTempColor(""); } }}>Add</Button>
                                     </div>
-
                                     <div className="flex flex-wrap gap-2 mt-1">
-                                        {colors.map((c) => (
-                                            <span
-                                                key={c}
-                                                className="px-2 py-1 bg-neutral-200 rounded-md text-xs flex items-center gap-1"
-                                            >
-                                                {c}
-                                                <X
-                                                    className="w-3 h-3 cursor-pointer"
-                                                    onClick={() =>
-                                                        setColors((prev) => prev.filter((x) => x !== c))
-                                                    }
-                                                />
-                                            </span>
-                                        ))}
+                                        {colors.map((c) => (<span key={c} className="px-2 py-1 bg-neutral-200 rounded-md text-xs flex items-center gap-1">{c}<X className="w-3 h-3 cursor-pointer" onClick={() => setColors((prev) => prev.filter((x) => x !== c))} /></span>))}
                                     </div>
                                 </div>
 
                                 {/* SIZES */}
                                 <div className="space-y-2">
                                     <Label>Sizes</Label>
-
                                     <div className="flex gap-2">
-                                        <Input
-                                            placeholder="XS, S, M..."
-                                            value={tempSize}
-                                            onChange={(e) => setTempSize(e.target.value)}
-                                        />
-                                        <Button
-                                            type="button"
-                                            onClick={() => {
-                                                if (tempSize.trim()) {
-                                                    setSizes((prev) => [...prev, tempSize.trim()]);
-                                                    setTempSize("");
-                                                }
-                                            }}
-                                        >
-                                            Add
-                                        </Button>
+                                        <Input placeholder="XS, S, M..." value={tempSize} onChange={(e) => setTempSize(e.target.value)} />
+                                        <Button type="button" onClick={() => { if (tempSize.trim()) { setSizes((prev) => [...prev, tempSize.trim()]); setTempSize(""); } }}>Add</Button>
                                     </div>
-
                                     <div className="flex flex-wrap gap-2 mt-1">
-                                        {sizes.map((s) => (
-                                            <span
-                                                key={s}
-                                                className="px-2 py-1 bg-neutral-200 rounded-md text-xs flex items-center gap-1"
-                                            >
-                                                {s}
-                                                <X
-                                                    className="w-3 h-3 cursor-pointer"
-                                                    onClick={() =>
-                                                        setSizes((prev) => prev.filter((x) => x !== s))
-                                                    }
-                                                />
-                                            </span>
-                                        ))}
+                                        {sizes.map((s) => (<span key={s} className="px-2 py-1 bg-neutral-200 rounded-md text-xs flex items-center gap-1">{s}<X className="w-3 h-3 cursor-pointer" onClick={() => setSizes((prev) => prev.filter((x) => x !== s))} /></span>))}
                                     </div>
                                 </div>
 
                                 {/* TAGS */}
                                 <div className="space-y-2">
                                     <Label>Tags</Label>
-
                                     <div className="flex gap-2">
-                                        <Input
-                                            placeholder="Summer, trending..."
-                                            value={tempTag}
-                                            onChange={(e) => setTempTag(e.target.value)}
-                                        />
-                                        <Button
-                                            type="button"
-                                            onClick={() => {
-                                                if (tempTag.trim()) {
-                                                    setTags((prev) => [...prev, tempTag.trim()]);
-                                                    setTempTag("");
-                                                }
-                                            }}
-                                        >
-                                            Add
-                                        </Button>
+                                        <Input placeholder="Summer, trending..." value={tempTag} onChange={(e) => setTempTag(e.target.value)} />
+                                        <Button type="button" onClick={() => { if (tempTag.trim()) { setTags((prev) => [...prev, tempTag.trim()]); setTempTag(""); } }}>Add</Button>
                                     </div>
-
                                     <div className="flex flex-wrap gap-2 mt-1">
-                                        {tags.map((t) => (
-                                            <span
-                                                key={t}
-                                                className="px-2 py-1 bg-neutral-200 rounded-md text-xs flex items-center gap-1"
-                                            >
-                                                {t}
-                                                <X
-                                                    className="w-3 h-3 cursor-pointer"
-                                                    onClick={() =>
-                                                        setTags((prev) => prev.filter((x) => x !== t))
-                                                    }
-                                                />
-                                            </span>
-                                        ))}
+                                        {tags.map((t) => (<span key={t} className="px-2 py-1 bg-neutral-200 rounded-md text-xs flex items-center gap-1">{t}<X className="w-3 h-3 cursor-pointer" onClick={() => setTags((prev) => prev.filter((x) => x !== t))} /></span>))}
                                     </div>
                                 </div>
-
                             </div>
                         </div>
                     </div>
 
                     <DialogFooter className="border-t px-6 py-4 bg-white flex justify-end gap-3">
-                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading ? "Saving..." : "Save Changes"}
-                        </Button>
+                        <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                        <Button type="submit" disabled={isLoading}>{isLoading ? "Saving..." : "Save Changes"}</Button>
                     </DialogFooter>
                 </form>
             </DialogContent>

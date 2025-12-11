@@ -15,57 +15,34 @@ interface CartItemProps {
 }
 
 const counterVariants = {
-    initial: (direction: number) => ({
-        y: direction > 0 ? 20 : -20,
-        opacity: 0,
-    }),
-    animate: {
-        y: 0,
-        opacity: 1,
-    },
-    exit: (direction: number) => ({
-        y: direction > 0 ? -20 : 20,
-        opacity: 0,
-    }),
+    initial: (direction: number) => ({ y: direction > 0 ? 20 : -20, opacity: 0 }),
+    animate: { y: 0, opacity: 1 },
+    exit: (direction: number) => ({ y: direction > 0 ? -20 : 20, opacity: 0 }),
 };
 
-const springTransition = {
-    type: "spring" as const,
-    stiffness: 400,
-    damping: 25,
-    mass: 0.5
-};
+const springTransition = { type: "spring" as const, stiffness: 400, damping: 25, mass: 0.5 };
 
 export function CartItem({ item, isUpdating, onUpdateQuantity, onRemove }: CartItemProps) {
     const [localQty, setLocalQty] = useState(item.quantity);
     const [direction, setDirection] = useState(0);
 
-    useEffect(() => {
-        setLocalQty(item.quantity);
-    }, [item.quantity]);
+    useEffect(() => { setLocalQty(item.quantity); }, [item.quantity]);
 
     useEffect(() => {
         if (localQty === item.quantity) return;
-
         const timer = setTimeout(() => {
             const delta = localQty - item.quantity;
-            if (delta !== 0) {
-                onUpdateQuantity(item.id, item.quantity, delta);
-            }
+            if (delta !== 0) onUpdateQuantity(item.id, item.quantity, delta);
         }, 600);
-
         return () => clearTimeout(timer);
     }, [localQty, item.quantity, item.id, onUpdateQuantity]);
 
-    const handleIncrement = () => {
-        setDirection(1);
-        setLocalQty((prev) => prev + 1);
-    };
+    const handleIncrement = () => { setDirection(1); setLocalQty((prev) => prev + 1); };
+    const handleDecrement = () => { setDirection(-1); setLocalQty((prev) => Math.max(1, prev - 1)); };
 
-    const handleDecrement = () => {
-        setDirection(-1);
-        setLocalQty((prev) => Math.max(1, prev - 1));
-    };
+    // Определяем актуальную цену
+    const currentPrice = item.product.salePrice ? Number(item.product.salePrice) : Number(item.product.price);
+    const isOnSale = item.product.salePrice && Number(item.product.salePrice) < Number(item.product.price);
 
     return (
         <motion.div
@@ -78,19 +55,13 @@ export function CartItem({ item, isUpdating, onUpdateQuantity, onRemove }: CartI
             <button
                 onClick={() => onRemove(item.id)}
                 className="absolute top-4 right-4 text-gray-300 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-50 z-10"
-                title="Remove item"
             >
                 <Trash2 size={18} />
             </button>
 
             <Link href={`/products/${item.product.id}`} className="shrink-0 w-28 h-36 bg-gray-100 overflow-hidden relative rounded-md border border-gray-100">
                 {item.product.imageUrl ? (
-                    <Image
-                        src={item.product.imageUrl}
-                        alt={item.product.name}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
+                    <Image src={item.product.imageUrl} alt={item.product.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
                 ) : (
                     <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">No Img</div>
                 )}
@@ -105,10 +76,7 @@ export function CartItem({ item, isUpdating, onUpdateQuantity, onRemove }: CartI
                             </Link>
                         </h3>
                     </div>
-
-                    <p className="text-sm text-gray-500 mt-1 capitalize font-medium">
-                        {item.product.category?.name || "Category"}
-                    </p>
+                    <p className="text-sm text-gray-500 mt-1 capitalize font-medium">{item.product.category?.name || "Category"}</p>
 
                     <div className="flex flex-wrap items-center gap-3 mt-3">
                         {item.size && (
@@ -120,10 +88,7 @@ export function CartItem({ item, isUpdating, onUpdateQuantity, onRemove }: CartI
                         {item.color && (
                             <div className="flex items-center gap-1.5 bg-gray-50 px-2 py-1 rounded border border-gray-200">
                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Color</span>
-                                <div
-                                    className="w-3 h-3 rounded-full border border-gray-300 shadow-sm"
-                                    style={{ backgroundColor: item.color }}
-                                />
+                                <div className="w-3 h-3 rounded-full border border-gray-300 shadow-sm" style={{ backgroundColor: item.color }} />
                             </div>
                         )}
                     </div>
@@ -131,43 +96,14 @@ export function CartItem({ item, isUpdating, onUpdateQuantity, onRemove }: CartI
 
                 <div className="flex flex-wrap items-end justify-between gap-4 mt-4">
                     <div className="flex items-center bg-white border border-gray-300 rounded-md shadow-sm h-9">
-                        <button
-                            onClick={handleDecrement}
-                            disabled={localQty <= 1}
-                            className="h-full px-3 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition text-neutral-600 border-r border-gray-200 active:bg-gray-200"
-                        >
-                            <Minus size={14} />
-                        </button>
-
+                        <button onClick={handleDecrement} disabled={localQty <= 1} className="h-full px-3 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition text-neutral-600 border-r border-gray-200 active:bg-gray-200"><Minus size={14} /></button>
                         <div className="w-10 h-full flex justify-center items-center relative overflow-hidden">
                             <AnimatePresence mode="popLayout" initial={false} custom={direction}>
-                                <motion.span
-                                    key={localQty}
-                                    custom={direction}
-                                    variants={counterVariants}
-                                    initial="initial"
-                                    animate="animate"
-                                    exit="exit"
-                                    transition={springTransition}
-                                    className={`text-sm font-semibold text-neutral-900 select-none absolute ${isUpdating ? "opacity-30" : "opacity-100"}`}
-                                >
-                                    {localQty}
-                                </motion.span>
+                                <motion.span key={localQty} custom={direction} variants={counterVariants} initial="initial" animate="animate" exit="exit" transition={springTransition} className={`text-sm font-semibold text-neutral-900 select-none absolute ${isUpdating ? "opacity-30" : "opacity-100"}`}>{localQty}</motion.span>
                             </AnimatePresence>
-
-                            {isUpdating && (
-                                <div className="absolute inset-0 flex items-center justify-center z-10">
-                                    <Loader2 size={14} className="animate-spin text-black" />
-                                </div>
-                            )}
+                            {isUpdating && <div className="absolute inset-0 flex items-center justify-center z-10"><Loader2 size={14} className="animate-spin text-black" /></div>}
                         </div>
-
-                        <button
-                            onClick={handleIncrement}
-                            className="h-full px-3 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition text-neutral-600 border-l border-gray-200 active:bg-gray-200"
-                        >
-                            <Plus size={14} />
-                        </button>
+                        <button onClick={handleIncrement} className="h-full px-3 hover:bg-gray-100 disabled:opacity-30 disabled:hover:bg-transparent transition text-neutral-600 border-l border-gray-200 active:bg-gray-200"><Plus size={14} /></button>
                     </div>
 
                     <div className="text-right">
@@ -181,16 +117,30 @@ export function CartItem({ item, isUpdating, onUpdateQuantity, onRemove }: CartI
                                     animate="animate"
                                     exit="exit"
                                     transition={springTransition}
-                                    className="text-lg font-bold text-neutral-900 absolute right-0"
+                                    className={isOnSale ? "text-lg font-bold text-red-600 absolute right-0" : "text-lg font-bold text-neutral-900 absolute right-0"}
                                 >
-                                    ${(Number(item.product.price) * localQty).toFixed(2)}
+                                    ${(currentPrice * localQty).toFixed(2)}
                                 </motion.p>
                             </AnimatePresence>
                         </div>
 
                         {localQty > 1 && (
-                            <p className="text-xs text-gray-400 font-medium">
-                                ${Number(item.product.price)} each
+                            <div className="flex flex-col items-end">
+                                <p className={isOnSale ? "text-xs text-red-500 font-medium" : "text-xs text-gray-400 font-medium"}>
+                                    ${currentPrice.toFixed(2)} each
+                                </p>
+                                {isOnSale && (
+                                    <p className="text-[10px] text-gray-400 line-through decoration-gray-400">
+                                        Was ${Number(item.product.price).toFixed(2)}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Если кол-во 1, но есть скидка, покажем старую цену */}
+                        {localQty === 1 && isOnSale && (
+                            <p className="text-xs text-gray-400 line-through decoration-gray-400">
+                                ${Number(item.product.price).toFixed(2)}
                             </p>
                         )}
                     </div>

@@ -10,6 +10,12 @@ interface ApiResponse<T> {
 
 interface ProductsResponse {
     products: Product[];
+    meta: {
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+    };
 }
 
 interface ProductResponse {
@@ -39,8 +45,12 @@ interface StatsResponse {
 export const adminApi = mainApi.injectEndpoints({
     endpoints: (builder) => ({
 
-        getAdminProducts: builder.query<ApiResponse<ProductsResponse>, void>({
-            query: () => "/products",
+        getAdminProducts: builder.query<ApiResponse<ProductsResponse>, Record<string, any> | void>({
+            query: (params) => ({
+                url: "/products",
+                method: "GET",
+                params: params || {},
+            }),
             providesTags: ["Products"],
         }),
 
@@ -65,6 +75,15 @@ export const adminApi = mainApi.injectEndpoints({
                 body: data,
             }),
             invalidatesTags: (_result, _error, arg) => [{ type: "Product", id: arg.id }, "Products"],
+        }),
+
+        applyBulkDiscount: builder.mutation<any, { ids: string[]; discountPercent: number }>({
+            query: (body) => ({
+                url: "/products/bulk",
+                method: "POST",
+                body,
+            }),
+            invalidatesTags: ["Products"],
         }),
 
         deleteProduct: builder.mutation<ApiResponse<null>, string>({
@@ -132,4 +151,5 @@ export const {
     useGetAdminCategoriesQuery,
     useAddCategoryMutation,
     useDeleteCategoryMutation,
+    useApplyBulkDiscountMutation,
 } = adminApi;

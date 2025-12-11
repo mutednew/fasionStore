@@ -1,63 +1,99 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import {
     useGetAdminProductsQuery,
     useDeleteProductMutation,
     useGetAdminCategoriesQuery,
+    useApplyBulkDiscountMutation,
 } from "@/store/api/adminApi";
 
 export const useAdminProducts = () => {
-    const [searchTerm, setSearchTerm] = useState("");
-    const [filterCategory, setFilterCategory] = useState("all");
-    const [stockStatus, setStockStatus] = useState("all");
-    const [priceRange, setPriceRange] = useState("all");
-    const [sortBy, setSortBy] = useState("newest");
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+    const { replace } = useRouter();
 
-    const { data: productsRes, isLoading: isProductsLoading } = useGetAdminProductsQuery();
+    const page = Number(searchParams.get("page")) || 1;
+    const filterCategory = searchParams.get("categoryId") || "all";
+    const stockStatus = searchParams.get("stockStatus") || "all";
+    const priceRange = searchParams.get("priceRange") || "all";
+    const sortBy = searchParams.get("sort") || "newest";
+    const urlSearch = searchParams.get("search") || "";
+    const [localSearch, setLocalSearch] = useState(urlSearch);
+
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+    useEffect(() => {
+        setLocalSearch(urlSearch);
+    }, [urlSearch]);
+
+    const updateUrl = useCallback((key: string, value: string | null) => {
+        const params = new URLSearchParams(searchParams.toString());
+        if (value && value !== "all" && value !== "") {
+            params.set(key, value);
+        } else {
+            params.delete(key);
+        }
+        if (key !== "page") params.set("page", "1");
+        replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }, [searchParams, pathname, replace]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (localSearch !== urlSearch) updateUrl("search", localSearch);
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [localSearch, urlSearch, updateUrl]);
+
+    const queryParams: any = { page, limit: 10, sort: sortBy };
+    if (localSearch) queryParams.search = localSearch;
+    if (filterCategory !== "all") queryParams.categoryId = filterCategory;
+    if (stockStatus !== "all") queryParams.stockStatus = stockStatus;
+    if (priceRange === "low") queryParams.maxPrice = 50;
+    if (priceRange === "mid") { queryParams.minPrice = 50; queryParams.maxPrice = 200; }
+    if (priceRange === "high") queryParams.minPrice = 200;
+
+    const { data: productsRes, isLoading: isProductsLoading } = useGetAdminProductsQuery(queryParams);
     const { data: categoriesRes } = useGetAdminCategoriesQuery();
-    const [deleteProduct, { isLoading: isDeleting }] = useDeleteProductMutation();
+    const [deleteProduct] = useDeleteProductMutation();
+    const [applyBulkDiscount, { isLoading: isBulkUpdating }] = useApplyBulkDiscountMutation();
 
     const products = productsRes?.data.products ?? [];
+    const meta = productsRes?.data.meta ?? { total: 0, page: 1, limit: 10, totalPages: 1 };
     const categories = categoriesRes?.data.categories ?? [];
 
-    const filteredProducts = useMemo(() => {
-        let filtered = [...products];
-
-        if (searchTerm) {
-            filtered = filtered.filter((p) =>
-                p.name.toLowerCase().includes(searchTerm.toLowerCase())
-            );
-        }
-
-        if (filterCategory !== "all") {
-            filtered = filtered.filter((p) => p.categoryId === filterCategory);
-        }
-
-        if (stockStatus === "in-stock") {
-            filtered = filtered.filter((p) => p.stock > 0);
-        } else if (stockStatus === "out-of-stock") {
-            filtered = filtered.filter((p) => p.stock <= 0);
-        }
-
-        filtered = filtered.filter((p) => {
-            const price = Number(p.price);
-            if (priceRange === "low") return price < 50;
-            if (priceRange === "mid") return price >= 50 && price <= 200;
-            if (priceRange === "high") return price > 200;
-            return true;
+    const handleSelectOne = (id: string) => {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next;
         });
+    };
 
-        filtered.sort((a, b) => {
-            if (sortBy === "price-asc") return Number(a.price) - Number(b.price);
-            if (sortBy === "price-desc") return Number(b.price) - Number(a.price);
-            if (sortBy === "stock-desc") return (b.stock ?? 0) - (a.stock ?? 0);
-            if (sortBy === "newest")
-                return new Date(b.createdAt ?? "").getTime() - new Date(a.createdAt ?? "").getTime();
-            return 0;
-        });
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            const ids = products.map((p) => p.id);
+            setSelectedIds(new Set(ids));
+        } else {
+            setSelectedIds(new Set());
+        }
+    };
 
-        return filtered;
-    }, [products, searchTerm, filterCategory, stockStatus, priceRange, sortBy]);
+    const handleBulkDiscount = async (percent: number) => {
+        if (selectedIds.size === 0) return;
+        try {
+            await applyBulkDiscount({
+                ids: Array.from(selectedIds),
+                discountPercent: percent
+            }).unwrap();
+
+            toast.success("Discount applied successfully");
+            setSelectedIds(new Set());
+        } catch {
+            toast.error("Failed to apply discount");
+        }
+    };
 
     const handleDelete = async (id: string) => {
         if (confirm("Delete this product?")) {
@@ -71,25 +107,28 @@ export const useAdminProducts = () => {
     };
 
     return {
-        products: filteredProducts,
+        products,
+        meta,
         categories,
         isLoading: isProductsLoading,
-        isDeleting,
+        isBulkUpdating,
 
-        filters: {
-            searchTerm,
-            filterCategory,
-            stockStatus,
-            priceRange,
-            sortBy
+        selectedIds,
+        handleSelectOne,
+        handleSelectAll,
+        handleBulkDiscount,
+
+        filters: { searchTerm: localSearch, filterCategory, stockStatus, priceRange, sortBy, page },
+        setSearchTerm: setLocalSearch,
+        setFilterCategory: (v: string) => updateUrl("categoryId", v),
+        setStockStatus: (v: string) => updateUrl("stockStatus", v),
+        setPriceRange: (v: string) => updateUrl("priceRange", v),
+        setSortBy: (v: string) => updateUrl("sort", v),
+        setPage: (p: number) => {
+            const params = new URLSearchParams(searchParams.toString());
+            params.set("page", p.toString());
+            replace(`${pathname}?${params.toString()}`, { scroll: false });
         },
-
-        setSearchTerm,
-        setFilterCategory,
-        setStockStatus,
-        setPriceRange,
-        setSortBy,
-
         handleDelete
     };
 };
