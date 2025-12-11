@@ -109,6 +109,8 @@ export default function ThisWeek() {
 }
 
 function ProductCard({ product }: { product: Product }) {
+    const isOnSale = product.salePrice && Number(product.salePrice) < Number(product.price);
+
     return (
         <Link
             href={`/products/${product.id}`}
@@ -123,6 +125,12 @@ function ProductCard({ product }: { product: Product }) {
                     className="object-cover transition-transform duration-700 group-hover/card:scale-105"
                 />
 
+                {isOnSale && (
+                    <div className="absolute top-4 left-4 bg-red-700 text-white text-[10px] font-bold uppercase py-1 px-3 tracking-widest z-10">
+                        Sale
+                    </div>
+                )}
+
                 <div className="absolute top-4 right-4 opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 z-10">
                     <Button size="icon" className="rounded-full bg-white text-black hover:bg-black hover:text-white shadow-lg w-10 h-10">
                         <Plus className="w-5 h-5" />
@@ -136,9 +144,23 @@ function ProductCard({ product }: { product: Product }) {
                     <h3 className="text-white font-bold text-lg leading-tight mb-1 line-clamp-1">
                         {product.name}
                     </h3>
-                    <p className="text-white font-medium">
-                        ${product.price}
-                    </p>
+
+                    <div className="flex items-center gap-2">
+                        {isOnSale ? (
+                            <>
+                                <span className="text-red-700 font-bold text-lg">
+                                    ${Number(product.salePrice).toFixed(2)}
+                                </span>
+                                <span className="text-white/60 text-sm line-through decoration-white/60">
+                                    ${Number(product.price).toFixed(2)}
+                                </span>
+                            </>
+                        ) : (
+                            <span className="text-white font-medium text-lg">
+                                ${Number(product.price).toFixed(2)}
+                            </span>
+                        )}
+                    </div>
                 </div>
             </div>
         </Link>

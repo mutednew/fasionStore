@@ -159,60 +159,83 @@ export default function HeroSection() {
                         </div>
 
                         <AnimatePresence mode="popLayout">
-                            {visibleProducts.map((product, idx) => (
-                                <motion.div
-                                    key={`${product.id}-${cycle}`}
-                                    initial={{ opacity: 0, y: 30, scale: 0.98 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    exit={{ opacity: 0, y: -30, scale: 0.98, transition: { duration: 0.4 } }}
-                                    transition={{ duration: 0.6, ease: "easeOut", delay: idx * 0.1 }}
-                                    className={`relative z-10 w-1/2 h-full ${idx === 1 ? 'mt-16 md:mt-24 h-[85%]' : ''}`}
-                                >
-                                    <Link href={`/products/${product.id}`} className="block w-full h-full group perspective-1000">
-                                        <div className="w-full h-full relative overflow-hidden bg-white shadow-2xl transition-all duration-500 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
+                            {visibleProducts.map((product, idx) => {
+                                const isOnSale = product.salePrice && Number(product.salePrice) < Number(product.price);
 
-                                            <div className="absolute inset-0 bg-neutral-200">
-                                                <Image
-                                                    src={product.imageUrl || "/placeholder.png"}
-                                                    alt={product.name}
-                                                    fill
-                                                    priority={idx === 0}
-                                                    sizes="(max-width: 768px) 50vw, 33vw"
-                                                    className="object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[10%] group-hover:grayscale-0"
-                                                />
-                                            </div>
+                                return (
+                                    <motion.div
+                                        key={`${product.id}-${cycle}`}
+                                        initial={{ opacity: 0, y: 30, scale: 0.98 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        exit={{ opacity: 0, y: -30, scale: 0.98, transition: { duration: 0.4 } }}
+                                        transition={{ duration: 0.6, ease: "easeOut", delay: idx * 0.1 }}
+                                        className={`relative z-10 w-1/2 h-full ${idx === 1 ? 'mt-16 md:mt-24 h-[85%]' : ''}`}
+                                    >
+                                        <Link href={`/products/${product.id}`} className="block w-full h-full group perspective-1000">
+                                            <div className="w-full h-full relative overflow-hidden bg-white shadow-2xl transition-all duration-500 group-hover:shadow-[0_20px_50px_rgba(0,0,0,0.2)]">
 
-                                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
+                                                <div className="absolute inset-0 bg-neutral-200">
+                                                    <Image
+                                                        src={product.imageUrl || "/placeholder.png"}
+                                                        alt={product.name}
+                                                        fill
+                                                        priority={idx === 0}
+                                                        sizes="(max-width: 768px) 50vw, 33vw"
+                                                        className="object-cover transition-transform duration-700 group-hover:scale-110 grayscale-[10%] group-hover:grayscale-0"
+                                                    />
+                                                </div>
 
-                                            <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
-                                                <div className="flex items-end justify-between border-b border-white/30 pb-4 mb-4">
-                                                    <div>
-                                                        <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest mb-1">
-                                                            {product.category?.name || "New Arrival"}
-                                                        </p>
-                                                        <h3 className="text-white text-xl md:text-2xl font-bold leading-tight uppercase tracking-tight line-clamp-2">
-                                                            {product.name}
-                                                        </h3>
+                                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
+
+                                                {isOnSale && (
+                                                    <div className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-bold uppercase py-2 px-4 tracking-widest z-20">
+                                                        Sale
                                                     </div>
-                                                    <div className="text-white text-lg font-medium whitespace-nowrap ml-2">
-                                                        ${product.price}
+                                                )}
+                                                {!isOnSale && idx === 0 && (
+                                                    <div className="absolute top-0 right-0 bg-white text-black text-[10px] font-bold uppercase py-2 px-4 tracking-widest z-20">
+                                                        Trending
+                                                    </div>
+                                                )}
+
+                                                <div className="absolute bottom-0 left-0 w-full p-6 md:p-8 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-500">
+                                                    <div className="flex items-end justify-between border-b border-white/30 pb-4 mb-4">
+                                                        <div className="flex-1 min-w-0 pr-4">
+                                                            <p className="text-[10px] font-bold text-white/80 uppercase tracking-widest mb-1">
+                                                                {product.category?.name || "New Arrival"}
+                                                            </p>
+                                                            <h3 className="text-white text-xl md:text-2xl font-bold leading-tight uppercase tracking-tight line-clamp-2">
+                                                                {product.name}
+                                                            </h3>
+                                                        </div>
+
+                                                        <div className="text-right flex flex-col items-end">
+                                                            {isOnSale ? (
+                                                                <>
+                                                                    <span className="text-red-700 text-lg font-bold whitespace-nowrap">
+                                                                        ${Number(product.salePrice).toFixed(2)}
+                                                                    </span>
+                                                                    <span className="text-white/60 text-xs line-through decoration-white/60 whitespace-nowrap">
+                                                                        ${Number(product.price).toFixed(2)}
+                                                                    </span>
+                                                                </>
+                                                            ) : (
+                                                                <span className="text-white text-lg font-medium whitespace-nowrap">
+                                                                    ${Number(product.price).toFixed(2)}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2 text-white/90 text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-75">
+                                                        View Product <MoveRight className="w-4 h-4" />
                                                     </div>
                                                 </div>
-
-                                                <div className="flex items-center gap-2 text-white/90 text-xs font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-75">
-                                                    View Product <MoveRight className="w-4 h-4" />
-                                                </div>
                                             </div>
-
-                                            {idx === 0 && (
-                                                <div className="absolute top-0 right-0 bg-white text-black text-[10px] font-bold uppercase py-2 px-4 tracking-widest z-20">
-                                                    Trending
-                                                </div>
-                                            )}
-                                        </div>
-                                    </Link>
-                                </motion.div>
-                            ))}
+                                        </Link>
+                                    </motion.div>
+                                );
+                            })}
                         </AnimatePresence>
 
                         {visibleProducts.length === 0 && (
