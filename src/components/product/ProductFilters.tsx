@@ -29,19 +29,19 @@ interface ProductFiltersProps {
 }
 
 export function ProductFilters({
-                                   searchTerm,
-                                   setSearchTerm,
-                                   categoryId,
-                                   setCategoryId,
-                                   sort,
-                                   setSort,
-                                   size,
-                                   setSize,
-                                   priceRange,
-                                   setPriceRange,
-                                   onClear,
-                                   hideCategory = false,
-                               }: ProductFiltersProps) {
+    searchTerm,
+    setSearchTerm,
+    categoryId,
+    setCategoryId,
+    sort,
+    setSort,
+    size,
+    setSize,
+    priceRange,
+    setPriceRange,
+    onClear,
+    hideCategory = false,
+}: ProductFiltersProps) {
     const { data: catData } = useGetCategoriesQuery();
     const categories = catData?.categories ?? [];
 

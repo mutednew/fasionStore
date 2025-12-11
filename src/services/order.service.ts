@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { ApiError } from "@/lib/ApiError";
 import { emailService } from "./email.service";
 import { promoService } from "./promo.service";
+import { startOfDay, subDays, format, subMonths } from "date-fns";
 
 export interface CheckoutData {
     email: string;
@@ -128,6 +129,83 @@ export const orderService = {
         }
 
         return order;
+    },
+
+    async getAnalytics(range: 'week' | 'month' | 'year') {
+        const now = new Date();
+        let startDate = new Date();
+        let previousStartDate = new Date();
+        let dateFormat = "MMM dd";
+
+        if (range === 'week') {
+            startDate = subDays(now, 7);
+            previousStartDate = subDays(now, 14);
+            dateFormat = "EEE";
+        } else if (range === 'month') {
+            startDate = subDays(now, 30);
+            previousStartDate = subDays(now, 60);
+            dateFormat = "MMM dd";
+        } else if (range === 'year') {
+            startDate = subMonths(now, 12);
+            previousStartDate = subMonths(now, 24);
+            dateFormat = "MMM yyyy";
+        }
+
+        const currentOrders = await prisma.order.findMany({
+            where: {
+                createdAt: { gte: startDate },
+                status: { not: "CANCELED" }
+            },
+            select: { createdAt: true, total: true },
+            orderBy: { createdAt: 'asc' }
+        });
+
+        const previousOrdersAgg = await prisma.order.aggregate({
+            _sum: { total: true },
+            where: {
+                createdAt: { gte: previousStartDate, lt: startDate },
+                status: { not: "CANCELED" }
+            }
+        });
+
+        const groupedData: Record<string, number> = {};
+        let currentTotalSales = 0;
+
+        currentOrders.forEach(order => {
+            const dateKey = format(order.createdAt, dateFormat);
+            const total = Number(order.total);
+
+            currentTotalSales += total;
+
+            if (groupedData[dateKey]) {
+                groupedData[dateKey] += total;
+            } else {
+                groupedData[dateKey] = total;
+            }
+        });
+
+        const sales = Object.entries(groupedData).map(([name, value]) => ({
+            name,
+            value
+        }));
+
+        const previousTotalSales = Number(previousOrdersAgg._sum.total || 0);
+
+        let percentageChange = 0;
+
+        if (previousTotalSales === 0) {
+            percentageChange = currentTotalSales > 0 ? 100 : 0;
+        } else {
+            percentageChange = ((currentTotalSales - previousTotalSales) / previousTotalSales) * 100;
+        }
+
+        percentageChange = Math.round(percentageChange * 10) / 10;
+
+        return {
+            sales,
+            percentageChange,
+            total: currentTotalSales
+        };
     },
 
     async updateStatus(id: string, status: any) {

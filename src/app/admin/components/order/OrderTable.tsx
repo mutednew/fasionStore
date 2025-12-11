@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useGetOrdersQuery, useUpdateOrderStatusMutation } from "@/store/api/adminApi";
 import { format } from "date-fns";
-import { Ticket } from "lucide-react"; // Иконка скидки
+import { Ticket } from "lucide-react";
 import {
     Select,
     SelectTrigger,
@@ -34,7 +34,6 @@ export function OrderTable({ status, sort }: OrderTableProps) {
 
     const orders = ordersRes?.data.orders ?? [];
 
-    // Фильтрация и сортировка
     const filteredOrders = orders
         .filter((order) => status === "all" || order.status === status)
         .sort((a, b) => {
@@ -78,16 +77,13 @@ export function OrderTable({ status, sort }: OrderTableProps) {
                                 </TableRow>
                             ) : (
                                 filteredOrders.map((order) => {
-                                    // --- ЛОГИКА ОПРЕДЕЛЕНИЯ СКИДКИ ---
                                     const itemsTotal = order.items.reduce((acc, item) => acc + Number(item.price) * item.quantity, 0);
 
-                                    // Стандартная логика доставки (как в корзине)
                                     const standardShipping = itemsTotal > 200 ? 0 : 15;
 
                                     const expectedTotal = itemsTotal + standardShipping;
                                     const paidTotal = Number(order.total);
 
-                                    // Если заплатили меньше ожидаемого (> 1 цента разницы), значит была скидка
                                     const discountAmount = expectedTotal - paidTotal;
                                     const hasDiscount = discountAmount > 0.01;
 
@@ -99,7 +95,6 @@ export function OrderTable({ status, sort }: OrderTableProps) {
                                             exit={{ opacity: 0, y: -10 }}
                                             transition={{ duration: 0.2 }}
                                             className="border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted"
-                                            // motion.tr рендерится как tr, но TS иногда ругается на layout пропсы, здесь безопасно
                                         >
                                             <TableCell className="font-medium font-mono text-xs">
                                                 #{order.id.slice(0, 8).toUpperCase()}
@@ -126,19 +121,16 @@ export function OrderTable({ status, sort }: OrderTableProps) {
 
                                             <TableCell className="text-right">
                                                 <div className="flex flex-col items-end">
-                                                    {/* Старая цена (зачеркнуто) */}
                                                     {hasDiscount && (
                                                         <span className="text-[10px] text-muted-foreground line-through flex items-center gap-1 mb-0.5">
                                                             ${expectedTotal.toFixed(2)}
                                                         </span>
                                                     )}
 
-                                                    {/* Итоговая цена */}
                                                     <span className={`font-bold ${hasDiscount ? "text-green-600" : ""}`}>
                                                         ${paidTotal.toFixed(2)}
                                                     </span>
 
-                                                    {/* Бейджик промокода */}
                                                     {hasDiscount && (
                                                         <div className="flex items-center gap-1 text-[10px] text-green-600 bg-green-50 px-1.5 py-0.5 rounded-full mt-1">
                                                             <Ticket size={10} />

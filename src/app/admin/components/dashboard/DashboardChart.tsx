@@ -1,132 +1,116 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from "recharts";
+import { useState } from "react";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis } from "recharts";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ArrowUpRight, ArrowDownRight, Loader2, Minus } from "lucide-react";
+import { useGetSalesAnalyticsQuery } from "@/store/api/adminApi";
+import { cn } from "@/lib/utils";
 
-interface DashboardChartProps {
-    stats: {
-        pending: number;
-        paid: number;
-        shipped: number;
-        delivered: number;
-        canceled: number;
-    };
-}
+export function DashboardChart() {
+    const [period, setPeriod] = useState("month");
 
-// Цвета для разных статусов
-const COLORS = {
-    PENDING: "#EAB308", // yellow-500
-    PAID: "#3B82F6", // blue-500
-    SHIPPED: "#A855F7", // purple-500
-    DELIVERED: "#22C55E", // green-500
-    CANCELED: "#EF4444", // red-500
-};
+    const { data, isLoading } = useGetSalesAnalyticsQuery(period);
 
-const RADIAN = Math.PI / 180;
+    const chartData = data?.data?.sales ?? [];
+    const percentageChange = data?.data?.percentageChange ?? 0;
+    const totalRevenue = data?.data?.total ?? 0;
 
-// Кастомная метка внутри сегмента
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
-    const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-    const x = cx + radius * Math.cos(-midAngle * RADIAN);
-    const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    if (percent < 0.05) return null;
+    const isPositive = percentageChange > 0;
+    const isNeutral = percentageChange === 0;
 
     return (
-        <text
-            x={x}
-            y={y}
-            fill="white"
-            textAnchor={x > cx ? 'start' : 'end'}
-            dominantBaseline="central"
-            className="text-xs font-bold pointer-events-none"
-        >
-            {`${(percent * 100).toFixed(0)}%`}
-        </text>
-    );
-};
+        <Card className="col-span-4 h-full border-none shadow-md overflow-hidden relative">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 z-10 relative">
+                <div className="space-y-1">
+                    <CardTitle className="text-base font-bold text-gray-800">
+                        Sales Trends
+                    </CardTitle>
 
-// Кастомный тултип
-const CustomTooltip = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
-        const data = payload[0].payload;
-        return (
-            <div className="bg-white p-2 border rounded-md shadow-sm">
-                <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.color }} />
-                    <p className="text-sm font-medium">{data.name}</p>
+                    {isLoading ? (
+                        <div className="h-4 w-24 bg-gray-100 animate-pulse rounded" />
+                    ) : (
+                        <div className="flex flex-col">
+                             <span className="text-2xl font-bold text-neutral-900">
+                                ${totalRevenue.toFixed(2)}
+                            </span>
+                            <CardDescription className={cn(
+                                "flex items-center gap-1 font-medium",
+                                isPositive ? "text-green-600" : isNeutral ? "text-gray-500" : "text-red-600"
+                            )}>
+                                {isPositive && <ArrowUpRight className="h-4 w-4" />}
+                                {isNeutral && <Minus className="h-4 w-4" />}
+                                {!isPositive && !isNeutral && <ArrowDownRight className="h-4 w-4" />}
+
+                                {Math.abs(percentageChange)}%
+                                <span className="text-muted-foreground font-normal ml-1">
+                                    vs last {period}
+                                </span>
+                            </CardDescription>
+                        </div>
+                    )}
                 </div>
-                <p className="text-xs text-gray-500 mt-1">Orders: <span className="font-bold text-black">{data.value}</span></p>
-            </div>
-        );
-    }
-    return null;
-};
 
-export function DashboardChart({ stats }: DashboardChartProps) {
-    // Исправление ошибки SSR: Рендерим график только на клиенте
-    const [isMounted, setIsMounted] = useState(false);
-
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
-
-    if (!isMounted) {
-        return (
-            <Card className="shadow-sm border-none bg-white h-full min-h-[300px] flex items-center justify-center">
-                <p className="text-sm text-muted-foreground">Loading chart...</p>
-            </Card>
-        );
-    }
-
-    const chartData = [
-        { name: "Pending", value: stats.pending, color: COLORS.PENDING },
-        { name: "Paid", value: stats.paid, color: COLORS.PAID },
-        { name: "Shipped", value: stats.shipped, color: COLORS.SHIPPED },
-        { name: "Delivered", value: stats.delivered, color: COLORS.DELIVERED },
-        { name: "Canceled", value: stats.canceled, color: COLORS.CANCELED },
-    ].filter(item => item.value > 0);
-
-    return (
-        <Card className="shadow-sm border-none bg-white h-full">
-            <CardHeader>
-                <CardTitle className="text-lg font-medium">Order Distribution</CardTitle>
+                <Tabs defaultValue="month" onValueChange={setPeriod} className="w-auto">
+                    <TabsList className="h-8 bg-gray-100/80">
+                        <TabsTrigger value="week" className="text-xs px-3 h-6">Week</TabsTrigger>
+                        <TabsTrigger value="month" className="text-xs px-3 h-6">Month</TabsTrigger>
+                        <TabsTrigger value="year" className="text-xs px-3 h-6">Year</TabsTrigger>
+                    </TabsList>
+                </Tabs>
             </CardHeader>
-            <CardContent>
-                {chartData.length === 0 ? (
-                    <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-                        No order data available to display.
+
+            <CardContent className="pl-0 pb-0 min-h-[300px] w-full relative">
+                <div className="absolute inset-0 bg-gradient-to-t from-blue-50/50 to-transparent pointer-events-none" />
+
+                {isLoading ? (
+                    <div className="flex h-[300px] items-center justify-center">
+                        <Loader2 className="animate-spin text-blue-500" />
                     </div>
+                ) : chartData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height={300}>
+                        <AreaChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                            <defs>
+                                <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.4} />
+                                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
+                                </linearGradient>
+                            </defs>
+
+                            <XAxis
+                                dataKey="name"
+                                stroke="#888888"
+                                fontSize={12}
+                                tickLine={false}
+                                axisLine={false}
+                                dy={10}
+                                interval={period === "month" ? 4 : 0}
+                            />
+
+                            <Tooltip
+                                contentStyle={{
+                                    borderRadius: "8px",
+                                    border: "none",
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
+                                }}
+                                formatter={(value: number) => [`$${value}`, "Sales"]}
+                                cursor={{ stroke: '#3b82f6', strokeWidth: 1, strokeDasharray: '5 5' }}
+                            />
+
+                            <Area
+                                type="monotone"
+                                dataKey="value"
+                                stroke="#3b82f6"
+                                strokeWidth={3}
+                                fillOpacity={1}
+                                fill="url(#colorValue)"
+                            />
+                        </AreaChart>
+                    </ResponsiveContainer>
                 ) : (
-                    <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={chartData}
-                                    cx="50%"
-                                    cy="50%"
-                                    labelLine={false}
-                                    label={renderCustomizedLabel}
-                                    outerRadius={100}
-                                    innerRadius={40}
-                                    fill="#8884d8"
-                                    dataKey="value"
-                                    paddingAngle={2}
-                                >
-                                    {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} stroke="transparent" className="hover:opacity-80 transition-opacity cursor-pointer" />
-                                    ))}
-                                </Pie>
-                                <Tooltip content={<CustomTooltip />} />
-                                <Legend
-                                    verticalAlign="bottom"
-                                    height={36}
-                                    iconType="circle"
-                                    formatter={(value, entry: any) => <span className="text-sm text-gray-600 ml-1">{value} ({entry.payload.value})</span>}
-                                />
-                            </PieChart>
-                        </ResponsiveContainer>
+                    <div className="flex h-[300px] items-center justify-center text-muted-foreground text-sm">
+                        No sales data for this {period}
                     </div>
                 )}
             </CardContent>

@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { motion, AnimatePresence } from "framer-motion";
 import { Order } from "@/types";
 
-// Расширяем тип Order локально или глобально, чтобы TS знал про user
 interface OrderWithUser extends Omit<Order, "user"> {
     user?: {
         name: string;
@@ -13,7 +12,6 @@ interface OrderWithUser extends Omit<Order, "user"> {
     };
 }
 
-// маленькая функция для "2h ago"
 function timeAgo(dateString: string) {
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return "recently";
@@ -28,13 +26,10 @@ function timeAgo(dateString: string) {
 
 export function OrderActivity() {
     const { data, isLoading } = useGetOrdersQuery();
-    // Приводим к нужному типу
     const orders = (data?.data?.orders ?? []) as OrderWithUser[];
 
-    // создаём "историю" активности
     const activity = orders.slice(0, 8).map((o) => {
         let text = "";
-        // Используем имя, если есть, иначе email, иначе ID
         const userName = o.user?.name || o.user?.email || "Customer";
         const orderId = o.id.slice(0, 8).toUpperCase();
 

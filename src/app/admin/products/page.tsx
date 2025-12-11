@@ -13,7 +13,6 @@ export default function AdminProducts() {
         products, meta, categories, isLoading, filters,
         setSearchTerm, setFilterCategory, setStockStatus, setPriceRange, setSortBy, setPage,
         handleDelete,
-        // Новые свойства для массовых действий
         selectedIds, handleSelectOne, handleSelectAll, handleBulkDiscount, isBulkUpdating
     } = useAdminProducts();
 
@@ -48,7 +47,6 @@ export default function AdminProducts() {
                         products={products}
                         categories={categories}
                         onDelete={handleDelete}
-                        // Передаем новые пропсы
                         selectedIds={selectedIds}
                         onSelectOne={handleSelectOne}
                         onSelectAll={handleSelectAll}

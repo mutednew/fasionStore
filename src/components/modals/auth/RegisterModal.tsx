@@ -2,7 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { z } from "zod";
-import { Mail } from "lucide-react"; // Импортируем иконку для успеха
+import { Mail } from "lucide-react";
 import { RegisterSchema } from "@/schemas/auth.schema";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -32,12 +32,8 @@ export default function RegisterModal({ onSwitch, onClose }: RegisterModalProps)
             const parsed = RegisterSchema.parse(data);
             setEmail(parsed.email);
 
-            // Отправляем запрос на регистрацию
-            // Бэкенд создаст юзера, отправит письмо и вернет 201
             await registerFn(parsed).unwrap();
 
-            // ВАЖНО: Мы больше не делаем dispatch(setProfile) и не логиним сразу.
-            // Вместо этого показываем экран успеха.
             setIsSuccess(true);
 
         } catch (err: any) {
@@ -51,7 +47,6 @@ export default function RegisterModal({ onSwitch, onClose }: RegisterModalProps)
         }
     };
 
-    // Если регистрация успешна — показываем сообщение
     if (isSuccess) {
         return (
             <div className="flex flex-col items-center text-center animate-in fade-in zoom-in-95 duration-300">
@@ -74,7 +69,6 @@ export default function RegisterModal({ onSwitch, onClose }: RegisterModalProps)
         );
     }
 
-    // Стандартная форма регистрации
     return (
         <div>
             <h1 className="text-xl font-semibold mb-2 text-neutral-900">Create Account</h1>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react"; // Добавил useEffect
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Ticket } from "lucide-react";
@@ -20,7 +20,7 @@ import { InfoStep } from "@/components/checkout/steps/InfoStep";
 import { ShippingStep } from "@/components/checkout/steps/ShippingStep";
 import { PaymentStep } from "@/components/checkout/steps/PaymentStep";
 import { checkoutSchema, CheckoutFormValues } from "@/schemas/checkout.schema";
-import { PromoCode } from "@/types"; // Импортируем тип
+import { PromoCode } from "@/types";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
@@ -28,14 +28,12 @@ export default function CheckoutPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    // Получаем код из URL
     const promoCode = searchParams.get("promo");
 
     const [activeTab, setActiveTab] = useState("information");
     const [clientSecret, setClientSecret] = useState("");
     const [isInitializingPayment, setIsInitializingPayment] = useState(false);
 
-    // Стейт для данных промокода (чтобы отобразить скидку визуально в чекауте)
     const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
 
     const { data: cartData, isLoading: loadingCart } = useGetCartQuery();
@@ -56,7 +54,6 @@ export default function CheckoutPage() {
 
     const formData = watch();
 
-    // 1. Проверяем промокод при загрузке страницы, чтобы красиво отобразить скидку
     useEffect(() => {
         if (promoCode) {
             fetch("/api/cart/apply-promo", {
@@ -83,7 +80,6 @@ export default function CheckoutPage() {
         }, 0);
     }, [items]);
 
-    // Логика расчета скидки для отображения
     let discountAmount = 0;
     let shipping = subtotal > 200 ? 0 : 15;
 
@@ -153,8 +149,6 @@ export default function CheckoutPage() {
         try {
             const data = getValues();
 
-            // ВАЖНО: Мы добавляем promoCode в объект, который отправляем на сервер
-            // Типы CheckoutData в cartApi должны поддерживать это поле (мы добавили его в order.service и route)
             await checkout({
                 email: data.email,
                 phone: data.phone,
@@ -165,8 +159,6 @@ export default function CheckoutPage() {
                 country: data.country,
                 zip: data.zip,
 
-                // --- ВОТ ЗДЕСЬ БЫЛА ОШИБКА ---
-                // Мы не передавали код, поэтому заказ создавался без скидки
                 promoCode: promoCode || undefined,
             }).unwrap();
 
@@ -238,7 +230,6 @@ export default function CheckoutPage() {
                         subtotal={subtotal}
                         shipping={shipping}
                         total={total}
-                        // Передаем данные о скидке для визуализации
                         discountAmount={discountAmount}
                         appliedPromo={appliedPromo}
                     />

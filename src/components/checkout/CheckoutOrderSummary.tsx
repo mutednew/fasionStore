@@ -17,13 +17,13 @@ interface CheckoutOrderSummaryProps {
 }
 
 export function CheckoutOrderSummary({
-                                         items,
-                                         subtotal,
-                                         shipping,
-                                         total,
-                                         discountAmount = 0,
-                                         appliedPromo
-                                     }: CheckoutOrderSummaryProps) {
+    items,
+    subtotal,
+    shipping,
+    total,
+    discountAmount = 0,
+    appliedPromo
+}: CheckoutOrderSummaryProps) {
     return (
         <Card className="border border-gray-200 bg-white p-6 shadow-sm rounded-lg overflow-hidden">
             <h2 className="text-xs font-bold mb-6 uppercase tracking-wider text-gray-500">

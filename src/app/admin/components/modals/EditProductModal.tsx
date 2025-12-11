@@ -27,7 +27,7 @@ import {
 
 import { useUpdateProductMutation, useGetAdminCategoriesQuery } from "@/store/api/adminApi";
 
-import { Pencil, X, Percent } from "lucide-react"; // Добавил иконку процента
+import { Pencil, X, Percent } from "lucide-react";
 import { toast } from "sonner";
 
 import type { Product } from "@/types";
@@ -44,22 +44,18 @@ export function EditProductModal({ product }: EditProductModalProps) {
     const [description, setDescription] = useState(product.description ?? "");
     const [stock, setStock] = useState(String(product.stock ?? 0));
 
-    // --- ЛОГИКА ЦЕН И СКИДОК ---
     const [price, setPrice] = useState(String(product.price));
     const [salePrice, setSalePrice] = useState(product.salePrice ? String(product.salePrice) : "");
 
-    // Вычисляем начальный процент, если скидка уже есть
     const initialDiscount = product.salePrice && product.price
         ? Math.round(((Number(product.price) - Number(product.salePrice)) / Number(product.price)) * 100).toString()
         : "";
     const [discount, setDiscount] = useState(initialDiscount);
 
-    // Хендлер изменения Базовой Цены
     const handlePriceChange = (e: ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         setPrice(val);
 
-        // Если есть процент скидки, обновляем Sale Price
         if (discount && val) {
             const p = parseFloat(val);
             const d = parseFloat(discount);
@@ -70,13 +66,12 @@ export function EditProductModal({ product }: EditProductModalProps) {
         }
     };
 
-    // Хендлер изменения Процента
     const handleDiscountChange = (e: ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         setDiscount(val);
 
         if (!val) {
-            setSalePrice(""); // Если стерли процент — убираем скидочную цену
+            setSalePrice("");
             return;
         }
 
@@ -85,12 +80,10 @@ export function EditProductModal({ product }: EditProductModalProps) {
 
         if (!isNaN(p) && !isNaN(d)) {
             const newSale = p - (p * d) / 100;
-            // Не даем цене уйти в минус
             setSalePrice(newSale > 0 ? newSale.toFixed(2) : "0");
         }
     };
 
-    // Хендлер изменения Sale Price (обратный пересчет процента)
     const handleSalePriceChange = (e: ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
         setSalePrice(val);
@@ -104,25 +97,19 @@ export function EditProductModal({ product }: EditProductModalProps) {
         const s = parseFloat(val);
 
         if (!isNaN(p) && !isNaN(s) && p > 0) {
-            // Считаем процент: (Old - New) / Old * 100
             const newDiscount = ((p - s) / p) * 100;
-            // Округляем до целого для красоты
             setDiscount(Math.round(newDiscount).toString());
         }
     };
-    // ---------------------------
 
-    // EXISTING IMAGES
     const [gallery, setGallery] = useState<string[]>(product.images ?? []);
     const [mainImageIndex, setMainImageIndex] = useState(
         Math.max(gallery.indexOf(product.imageUrl ?? ""), 0)
     );
 
-    // NEW FILES
     const [newFiles, setNewFiles] = useState<File[]>([]);
     const [newPreviews, setNewPreviews] = useState<string[]>([]);
 
-    // ATTRIBUTES
     const [colors, setColors] = useState<string[]>(product.colors ?? []);
     const [sizes, setSizes] = useState<string[]>(product.sizes ?? []);
     const [tags, setTags] = useState<string[]>(product.tags ?? []);
@@ -197,7 +184,6 @@ export function EditProductModal({ product }: EditProductModalProps) {
                 id: product.id,
                 name,
                 price: Number(price),
-                // Отправляем salePrice (если пустой или <= 0, отправится null)
                 salePrice: salePrice && Number(salePrice) > 0 ? Number(salePrice) : null,
                 stock: Number(stock),
                 categoryId,
@@ -239,7 +225,6 @@ export function EditProductModal({ product }: EditProductModalProps) {
 
                         <div className="grid gap-6 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
 
-                            {/* LEFT */}
                             <div className="space-y-5">
                                 <div className="space-y-1.5">
                                     <Label>Name</Label>
@@ -256,9 +241,7 @@ export function EditProductModal({ product }: EditProductModalProps) {
                                     />
                                 </div>
 
-                                {/* БЛОК ЦЕНЫ И СКИДКИ */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 bg-neutral-50 p-4 rounded-lg border border-neutral-100">
-                                    {/* 1. Основная цена */}
                                     <div className="space-y-1.5">
                                         <Label>Base Price ($)</Label>
                                         <Input
@@ -269,7 +252,6 @@ export function EditProductModal({ product }: EditProductModalProps) {
                                         />
                                     </div>
 
-                                    {/* 2. Сток */}
                                     <div className="space-y-1.5">
                                         <Label>Stock</Label>
                                         <Input
@@ -280,7 +262,6 @@ export function EditProductModal({ product }: EditProductModalProps) {
                                         />
                                     </div>
 
-                                    {/* 3. Скидка в процентах */}
                                     <div className="space-y-1.5">
                                         <Label className="text-blue-600 flex items-center gap-1">
                                             Discount <Percent size={12} />
@@ -297,7 +278,6 @@ export function EditProductModal({ product }: EditProductModalProps) {
                                         </div>
                                     </div>
 
-                                    {/* 4. Итоговая цена (Sale Price) */}
                                     <div className="space-y-1.5">
                                         <Label className="text-red-600">Final Sale Price ($)</Label>
                                         <Input
@@ -331,7 +311,6 @@ export function EditProductModal({ product }: EditProductModalProps) {
                                 </div>
                             </div>
 
-                            {/* RIGHT (Images & Attributes - без изменений) */}
                             <div className="space-y-6">
                                 <div className="space-y-2">
                                     <Label>Images</Label>
@@ -355,7 +334,6 @@ export function EditProductModal({ product }: EditProductModalProps) {
                                     )}
                                 </div>
 
-                                {/* COLORS */}
                                 <div className="space-y-2">
                                     <Label>Colors</Label>
                                     <div className="flex gap-2">
@@ -367,7 +345,6 @@ export function EditProductModal({ product }: EditProductModalProps) {
                                     </div>
                                 </div>
 
-                                {/* SIZES */}
                                 <div className="space-y-2">
                                     <Label>Sizes</Label>
                                     <div className="flex gap-2">
@@ -379,7 +356,6 @@ export function EditProductModal({ product }: EditProductModalProps) {
                                     </div>
                                 </div>
 
-                                {/* TAGS */}
                                 <div className="space-y-2">
                                     <Label>Tags</Label>
                                     <div className="flex gap-2">

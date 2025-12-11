@@ -22,9 +22,9 @@ interface CartSummaryProps {
 }
 
 export function CartSummary({
-                                subtotal, shipping, total, discountAmount,
-                                appliedPromo, isPromoLoading, onApply, onRemove
-                            }: CartSummaryProps) {
+    subtotal, shipping, total, discountAmount,
+    appliedPromo, isPromoLoading, onApply, onRemove
+}: CartSummaryProps) {
 
     const [code, setCode] = useState("");
 
@@ -78,7 +78,6 @@ export function CartSummary({
                     </div>
                 </div>
 
-                {/* БЛОК СКИДКИ */}
                 <AnimatePresence>
                     {discountAmount > 0 && (
                         <motion.div
@@ -93,7 +92,6 @@ export function CartSummary({
                     )}
                 </AnimatePresence>
 
-                {/* PROMO INPUT */}
                 <div className="pt-2">
                     {appliedPromo ? (
                         <motion.div

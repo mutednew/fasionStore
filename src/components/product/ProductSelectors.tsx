@@ -15,15 +15,15 @@ interface ProductSelectorsProps {
 }
 
 export function ProductSelectors({
-                                     colors,
-                                     sizes,
-                                     selectedColor,
-                                     selectedSize,
-                                     quantity,
-                                     setColor,
-                                     setSize,
-                                     setQuantity,
-                                 }: ProductSelectorsProps) {
+    colors,
+    sizes,
+    selectedColor,
+    selectedSize,
+    quantity,
+    setColor,
+    setSize,
+    setQuantity,
+}: ProductSelectorsProps) {
     const handleQuantity = (type: "inc" | "dec") => {
         setQuantity(type === "inc" ? quantity + 1 : Math.max(1, quantity - 1));
     };

@@ -34,16 +34,9 @@ export default function AdminDashboard() {
         total: 0
     };
 
-    // --- ИСПРАВЛЕННЫЙ РАСЧЕТ ---
     const totalSales = orders.reduce((acc, order) => {
-        // Не учитываем отмененные заказы в выручке (по желанию)
         if (order.status === "CANCELED") return acc;
-
-        // Главное исправление:
-        // 1. Приводим к числу (так как может быть string)
-        // 2. Доверяем order.total, так как он включает промокоды и доставку
         const finalTotal = Number(order.total);
-
         return acc + (isNaN(finalTotal) ? 0 : finalTotal);
     }, 0);
 
@@ -100,7 +93,7 @@ export default function AdminDashboard() {
 
             <div className="grid grid-cols-1 lg:grid-cols-7 gap-6">
                 <div className="lg:col-span-4">
-                    <DashboardChart stats={stats} />
+                    <DashboardChart />
                 </div>
                 <div className="lg:col-span-3">
                     <OrderActivity />

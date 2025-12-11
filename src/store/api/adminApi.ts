@@ -42,6 +42,12 @@ interface StatsResponse {
     };
 }
 
+interface AnalyticsResponse {
+    sales: { name: string; value: number }[];
+    percentageChange: number;
+    total: number;
+}
+
 export const adminApi = mainApi.injectEndpoints({
     endpoints: (builder) => ({
 
@@ -104,6 +110,11 @@ export const adminApi = mainApi.injectEndpoints({
             providesTags: ["Orders"],
         }),
 
+        getSalesAnalytics: builder.query<ApiResponse<AnalyticsResponse>, string>({
+            query: (range) => `/orders/analytics?range=${range}`,
+            providesTags: ["Orders"],
+        }),
+
         updateOrderStatus: builder.mutation<ApiResponse<{ order: Order }>, { id: string; status: string }>({
             query: ({ id, status }) => ({
                 url: `/orders/${id}`,
@@ -146,6 +157,7 @@ export const {
 
     useGetOrdersQuery,
     useGetOrderStatsQuery,
+    useGetSalesAnalyticsQuery,
     useUpdateOrderStatusMutation,
 
     useGetAdminCategoriesQuery,

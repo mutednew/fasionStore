@@ -43,20 +43,14 @@ export function OrdersList({ orders }: { orders: Order[] }) {
     return (
         <div className="space-y-6">
             {orders.map((order, index) => {
-                // 1. Сумма товаров
                 const itemsTotal = order.items.reduce((acc, item) => acc + Number(item.price) * item.quantity, 0);
 
-                // 2. Ожидаемая доставка (стандартная логика магазина)
                 const standardShipping = itemsTotal > 200 ? 0 : 15;
 
-                // 3. Ожидаемая сумма БЕЗ промокода
                 const expectedTotal = itemsTotal + standardShipping;
 
-                // 4. Реальная сумма, которую заплатил юзер
                 const paidTotal = Number(order.total);
 
-                // 5. Если заплатил МЕНЬШЕ, чем ожидалось — значит был промокод
-                // (используем 0.01 для погрешности float)
                 const discountAmount = expectedTotal - paidTotal;
                 const isDiscounted = discountAmount > 0.01;
 
@@ -85,7 +79,6 @@ export function OrdersList({ orders }: { orders: Order[] }) {
                                     <div className="text-right">
                                         <p className="text-xs font-medium text-neutral-500 uppercase tracking-wide">Total</p>
                                         <div className="flex flex-col items-end">
-                                            {/* Если была скидка, показываем зачеркнутую полную цену (товары + доставка) */}
                                             {isDiscounted && (
                                                 <div className="flex items-center gap-1.5 mb-0.5">
                                                     <Ticket size={12} className="text-green-600" />
@@ -112,7 +105,6 @@ export function OrdersList({ orders }: { orders: Order[] }) {
                                         </AccordionTrigger>
 
                                         <AccordionContent className="px-6 pb-6">
-                                            {/* СПИСОК ТОВАРОВ */}
                                             <div className="space-y-4 pt-2">
                                                 {order.items?.map((item) => (
                                                     <div key={item.id} className="flex items-center gap-4 py-2 border-b border-neutral-100 last:border-0">
@@ -157,7 +149,6 @@ export function OrdersList({ orders }: { orders: Order[] }) {
                                                 ))}
                                             </div>
 
-                                            {/* ИНФОРМАЦИЯ О ДОСТАВКЕ */}
                                             <div className="mt-6 bg-neutral-50 p-5 rounded-lg border border-neutral-100 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
                                                 <div>
                                                     <p className="font-bold text-neutral-900 text-xs uppercase mb-3 flex items-center gap-2">

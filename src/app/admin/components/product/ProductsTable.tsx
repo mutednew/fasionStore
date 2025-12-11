@@ -36,7 +36,6 @@ export function ProductsTable({
                                   selectedIds, onSelectOne, onSelectAll, onBulkDiscount, isBulkUpdating
                               }: ProductsTableProps) {
 
-    // Локальный стейт для инпута скидки в футере
     const [discountInput, setDiscountInput] = useState("");
 
     const isAllSelected = products.length > 0 && products.every(p => selectedIds.has(p.id));
@@ -48,7 +47,6 @@ export function ProductsTable({
                     <table className="w-full border-collapse text-sm">
                         <thead className="bg-muted/40 text-left">
                         <tr>
-                            {/* ЧЕКБОКС "ВЫБРАТЬ ВСЕ" */}
                             <th className="px-4 py-3 w-[40px]">
                                 <Checkbox
                                     checked={isAllSelected}
@@ -84,7 +82,6 @@ export function ProductsTable({
                                         custom={index}
                                         className={`border-t transition group ${selectedIds.has(p.id) ? "bg-blue-50/50 hover:bg-blue-50" : "hover:bg-muted/10"}`}
                                     >
-                                        {/* ЧЕКБОКС СТРОКИ */}
                                         <td className="px-4 py-3">
                                             <Checkbox
                                                 checked={selectedIds.has(p.id)}
@@ -158,7 +155,6 @@ export function ProductsTable({
                 </CardContent>
             </Card>
 
-            {/* --- ПЛАВАЮЩАЯ ПАНЕЛЬ ДЕЙСТВИЙ --- */}
             <AnimatePresence>
                 {selectedIds.size > 0 && (
                     <motion.div
@@ -202,7 +198,6 @@ export function ProductsTable({
                                 {isBulkUpdating ? "Applying..." : "Apply Sale"}
                             </Button>
 
-                            {/* Кнопка "Убрать скидку" (ставит 0%) */}
                             <Button
                                 size="sm"
                                 variant="outline"

@@ -20,6 +20,9 @@ model User {
   orders    Order[]
   cart      Cart?
   PromoCode PromoCode[]
+
+  @@index([role])
+  @@index([createdAt])
 }
 
 model VerificationToken {
@@ -54,6 +57,12 @@ model Product {
 
   orderItems OrderItem[]
   cartItems  CartItem[]
+
+  @@index([categoryId])
+  @@index([price])
+  @@index([createdAt])
+  @@index([name])
+  @@index([stock])
 }
 
 model Category {
@@ -82,6 +91,9 @@ model CartItem {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([cartId])
+  @@index([productId])
 }
 
 model Order {
@@ -106,6 +118,10 @@ model Order {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model OrderItem {
@@ -119,6 +135,9 @@ model OrderItem {
 
   size  String?
   color String?
+
+  @@index([orderId])
+  @@index([productId])
 }
 
 model PromoCode {
@@ -135,6 +154,7 @@ model PromoCode {
   createdAt DateTime @default(now())
 
   @@index([code])
+  @@index([userId])
 }
 
 enum Role {

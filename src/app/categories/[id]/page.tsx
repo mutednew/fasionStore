@@ -18,14 +18,12 @@ export default function CategoryPage() {
     const params = useParams();
     const categoryId = params?.id as string;
 
-    // 1. Используем наш универсальный хук
     const {
         page,
         setPage,
         searchTerm,
         setSearchTerm,
-        // categoryId здесь нам не нужен из хука, так как он жестко задан URL-ом
-        setCategoryId, // это тоже заглушка
+        setCategoryId,
         sort,
         setSort,
         size,
@@ -40,17 +38,15 @@ export default function CategoryPage() {
 
     const LIMIT = 9;
 
-    // 2. Получаем инфо о категории
     const { data: catData, isLoading: loadingCat } = useGetCategoryByIdQuery(categoryId);
     const category = catData?.category;
 
-    // 3. Получаем товары с фильтрами
     const {
         data: prodData,
         isLoading: loadingProd,
         isFetching: isFetchingProd
     } = useGetProductsFilteredQuery({
-        categoryId, // <-- Важно: передаем ID из URL, а не из фильтра
+        categoryId,
         page,
         limit: LIMIT,
         search: searchTerm || undefined,
@@ -92,8 +88,6 @@ export default function CategoryPage() {
     return (
         <main className="min-h-screen bg-[#fafafa] py-12 px-4 md:px-8">
             <div className="max-w-[1400px] mx-auto space-y-8">
-
-                {/* Хлебные крошки и заголовок */}
                 <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -127,13 +121,12 @@ export default function CategoryPage() {
 
                 <div className="flex flex-col lg:flex-row gap-10 items-start">
 
-                    {/* Фильтры (скрываем выбор категории, т.к. мы уже в ней) */}
                     <ProductFilters
                         searchTerm={searchTerm}
                         setSearchTerm={(v) => handleFilterChange(setSearchTerm, v)}
                         categoryId={categoryId}
-                        setCategoryId={() => {}} // Заглушка, здесь нельзя сменить категорию
-                        hideCategory={true}      // <-- Скрываем аккордеон категорий
+                        setCategoryId={() => {}}
+                        hideCategory={true}
                         sort={sort}
                         setSort={(v) => handleFilterChange(setSort, v)}
                         size={size}
@@ -187,7 +180,6 @@ export default function CategoryPage() {
                             </motion.div>
                         )}
 
-                        {/* Пагинация */}
                         {!showSkeletons && meta && meta.totalPages > 1 && (
                             <div className="flex justify-center items-center gap-4 pt-10 mt-8 border-t border-gray-200 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                 <Button

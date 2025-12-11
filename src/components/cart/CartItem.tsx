@@ -40,7 +40,10 @@ export function CartItem({ item, isUpdating, onUpdateQuantity, onRemove, promo }
     const handleIncrement = () => { setDirection(1); setLocalQty((prev) => prev + 1); };
     const handleDecrement = () => { setDirection(-1); setLocalQty((prev) => Math.max(1, prev - 1)); };
 
-    const basePrice = item.product.salePrice ? Number(item.product.salePrice) : Number(item.product.price);
+    const originalPrice = Number(item.product.price);
+    const basePrice = item.product.salePrice ? Number(item.product.salePrice) : originalPrice;
+
+    const isOnSale = item.product.salePrice && Number(item.product.salePrice) < originalPrice;
 
     let finalPrice = basePrice;
     const isPromoApplied = promo && promo.type === "PERCENT";
@@ -48,8 +51,6 @@ export function CartItem({ item, isUpdating, onUpdateQuantity, onRemove, promo }
     if (isPromoApplied) {
         finalPrice = basePrice * (1 - promo.value / 100);
     }
-
-    const isOnSale = item.product.salePrice && Number(item.product.salePrice) < Number(item.product.price);
 
     return (
         <motion.div
@@ -114,7 +115,7 @@ export function CartItem({ item, isUpdating, onUpdateQuantity, onRemove, promo }
                     </div>
 
                     <div className="text-right">
-                        <div className="relative h-7 overflow-hidden min-w-[80px] flex justify-end">
+                        <div className="relative h-7 overflow-hidden min-w-[100px] flex justify-end">
                             <AnimatePresence mode="popLayout" initial={false} custom={direction}>
                                 <motion.p
                                     key={`${localQty}-${finalPrice}`}
@@ -131,7 +132,7 @@ export function CartItem({ item, isUpdating, onUpdateQuantity, onRemove, promo }
                             </AnimatePresence>
                         </div>
 
-                        <div className="flex flex-col items-end">
+                        <div className="flex flex-col items-end gap-0.5">
                             {isPromoApplied && (
                                 <div className="flex items-center gap-1 text-[10px] font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded mb-0.5">
                                     <Tag size={10} />
@@ -139,17 +140,34 @@ export function CartItem({ item, isUpdating, onUpdateQuantity, onRemove, promo }
                                 </div>
                             )}
 
-                            {(localQty > 1 || isPromoApplied) && (
-                                <div className="flex items-baseline gap-1">
-                                    {isPromoApplied && (
-                                        <span className="text-[10px] text-gray-400 line-through">
-                                            ${basePrice.toFixed(2)}
-                                        </span>
+                            {isPromoApplied ? (
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[10px] text-gray-400 line-through">
+                                        ${basePrice.toFixed(2)}
+                                    </span>
+                                    {localQty > 1 && (
+                                        <p className="text-xs text-purple-600 font-medium">
+                                            ${finalPrice.toFixed(2)} each
+                                        </p>
                                     )}
-                                    <p className="text-xs text-gray-400 font-medium">
-                                        ${finalPrice.toFixed(2)} each
-                                    </p>
                                 </div>
+                            ) : isOnSale ? (
+                                <div className="flex flex-col items-end">
+                                    <span className="text-[10px] text-gray-400 line-through">
+                                        ${originalPrice.toFixed(2)}
+                                    </span>
+                                    {localQty > 1 && (
+                                        <p className="text-xs text-red-600 font-medium">
+                                            ${basePrice.toFixed(2)} each
+                                        </p>
+                                    )}
+                                </div>
+                            ) : (
+                                localQty > 1 && (
+                                    <p className="text-xs text-gray-500 font-medium">
+                                        ${basePrice.toFixed(2)} each
+                                    </p>
+                                )
                             )}
                         </div>
                     </div>

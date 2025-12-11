@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import AuthModal from "@/components/modals/auth/AuthModal";
 import { useState } from "react";
-import { ProductPrice } from "./ProductPrice"; // <-- Импорт
+import { ProductPrice } from "./ProductPrice";
 
 interface ProductCardProps {
     product: Product;
@@ -108,7 +108,6 @@ export function ProductCard({ product }: ProductCardProps) {
                         </div>
 
                         <div className="mt-auto flex items-end justify-between pt-2">
-                            {/* Используем наш новый компонент цены */}
                             <ProductPrice price={product.price} salePrice={product.salePrice} />
 
                             {product.colors && product.colors.length > 0 && (

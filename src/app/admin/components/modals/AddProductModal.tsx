@@ -56,22 +56,14 @@ export function AddProductModal() {
 
     const [addProduct, { isLoading }] = useAddProductMutation();
 
-    // ======================================================
-    // =============== IMAGE HANDLERS =======================
-    // ======================================================
-
     const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
 
         setImages(files);
         setPreviews(files.map((f) => URL.createObjectURL(f)));
 
-        setMainImageIndex(0); // первое фото по умолчанию — главное
+        setMainImageIndex(0);
     };
-
-    // ======================================================
-    // ==================== SUBMIT ==========================
-    // ======================================================
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
@@ -103,7 +95,6 @@ export function AddProductModal() {
                 uploadedUrls.push(data?.data?.url || "");
             }
 
-            // === Перенос главного фото в начало массива ===
             const ordered = [...uploadedUrls];
             if (mainImageIndex !== 0) {
                 const main = ordered.splice(mainImageIndex, 1)[0];
@@ -116,7 +107,7 @@ export function AddProductModal() {
                 stock: Number(stock),
                 categoryId: categoryId || categories[0]?.id,
                 description: description || null,
-                imageUrl: ordered[0], // главное
+                imageUrl: ordered[0],
                 images: ordered,
                 colors,
                 sizes,
@@ -125,7 +116,6 @@ export function AddProductModal() {
 
             toast.success("Product added!");
 
-            // reset
             setOpen(false);
             setImages([]);
             setPreviews([]);
@@ -146,10 +136,6 @@ export function AddProductModal() {
             toast.error("Failed to add product");
         }
     };
-
-    // ======================================================
-    // ====================== UI ============================
-    // ======================================================
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -172,16 +158,13 @@ export function AddProductModal() {
                     </DialogTitle>
                 </DialogHeader>
 
-                {/* FORM */}
                 <form onSubmit={handleSubmit} className="flex flex-col max-h-[80vh]">
                     <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
 
                         <div className="grid gap-6 md:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
 
-                            {/* LEFT */}
                             <div className="space-y-5">
 
-                                {/* NAME */}
                                 <div className="space-y-1.5">
                                     <Label className="text-sm">Name</Label>
                                     <Input
@@ -191,7 +174,6 @@ export function AddProductModal() {
                                     />
                                 </div>
 
-                                {/* DESCRIPTION */}
                                 <div className="space-y-1.5">
                                     <Label className="text-sm">Description</Label>
                                     <Textarea
@@ -202,7 +184,6 @@ export function AddProductModal() {
                                     />
                                 </div>
 
-                                {/* PRICE + STOCK */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div className="space-y-1.5">
                                         <Label className="text-sm">Price ($)</Label>
@@ -225,7 +206,6 @@ export function AddProductModal() {
                                     </div>
                                 </div>
 
-                                {/* CATEGORY */}
                                 <div className="space-y-1.5">
                                     <Label className="text-sm">Category</Label>
                                     <Select value={categoryId} onValueChange={setCategoryId}>
@@ -243,10 +223,8 @@ export function AddProductModal() {
                                 </div>
                             </div>
 
-                            {/* RIGHT */}
                             <div className="space-y-6">
 
-                                {/* IMAGES */}
                                 <div className="space-y-2">
                                     <Label className="text-sm">Images</Label>
 
@@ -257,7 +235,6 @@ export function AddProductModal() {
                                         onChange={handleImageChange}
                                     />
 
-                                    {/* MAIN IMAGE */}
                                     {previews.length > 0 && (
                                         <div className="relative w-full aspect-[4/5] border rounded-md overflow-hidden bg-neutral-100">
                                             <Image
@@ -269,7 +246,6 @@ export function AddProductModal() {
                                         </div>
                                     )}
 
-                                    {/* THUMBNAILS */}
                                     {previews.length > 1 && (
                                         <div className="grid grid-cols-4 gap-2">
                                             {previews.map((src, i) => (
@@ -292,7 +268,6 @@ export function AddProductModal() {
                                     )}
                                 </div>
 
-                                {/* COLORS */}
                                 <div className="space-y-2">
                                     <Label className="text-sm">Colors</Label>
                                     <div className="flex gap-2">
@@ -334,7 +309,6 @@ export function AddProductModal() {
                                     </div>
                                 </div>
 
-                                {/* SIZES */}
                                 <div className="space-y-2">
                                     <Label className="text-sm">Sizes</Label>
                                     <div className="flex gap-2">
@@ -376,7 +350,6 @@ export function AddProductModal() {
                                     </div>
                                 </div>
 
-                                {/* TAGS */}
                                 <div className="space-y-2">
                                     <Label className="text-sm">Tags</Label>
                                     <div className="flex gap-2">
@@ -421,7 +394,6 @@ export function AddProductModal() {
                         </div>
                     </div>
 
-                    {/* FOOTER */}
                     <DialogFooter className="border-t px-6 py-4 bg-white flex justify-end gap-3">
                         <Button
                             type="button"

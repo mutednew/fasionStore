@@ -11,7 +11,6 @@ import { useAppSelector } from "@/store/hooks";
 import AuthModal from "@/components/modals/auth/AuthModal";
 import { Separator } from "@/components/ui/separator";
 
-// Импортируем наши новые компоненты
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { ProductInfo } from "@/components/product/ProductInfo";
 import { ProductSelectors } from "@/components/product/ProductSelectors";
@@ -36,7 +35,6 @@ export default function ProductPage() {
     const [size, setSize] = useState<string | null>(null);
     const [quantity, setQuantity] = useState(1);
 
-    // Сброс выбора при смене товара
     useEffect(() => {
         if (product) {
             setColor(product.colors?.[0] || null);
@@ -87,14 +85,12 @@ export default function ProductPage() {
 
             <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-start mb-24">
 
-                {/* Левая колонка: Галерея */}
                 <ProductGallery
                     images={images}
                     name={product.name}
                     stock={product.stock}
                 />
 
-                {/* Правая колонка: Информация и действия */}
                 <div className="lg:col-span-5 flex flex-col gap-8 pt-4">
                     <ProductInfo product={product} />
 
@@ -121,7 +117,6 @@ export default function ProductPage() {
                 </div>
             </div>
 
-            {/* Отзывы */}
             <ProductReviews />
         </main>
     );
