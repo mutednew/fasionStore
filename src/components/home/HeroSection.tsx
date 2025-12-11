@@ -188,7 +188,7 @@ export default function HeroSection() {
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-500" />
 
                                                 {isOnSale && (
-                                                    <div className="absolute top-0 right-0 bg-red-600 text-white text-[10px] font-bold uppercase py-2 px-4 tracking-widest z-20">
+                                                    <div className="absolute top-0 right-0 bg-red-700 text-white text-[10px] font-bold uppercase py-2 px-4 tracking-widest z-20">
                                                         Sale
                                                     </div>
                                                 )}
